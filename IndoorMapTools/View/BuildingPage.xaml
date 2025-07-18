@@ -1,0 +1,355 @@
+﻿<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls" 
+      xmlns:osm="clr-namespace:IndoorMapTools.OpenStreetMapControl"
+      xmlns:mv="clr-namespace:MapView.System.Windows.Controls;assembly=MapView"
+      xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
+      xmlns:vm="clr-namespace:IndoorMapTools.ViewModel"
+      xmlns:sys="clr-namespace:System;assembly=mscorlib"
+      xmlns:wpfmap="clr-namespace:Microsoft.Maps.MapControl.WPF;assembly=Microsoft.Maps.MapControl.WPF"
+      x:Class="IndoorMapTools.View.BuildingPage"
+      mc:Ignorable="d" d:DesignHeight="630" d:DesignWidth="1200"
+      Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}"
+      d:Background="White" Margin="-2"
+      d:DataContext="{d:DesignInstance Type={x:Type vm:Floor}}" >
+
+    <Grid.RowDefinitions>
+        <RowDefinition Height="1*"/>
+        <RowDefinition Height="1*"/>
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="3*" />
+        <ColumnDefinition Width="1*" MinWidth="200" MaxWidth="300"/>
+    </Grid.ColumnDefinitions>
+
+    <osm:OSMControl x:Name="mapControl" Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Margin="2"
+                   DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type TabControl}}}"
+                   d:DataContext="{d:DesignInstance Type={x:Type vm:Building}}"
+                   OnFileDropCommand="{Binding CreateFloorCommand}"
+                   AltTileSourceURL ="{DynamicResource TileSourceURL}"
+                   BuildingOutline="{Binding PolygonVisual, ElementName=polygonTool}" ZoomLevel="19">
+        <osm:OSMControl.Style>
+            <Style TargetType="osm:OSMControl">
+                <Setter Property="Center" Value="{Binding Outline, Converter={cvt:PolygonCenter}}"/>
+                <Style.Triggers>
+                    <Trigger Property="DataContext" Value="{x:Null}">
+                        <Setter Property="Visibility" Value="Hidden"/>
+                    </Trigger>
+                    <DataTrigger Binding="{Binding Outline.Length}" Value="0">
+                        <Setter Property="Center">
+                            <Setter.Value>
+                                <MultiBinding Converter="{cvt:XYToPointConverter}">
+                                    <Binding Source="{StaticResource strings.DEFAULT_LONGITUDE}"/>
+                                    <Binding Source="{StaticResource strings.DEFAULT_LATITUDE}"/>
+                                </MultiBinding>
+                            </Setter.Value>
+                        </Setter>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </osm:OSMControl.Style>
+
+        <wpfmap:MapItemsControl ItemsSource="{Binding Floors}" IsTabStop="False">
+            <wpfmap:MapItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:Floor}">
+                    <osm:TransformableMapImage Source="{Binding MapImage}" TinyImage="{StaticResource BuildingImage}"
+                           WestLongitude="{Binding LeftLongitude}" SouthLatitude="{Binding BottomLatitude}"
+                           PixelPerMeter="{Binding MapImagePPM}" Rotation="{Binding MapImageRotation}"
+                           Opacity="{Binding Value,ElementName=opacitySlider}"
+                           IsHitTestVisible="False">
+                        <osm:TransformableMapImage.Style>
+                            <Style TargetType="osm:TransformableMapImage">
+                                <Setter Property="Visibility" Value="{Binding Visible, 
+                                    Converter={cvt:BoolToVisibility}}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Value="True">
+                                        <DataTrigger.Binding>
+                                            <MultiBinding Converter="{cvt:ObjectEqualsMulti}">
+                                                <Binding/>
+                                                <Binding Path="DataContext" ElementName="floorInfo"/>
+                                            </MultiBinding>
+                                        </DataTrigger.Binding>
+                                        <Setter Property="Visibility" Value="Hidden"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </osm:TransformableMapImage.Style>
+                    </osm:TransformableMapImage>
+                </DataTemplate>
+            </wpfmap:MapItemsControl.ItemTemplate>
+        </wpfmap:MapItemsControl>
+
+        <wpfmap:MapItemsControl ItemsSource="{Binding Floors}" IsTabStop="False">
+            <wpfmap:MapItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:Floor}">
+                    <osm:TransformableMapImage Source="{Binding MapImage}" TinyImage="{StaticResource BuildingImage}"
+                           WestLongitude="{Binding LeftLongitude}" SouthLatitude="{Binding BottomLatitude}"
+                           PixelPerMeter="{Binding MapImagePPM}" Rotation="{Binding MapImageRotation}"
+                           Opacity="{Binding Value,ElementName=opacitySlider}"
+                           IsHitTestVisible="{Binding ActiveTool, ElementName=mapControl, Converter={cvt:IsNull}}">
+                        <osm:TransformableMapImage.Style>
+                            <Style TargetType="osm:TransformableMapImage">
+                                <Setter Property="Visibility" Value="Hidden"/>
+                                <Style.Triggers>
+                                    <DataTrigger Value="True">
+                                        <DataTrigger.Binding>
+                                            <MultiBinding Converter="{cvt:ObjectEqualsMulti}">
+                                                <Binding/>
+                                                <Binding Path="DataContext" ElementName="floorInfo"/>
+                                            </MultiBinding>
+                                        </DataTrigger.Binding>
+                                        <Setter Property="Visibility" Value="{Binding Visible, 
+                                            Converter={cvt:BoolToVisibility}}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </osm:TransformableMapImage.Style>
+                    </osm:TransformableMapImage>
+                </DataTemplate>
+            </wpfmap:MapItemsControl.ItemTemplate>
+        </wpfmap:MapItemsControl>
+    </osm:OSMControl>
+    
+    <GroupBox Header="{DynamicResource strings.BuildingInfo}"
+              Grid.Row="0" Grid.Column="1" Margin="2"
+              MinHeight="{Binding ActualHeight, ElementName=innerBuildingInfo}"
+              DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type TabControl}}}"
+              d:DataContext="{d:DesignInstance Type={x:Type vm:Building}}" >
+        <StackPanel x:Name="innerBuildingInfo" Margin="10" Orientation="Vertical">
+            <StackPanel Margin="2" Orientation="Horizontal">
+                <TextBlock Text="{DynamicResource strings.Name}" />
+                <TextBlock Text=" : " />
+                <uc:EditableText Value="{Binding Name}" VisualType="HyperText"/>
+            </StackPanel>
+            <StackPanel Margin="2" Orientation="Horizontal">
+                <TextBlock Text="{DynamicResource strings.BuildingAddress}" />
+                <TextBlock Text=" : " />
+                <uc:EditableText Value="{Binding Address}" VisualType="HyperText"/>
+            </StackPanel>
+            <StackPanel Margin="2" Orientation="Horizontal">
+                <TextBlock Text="{DynamicResource strings.DefaultFloorHeight}" />
+                <TextBlock Text=" : " />
+                <uc:EditableText Value="{Binding DefaultFloorHeight}"
+                                 PostfixText=" m" VisualType="HyperText" Validator="PositiveDouble"/>
+            </StackPanel>
+            <GroupBox Header="{DynamicResource strings.ReferenceCoordinates}"
+                      x:Name="groupLonLat" Margin="-7,2,-7,2"
+                      ToolTip="{DynamicResource strings.ReferenceCoordinatesToolTipText}"
+                      ToolTipService.InitialShowDelay="0"
+                      Tag="{Binding Outline, Converter={cvt:PolygonCenter}}">
+                <StackPanel Orientation="Vertical">
+                    <DockPanel Margin="10,2,2,2">
+                        <TextBlock Text="{DynamicResource strings.Longitude}"/>
+                        <TextBlock Text=" : "/>
+                        <TextBlock Text="{Binding Tag.X, ElementName=groupLonLat}"/>
+                    </DockPanel>
+                    <DockPanel Margin="10,2,2,2">
+                        <TextBlock Text="{DynamicResource strings.Latitude}"/>
+                        <TextBlock Text=" : "/>
+                        <TextBlock Text="{Binding Tag.Y, ElementName=groupLonLat}"/>
+                    </DockPanel>
+                </StackPanel>
+            </GroupBox>
+            <GroupBox Header="{DynamicResource strings.NumberOfLandmarksByCategory}" 
+                      Margin="-7,2,-7,2" >
+                <UniformGrid Columns="4">
+                    <StackPanel Orientation="Horizontal" Grid.Column="0" Margin="5">
+                        <Image Grid.Column="0" Height="24" Width="24" Source="{StaticResource StairImage}"/>
+                        <TextBlock Grid.Column="1" Text=" : " VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" VerticalAlignment="Center" 
+                                   Text="{Binding LandmarkGroups, Converter={cvt:LandmarkCounter}, 
+                                ConverterParameter={x:Static vm:LandmarkType.Stair}}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Grid.Column="1" Margin="5">
+                        <Image Grid.Column="0" Height="24" Width="24" Source="{StaticResource ElevatorImage}"/>
+                        <TextBlock Grid.Column="1" Text=" : " VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" VerticalAlignment="Center" 
+                                   Text="{Binding LandmarkGroups, Converter={cvt:LandmarkCounter}, 
+                                ConverterParameter={x:Static vm:LandmarkType.Elevator}}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Grid.Column="2" Margin="5">
+                        <Image Grid.Column="0" Height="24" Width="24" Source="{StaticResource EscalatorImage}"/>
+                        <TextBlock Grid.Column="1" Text=" : " VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" VerticalAlignment="Center" 
+                                   Text="{Binding LandmarkGroups, Converter={cvt:LandmarkCounter}, 
+                                ConverterParameter={x:Static vm:LandmarkType.Escalator}}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Grid.Column="3" Margin="5">
+                        <Image Grid.Column="0" Height="24" Width="24" Source="{StaticResource EntranceImage}"/>
+                        <TextBlock Grid.Column="1" Text=" : " VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" VerticalAlignment="Center" 
+                                   Text="{Binding LandmarkGroups, Converter={cvt:LandmarkCounter}, 
+                                ConverterParameter={x:Static vm:LandmarkType.Entrance}}"/>
+                    </StackPanel>
+                </UniformGrid>
+            </GroupBox>
+
+            <uc:ToolButton x:Name="drawOutlineToolBtn" MinHeight="30" Margin="2, 5, 2, 2"
+                           ActivationTarget="{Binding ActiveTool, ElementName=mapControl}"
+                           IsChecked="{Binding IsDrawing, ElementName=polygonTool, Mode=TwoWay}">
+                <uc:ToolButton.Style>
+                    <Style TargetType="ToggleButton">
+                        <Setter Property="Content" Value="{DynamicResource strings.EditBuildingOutline}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Outline}" Value="{x:Null}">
+                                <Setter Property="IsChecked" Value="False"/>
+                                <Setter Property="IsEnabled" Value="False"/>
+                                <Setter Property="Content" Value="{DynamicResource strings.DrawBuildingOutline}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Outline.Length}" Value="1">
+                                <Setter Property="Content" Value="{DynamicResource strings.DrawBuildingOutline}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </uc:ToolButton.Style>
+                <uc:ToolButton.Tool>
+                    <mv:PolygonTool x:Name="polygonTool" PolygonSource="{Binding Outline}"/>
+                </uc:ToolButton.Tool>
+            </uc:ToolButton>
+        </StackPanel>
+    </GroupBox>
+
+    <GroupBox Header="{DynamicResource strings.CurrentFloorInfo}" 
+              x:Name="floorInfo" Margin="2" Grid.Row="1" Grid.Column="1">
+        <StackPanel Margin="10" Orientation="Vertical">
+            <StackPanel Margin="2" Orientation="Horizontal">
+                <TextBlock Text="{DynamicResource strings.FloorName}"/>
+                <TextBlock Text=" : "/>
+                <uc:EditableText Value="{Binding Name}"
+                                 VisualType="HyperText" Validator="Name"/>
+            </StackPanel>
+
+            <StackPanel Margin="2" Orientation="Horizontal">
+                <TextBlock Text="{DynamicResource strings.TotalLandmarks}"/>
+                <TextBlock Text=" : "/>
+                <TextBlock Text="{Binding Landmarks.Count}" />
+            </StackPanel>
+
+            <StackPanel Margin="2" Orientation="Horizontal">
+                <TextBlock Text="{DynamicResource strings.FloorHeight}"/>
+                <TextBlock Text=" : " />
+                <uc:EditableText x:Name="floorHeightText" Value="{Binding Height}" PostfixText=" m "
+                                 AlternativeText="{Binding ParentBuilding.DefaultFloorHeight}"
+                                 VisualType="HyperText" Validator="PositiveDouble">
+                    <uc:EditableText.ShowAlternativeText>
+                        <MultiBinding Converter="{cvt:Compare}" ConverterParameter="le">
+                            <Binding Path="Height"/>
+                            <Binding Source="0"/>
+                        </MultiBinding>
+                    </uc:EditableText.ShowAlternativeText>
+                </uc:EditableText>
+                <Button Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}"
+                        Command="{Binding RemoveHeightCommand}"
+                        ToolTip="{DynamicResource strings.RemoveFloorHeightOverrideToolTipText}"
+                        ToolTipService.InitialShowDelay="0"
+                        HorizontalAlignment="Left" IsTabStop="False">
+                    <Image Source="/KAILOSMapTools;component/Resources/treshcan.png"
+                           Opacity="0.6" SnapsToDevicePixels="True"/>
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowAlternativeText, ElementName=floorHeightText}" Value="True">
+                                    <Setter Property="Visibility" Value="Hidden"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                            <Style.Resources>
+                                <Style TargetType="{x:Type Border}">
+                                    <Setter Property="CornerRadius"
+                                            Value="{Binding ActualWidth, RelativeSource={RelativeSource Self},
+                                        Converter={cvt:Multiplier}, ConverterParameter=0.2}"/>
+                                </Style>
+                            </Style.Resources>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </StackPanel>
+
+            <StackPanel Margin="2" Orientation="Horizontal"
+                        ToolTip="{DynamicResource strings.PlacementAvailableThroughMapViewToolTipText}"
+                       ToolTipService.InitialShowDelay="0">
+                <TextBlock Text="{DynamicResource strings.MapScale}" />
+                <TextBlock Text=" : " />
+                <uc:EditableText Grid.Column="2" PostfixText=" ppm" VisualType="HyperText" Validator="PositiveDouble"
+                                        Value="{Binding MapImagePPM, Mode=TwoWay, StringFormat=\{0:F4\}}"/>
+            </StackPanel>
+
+            <StackPanel Margin="2" Orientation="Horizontal"
+                        ToolTip="{DynamicResource strings.PlacementAvailableThroughMapViewToolTipText}"
+                       ToolTipService.InitialShowDelay="0">
+                <TextBlock Text="{DynamicResource strings.MapRotation}" />
+                <TextBlock Text=" : " />
+                <uc:EditableText Grid.Column="2" PostfixText="°" VisualType="HyperText" Validator="Double"
+                                 Value="{Binding MapImageRotation, Converter={cvt:Multiplier},
+                                    ConverterParameter=-1, Mode=TwoWay, StringFormat=\{0:F4\}}"/>
+            </StackPanel>
+
+            <GroupBox Header="{DynamicResource strings.ReferenceCoordinates}" Margin="-7,2,-7,2"
+                      ToolTip="{DynamicResource strings.PlacementAvailableThroughMapViewToolTipText}"
+                      ToolTipService.InitialShowDelay="0">
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Margin="10,2,2,2" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource strings.Longitude}"/>
+                        <TextBlock Text=" : " />
+                        <uc:EditableText VisualType="HyperText" Validator="Double"
+                                        Value="{Binding LeftLongitude, Mode=TwoWay}"/>
+                    </StackPanel>
+                    <StackPanel Margin="10,2,2,2" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource strings.Latitude}"/>
+                        <TextBlock Text=" : " />
+                        <uc:EditableText VisualType="HyperText" Validator="Double"
+                                        Value="{Binding BottomLatitude, Mode=TwoWay}"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <Button MinHeight="30" Margin="2, 5, 2, 2"
+                    Content="{DynamicResource strings.PlaceMapAtCurrentFocus}"
+                    Command="{Binding LocateFloorCommand}"
+                    CommandParameter="{Binding ElementName=mapControl, Path=Center}"/>
+        </StackPanel>
+    </GroupBox>
+
+    <Border Grid.Row="1" Grid.Column="0" Margin="10" BorderThickness="1"
+            HorizontalAlignment="Left" VerticalAlignment="Bottom"
+            BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+            Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+        <StackPanel Orientation="Vertical" Margin="10">
+            <Slider Width="100" Height="20" x:Name="opacitySlider" IsMoveToPointEnabled="True"
+                    Value="1.0" Maximum="1.0" Minimum="0.2"/>
+            <TextBlock Text="{DynamicResource strings.FloorMapImageOpacity}"/>
+        </StackPanel>
+    </Border>
+
+    <Border Grid.Row="0" Grid.Column="0" Margin="10" BorderThickness="1"
+            HorizontalAlignment="Left" VerticalAlignment="Top"
+            BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+            Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+        <Border.Resources>
+            <Style TargetType="{x:Type Border}">
+                <Setter Property="CornerRadius" Value="4"/>
+            </Style>
+        </Border.Resources>
+        <StackPanel Orientation="Horizontal" Margin="3">
+            <TextBox x:Name="textSearch" Width="100" Margin="0,0,2,0">
+                <TextBox.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="2"/>
+                    </Style>
+                </TextBox.Resources>
+            </TextBox>
+            
+            <Button Height="{Binding ActualHeight, ElementName=textSearch}">
+                <Image Source="/KAILOSMapTools;component/Resources/search.png"
+                       Margin="1"/>
+                <Button.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="2"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+        </StackPanel>
+    </Border>
+</Grid>
