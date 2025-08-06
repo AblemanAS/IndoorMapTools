@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndoorMapTools.Core;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;

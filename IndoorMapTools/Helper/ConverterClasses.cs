@@ -15,7 +15,7 @@ using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using static IndoorMapTools.View.FGAView.FGAShapes.FGAEdge;
+using static IndoorMapTools.View.FGAView.FGAVisuals.FGAEdge;
 
 namespace IndoorMapTools.Helper
 {
@@ -342,6 +342,18 @@ namespace IndoorMapTools.Helper
         }
     }
 
+    class GetGroupIds : OneWayConverter
+    {
+        public override object Convert(object value)
+        {
+            if(!(value is List<GraphNode> nodes && nodes.Count > 0)) return new int[0];
+
+            var result = new int[nodes.Count];
+            for(int i = 0; i < nodes.Count; i++)
+                result[i] = nodes[i].Group;
+            return result;
+        }
+    }
 
     class GetAreaPresentation : OneWayConverter
     {

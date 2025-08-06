@@ -9,7 +9,7 @@
       xmlns:mv="clr-namespace:MapView.System.Windows.Controls;assembly=MapView"
       xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
       xmlns:fga="clr-namespace:IndoorMapTools.View.FGAView"
-      xmlns:fsh="clr-namespace:IndoorMapTools.View.FGAView.FGAShapes"
+      xmlns:fvs="clr-namespace:IndoorMapTools.View.FGAView.FGAVisuals"
       xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls" 
       xmlns:collections="clr-namespace:System.Collections;assembly=mscorlib"
       Width="1280" Height="640" Margin="5"
@@ -39,43 +39,11 @@
                 BorderThickness="1" Background="White">
             <uc:PanZoomViewer VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <fga:FGAMatrix x:Name="fgaMatrix" DataContext="{Binding Report}">
-                    <fga:FGAItemsControl x:Name="fgaAreaControl" ItemsSource="{Binding NodesInArea.Keys}">
+                    <fga:FGAItemsControl ItemsSource="{Binding Areas}">
                         <fga:FGAItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type BitmapImage}">
-                                <fga:FGAItemsControl>
-                                    <fga:FGAItemsControl.Tag>
-                                        <MultiBinding Converter="{cvt:DictKeytoValue}">
-                                            <Binding Path="DataContext.NodesInArea" ElementName="fgaAreaControl"/>
-                                            <Binding Path="."/>
-                                        </MultiBinding>
-                                    </fga:FGAItemsControl.Tag>
-                                    <fga:FGAItemsControl.ItemsSource>
-                                        <Binding Path="Tag" RelativeSource="{RelativeSource self}"
-                                                 Converter="{cvt:GetAreaPresentation}"/>
-                                    </fga:FGAItemsControl.ItemsSource>
-                                    <fga:FGAItemsControl.ItemTemplate>
-                                        <DataTemplate DataType="{x:Type x:ArrayExtension}">
-                                            <Grid Width="64" Height="64" IsHitTestVisible="False">
-                                                <Rectangle Width="32" Height="56" Fill="AliceBlue" 
-                                               Visibility="{Binding [3], Converter={cvt:BoolToVisibility}}"
-                                               HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                <Ellipse Width="56" Height="56" Fill="AliceBlue"
-                                             Visibility="{Binding [4], Converter={cvt:BoolToVisibility}}"
-                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                <Rectangle Width="32" Height="56" Fill="AliceBlue"
-                                               Visibility="{Binding [5], Converter={cvt:BoolToVisibility}}"
-                                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </fga:FGAItemsControl.ItemTemplate>
-                                    <fga:FGAItemsControl.ItemContainerStyle>
-                                        <Style TargetType="{x:Type fga:FGAItem}">
-                                            <Setter Property="fga:FGAPanel.Floor" Value="{Binding [0]}" />
-                                            <Setter Property="fga:FGAPanel.Group" Value="{Binding [1]}"/>
-                                            <Setter Property="fga:FGAPanel.Area" Value="{Binding [2]}"/>
-                                        </Style>
-                                    </fga:FGAItemsControl.ItemContainerStyle>
-                                </fga:FGAItemsControl>
+                            <DataTemplate DataType="{x:Type vm:Area}">
+                                <fvs:FGAArea GroupIds="{Binding Nodes, Converter={cvt:GetGroupIds}}"
+                                             FloorId="{Binding FloorId}" AreaId="{Binding AreaId}"/>
                             </DataTemplate>
                         </fga:FGAItemsControl.ItemTemplate>
                     </fga:FGAItemsControl>
@@ -98,14 +66,10 @@
                                         </MultiBinding>
                                     </Setter.Value>
                                 </Setter>
-                                <Setter Property="fga:FGAPanel.Floor" 
-                                    Value="{Binding Tag.Floor, RelativeSource={RelativeSource self}}" />
-                                <Setter Property="fga:FGAPanel.Group" 
-                                    Value="{Binding Tag.Group, RelativeSource={RelativeSource self}}"/>
-                                <Setter Property="fga:FGAPanel.Area" 
-                                    Value="{Binding Tag.Area, RelativeSource={RelativeSource self}}"/>
+                                <Setter Property="fga:FGAPanel.Floor" Value="{Binding Tag.Floor, RelativeSource={RelativeSource self}}" />
+                                <Setter Property="fga:FGAPanel.Group" Value="{Binding Tag.Group, RelativeSource={RelativeSource self}}"/>
+                                <Setter Property="fga:FGAPanel.Area" Value="{Binding Tag.Area, RelativeSource={RelativeSource self}}"/>
                                 <Setter Property="Cursor" Value="Hand"/>
-
                             </Style>
                         </fga:FGAItemsControl.ItemContainerStyle>
                     </fga:FGAItemsControl>
@@ -119,7 +83,7 @@
                         </ItemsControl.ItemsSource>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type x:ArrayExtension}">
-                                <fsh:FGAEdge Floor1="{Binding [0]}" Floor2="{Binding [3]}"
+                                <fvs:FGAEdge Floor1="{Binding [0]}" Floor2="{Binding [3]}"
                                              Group1="{Binding [1]}" Group2="{Binding [4]}"
                                              Area1="{Binding [2]}" Area2="{Binding [5]}"
                                              Deduct1="24" Deduct2="24"/>
@@ -150,13 +114,13 @@
                                     </ItemsControl.Style>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type x:ArrayExtension}">
-                                            <fsh:FGAEdge StrokeThickness="4" HeadSize="8" Stroke="Red"
+                                            <fvs:FGAEdge StrokeThickness="4" HeadSize="8" Stroke="Red"
                                                          Floor1="{Binding [0]}" Floor2="{Binding [3]}"
                                                          Group1="{Binding [1]}" Group2="{Binding [4]}"
                                                          Area1="{Binding [2]}" Area2="{Binding [5]}"
                                                          TailType="Circle" HeadType="{Binding [6]}">
-                                                <fsh:FGAEdge.Style>
-                                                    <Style TargetType="fsh:FGAEdge">
+                                                <fvs:FGAEdge.Style>
+                                                    <Style TargetType="fvs:FGAEdge">
                                                         <Setter Property="Deduct2" Value="0"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding [6]}" Value="Arrow">
@@ -164,8 +128,8 @@
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
-                                                </fsh:FGAEdge.Style>
-                                            </fsh:FGAEdge>
+                                                </fvs:FGAEdge.Style>
+                                            </fvs:FGAEdge>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -177,10 +141,10 @@
         </Border>
 
         <ListView x:Name="clusterView" Grid.Row="1" Grid.Column="0"
-                       ItemsSource="{Binding Report.ReachableClusters}"
-                       Height="{Binding DesiredSize.Height, ElementName=paramInfo}"
-                       ScrollViewer.VerticalScrollBarVisibility="Auto"
-                       ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                  ItemsSource="{Binding Report.ReachableClusters}"
+                  Height="{Binding DesiredSize.Height, ElementName=paramInfo}"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <ListView.ItemTemplate>
                 <DataTemplate DataType="{x:Type vm:GraphNode}">
                     <ContentControl x:Name="labelControl" Content="{Binding Data}">
@@ -192,13 +156,17 @@
                                     <TextBlock Text="{Binding}"/>
                                 </StackPanel>
                             </DataTemplate>
-                            <DataTemplate DataType="{x:Type BitmapImage}">
+                            <DataTemplate DataType="{x:Type vm:Area}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{DynamicResource strings.IsolatedArea}"/>
-                                    <TextBlock Text=" "/>
-                                    <TextBlock Text="{Binding DataContext.Floor, ElementName=labelControl}"/>
-                                    <TextBlock Text="-"/>
-                                    <TextBlock Text="{Binding DataContext.Area, ElementName=labelControl}"/>
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat=" {0}-{1}">
+                                                <Binding Path="FloorId"/>
+                                                <Binding Path="AreaId"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
                                 </StackPanel>
                             </DataTemplate>
                         </ContentControl.Resources>

@@ -2,7 +2,7 @@
 using System.Windows.Shapes;
 using System.Windows;
 
-namespace IndoorMapTools.View.FGAView.FGAShapes
+namespace IndoorMapTools.View.FGAView.FGAVisuals
 {
     public abstract class FGAShape : Shape
     {

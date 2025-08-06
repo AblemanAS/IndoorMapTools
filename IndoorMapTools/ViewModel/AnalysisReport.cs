@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace IndoorMapTools.ViewModel
 {
@@ -17,10 +16,11 @@ namespace IndoorMapTools.ViewModel
         private static readonly IFGASolver FGASolver = new TSPSolver(); // FGA Matrix Problem에 대한 Solver (기본값 : TSPSolver 사용)
 
         public List<Landmark> Landmarks { get; } = new List<Landmark>();        // LMs
+        public List<GraphNode> GraphNodes { get; } = new List<GraphNode>();     // Nodes
         public List<GraphNode> ReachableClusters { get; }                       // Node clusters
-        public Dictionary<Floor, List<BitmapImage>> ReachableAreas { get; }     // Floor - Areas
-        public Dictionary<BitmapImage, List<GraphNode>> NodesInArea { get; }    // Area - Nodes
+        public Dictionary<Floor, List<Area>> ReachableAreas { get; }            // Area - Nodes
         public Dictionary<Landmark, GraphNode> LandmarktoNode { get; }          // LM - Node
+        public List<Area> Areas { get; } = new List<Area>();
 
         public int[] GroupOrder { get; }
 
@@ -43,7 +43,7 @@ namespace IndoorMapTools.ViewModel
 
             // OGM 생성 및 ReachableAreas로 변환
             var ogmSegmentsConcBag = new ConcurrentBag<(Floor, List<System.Drawing.Bitmap>)>();
-            var reachableAreaConcBag = new ConcurrentBag<(Floor, List<BitmapImage>)>();
+            var reachableAreaConcBag = new ConcurrentBag<(Floor, List<Area>)>();
             Parallel.ForEach(building.Floors, curFloor =>
             {
                 double reachableScale = 1.0 / reachableResolution / curFloor.MapImagePPM; // OGM 배율 계산
@@ -53,18 +53,19 @@ namespace IndoorMapTools.ViewModel
                 ogmSegmentsConcBag.Add((curFloor, ogmSegments)); // OGM Segments 저장
                 ogm.Dispose(); // OGM 해제
 
-                var ogmInImages = new List<BitmapImage>();
+                var ogmInImages = new List<Area>();
 
                 // 이미지 인스턴스 변환
-                foreach(var curSegment in ogmSegments)
+                for(int i = 0; i < ogmSegments.Count; i++)
                 {
-                    curSegment.RotateFlip(System.Drawing.RotateFlipType.RotateNoneFlipY);
-                    ogmInImages.Add(ImageModule.BitmapImageFromBitmap(curSegment));
+                    var curSegment = ogmSegments[i];
+                    curSegment.RotateFlip(System.Drawing.RotateFlipType.RotateNoneFlipY); // Y축 반전
+                    ogmInImages.Add(new Area(building.Floors.IndexOf(curFloor), i) { Reachable = ImageModule.BitmapImageFromBitmap(curSegment) });
                 }
 
                 reachableAreaConcBag.Add((curFloor, ogmInImages)); // ReachableAreas로 변환
             });
-            ReachableAreas = new Dictionary<Floor, List<BitmapImage>>(reachableAreaConcBag.Count);
+            ReachableAreas = new Dictionary<Floor, List<Area>>(reachableAreaConcBag.Count);
             foreach(var (floor, segmentedImages) in reachableAreaConcBag)
                 ReachableAreas.Add(floor, segmentedImages); // ReachableAreas에 추가
             var ogmSegmentsDict = new Dictionary<Floor, List<System.Drawing.Bitmap>>(ogmSegmentsConcBag.Count);
@@ -82,7 +83,7 @@ namespace IndoorMapTools.ViewModel
 
             // 각 층별 Landmark의 위치를 변환행렬을 통해 변환
             var landmarktoNodeConcBag = new ConcurrentBag<(Landmark, GraphNode)>();
-            var nodesInAreaConcDict = new ConcurrentDictionary<BitmapImage, List<GraphNode>>();
+            var nodesInAreaConcDict = new ConcurrentDictionary<Area, List<GraphNode>>();
             Parallel.For(0, building.Floors.Count, floorIndex =>
             {
                 byte[] buffer = new byte[1];
@@ -106,27 +107,28 @@ namespace IndoorMapTools.ViewModel
                             var curNode = new GraphNode(floorIndex, building.LandmarkGroups.IndexOf(curLandmark.ParentGroup),
                                 areaIndex, curLandmark);
                             landmarktoNodeConcBag.Add((curLandmark, curNode)); // Landmark -> Node 매핑
-                            nodesInAreaConcDict.GetOrAdd(ReachableAreas[curFloor][areaIndex], (k) => new List<GraphNode>()).Add(curNode); // NodesInArea 구성
+                            ReachableAreas[curFloor][areaIndex].Nodes.Add(curNode);// Area에 Node 추가
                             break;
                         }
                     }
                 }
-                
                 //foreach(var ogmInBitmap in ogmSegmentsDict[curFloor]) ogmInBitmap.Dispose();
             });
-            NodesInArea = new Dictionary<BitmapImage, List<GraphNode>>(nodesInAreaConcDict);
             LandmarktoNode = new Dictionary<Landmark, GraphNode>(landmarktoNodeConcBag.Count);
             foreach(var (landmark, node) in landmarktoNodeConcBag)
                 LandmarktoNode.Add(landmark, node); // Landmark -> Node 매핑
+            foreach(Landmark curLandmark in Landmarks)
+                GraphNodes.Add(LandmarktoNode[curLandmark]); // GraphNodes에 추가
             progBox.Report(50);
 
             // 그래프 생성
-            Parallel.ForEach(NodesInArea, kvPair => // 각 층별 Area에 속하는 Node들
+            Areas = ReachableAreas.Values.SelectMany(areaList => areaList).ToList();
+            Parallel.ForEach(Areas, curArea => // 각 층별 Area에 속하는 Node들
             {
-                foreach(GraphNode curNode in kvPair.Value)
+                foreach(GraphNode curNode in curArea.Nodes)
                 {
                     // 현재 포인터의 랜드마크와 같은 Area에 속하는 Node들 중에서
-                    foreach(GraphNode otherNode in kvPair.Value)
+                    foreach(GraphNode otherNode in curArea.Nodes)
                     {
                         if(curNode == otherNode) continue; // 나 자신은 제외
                         curNode.Children.Add(otherNode); // 자식 추가
@@ -193,20 +195,21 @@ namespace IndoorMapTools.ViewModel
             foreach(var kvPair in ReachableAreas)
             {
                 Floor curFloor = kvPair.Key; // 현재 층
-                List<BitmapImage> curReachableAreas = kvPair.Value; // 현재 층의 ReachableArea들
-                for(int areaIndex = 0; areaIndex < curReachableAreas.Count; areaIndex++)
+                List<Area> curAreas = kvPair.Value; // 현재 층의 ReachableArea들
+                for(int areaIndex = 0; areaIndex < curAreas.Count; areaIndex++)
                 {
-                    BitmapImage curReachableArea = curReachableAreas[areaIndex]; // 현재 ReachableArea
-                    if(NodesInArea.TryGetValue(curReachableArea, out var foundNodeList)) continue; // Node 없으면 패스
-                    ReachableClusters.Add(new GraphNode(building.Floors.IndexOf(curFloor), -1, areaIndex, curReachableArea));
+                    Area curArea = curAreas[areaIndex]; // 현재 ReachableArea
+                    if(curArea.Nodes.Count == 0)
+                        ReachableClusters.Add(new GraphNode(building.Floors.IndexOf(curFloor), -1, areaIndex, curArea));
                 }
             }
             progBox.Report(80);
 
             // FGA 행렬 구축 (locality를 위해서 FG가 아닌 G-row, F-col의 구조로 기록)
             var fgaMatrix = new int[building.LandmarkGroups.Count, building.Floors.Count]; // column, row
-            foreach(var kvPair in NodesInArea)
-                foreach(var curNode in kvPair.Value)
+            foreach(var kvPair in ReachableAreas)
+                foreach(var curArea in kvPair.Value)
+                    foreach(var curNode in curArea.Nodes)
                     // FGA Matrix는 Cell의 기본값이 Null이고, Area 값은 0으로 시작함
                     // 이에 Null Cell과 Area 값 0 구분을 위해 Area 값에 +1 하여 대입
                     // 따라서 값이 0인 경우는 Null Cell을 의미함

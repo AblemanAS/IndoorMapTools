@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:kmt="clr-namespace:IndoorMapTools"
+        xmlns:imt="clr-namespace:IndoorMapTools"
         xmlns:view="clr-namespace:IndoorMapTools.View"
         xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls"
         xmlns:vm="clr-namespace:IndoorMapTools.ViewModel"
@@ -273,7 +273,7 @@
                            Height="24" Margin="0,-4,0,-4"/>
                     <ComboBox Height="24" Margin="5,-4,10,-4" VerticalContentAlignment="Center"
                               DataContext="{x:Static Application.Current}"
-                              d:DataContext="{d:DesignInstance Type=kmt:App}"
+                              d:DataContext="{d:DesignInstance Type=imt:App}"
                               ItemsSource="{Binding AvailableCultures}"
                               SelectedItem="{Binding Culture}"
                               DisplayMemberPath="NativeName"/>

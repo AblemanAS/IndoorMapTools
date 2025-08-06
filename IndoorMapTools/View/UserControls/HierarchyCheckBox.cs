@@ -14,7 +14,6 @@ namespace IndoorMapTools.View.UserControls
             get => (HierarchyCheckBox)GetValue(MasterProperty);
             set => SetValue(MasterProperty, value);
         }
-
         public static readonly DependencyProperty MasterProperty =
             DependencyProperty.Register(nameof(Master), typeof(HierarchyCheckBox), typeof(HierarchyCheckBox), 
                 new FrameworkPropertyMetadata(OnMasterChanged));
