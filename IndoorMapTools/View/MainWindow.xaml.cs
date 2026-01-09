@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using IndoorMapTools.ViewModel;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 
@@ -6,11 +7,12 @@ namespace IndoorMapTools.View
 {
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        public MainWindow(MainWindowVM dataContext)
         {
             InitializeComponent();
             Height = SystemParameters.PrimaryScreenHeight * 0.8;
             Width = SystemParameters.PrimaryScreenWidth * 0.9;
+            DataContext = dataContext;
         }
 
         protected override void OnPreviewKeyDown(KeyEventArgs e) => HandleKeyEvent(e);

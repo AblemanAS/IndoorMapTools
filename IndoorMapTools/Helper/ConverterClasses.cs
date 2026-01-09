@@ -1,12 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using IndoorMapTools.Core;
-using IndoorMapTools.ViewModel;
+using IndoorMapTools.Model;
+using IndoorMapTools.Services.Domain;
 using MapView.System.Windows.Controls;
 using Microsoft.Maps.MapControl.WPF;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -120,7 +120,7 @@ namespace IndoorMapTools.Helper
             => (value.AsDouble() is double dVal && parameter.AsDouble() is double dParam) ? dVal / dParam : 0.0;
     }
 
-    class AssertInt : ConverterBase, IValueConverter
+    class ForceInt : ConverterBase, IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
             => (value.AsDouble() is double dVal) ? (int)dVal : 0;
@@ -212,12 +212,18 @@ namespace IndoorMapTools.Helper
     }
 
     class ObjectEqualsMulti : OneWayMultiConverter
-    { public override object Convert(object[] values) => values[0].Equals(values[1]); }
+    { public override object Convert(object[] values) => values != null && values.Length == 2 && values[0].Equals(values[1]); }
 
     class BoolToVisibility : OneWayConverter
     {
         public override object Convert(object value)
             => (value is bool isVIsible && isVIsible) ? Visibility.Visible : Visibility.Hidden;
+    }
+
+    class BoolToInvisibility : OneWayConverter
+    {
+        public override object Convert(object value)
+            => (value is bool isInvisible && isInvisible) ? Visibility.Hidden : Visibility.Visible;
     }
 
     class NullityToVisibility : OneWayConverter
@@ -267,14 +273,14 @@ namespace IndoorMapTools.Helper
     class LandmarkCounter : OneWayConverterParam
     {
         public override object Convert(object value, object parameter)
-            => (value as ObservableCollection<LandmarkGroup>).Count(group => group.Type == (LandmarkType)parameter);
+            => (value as IEnumerable<LandmarkGroup>).Count(group => group.Type == (LandmarkType)parameter);
     }
 
     class LandmarkExtractor : OneWayConverter
     {
         public override object Convert(object value)
         {
-            if(!(value is Building building)) return null;
+            if(value is not Building building) return null;
             var result = new List<Landmark>();
             foreach(LandmarkGroup curGroup in building.LandmarkGroups)
                 foreach(Landmark curLM in curGroup.Landmarks)
@@ -388,14 +394,6 @@ namespace IndoorMapTools.Helper
         }
     }
 
-
-    class EPSGToName : OneWayConverter<int>
-    { public override object Convert(int epsg) => GeoLocationModule.ToName(epsg); }
-
-    class EPSGToWKT : OneWayConverter<int>
-    { public override object Convert(int epsg) => GeoLocationModule.ToWKT(epsg); }
-
-
     internal class InverseTransformCache
     {
         private static BitmapSource originalImage;
@@ -497,10 +495,21 @@ namespace IndoorMapTools.Helper
     class PolygonCenter : ConverterBase, IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-            => (value is Point[] points) ? MathModule.CalculatePolygonCenter(points) : default;
+            => (value is Point[] points) ? MathAlgorithms.CalculatePolygonCenter(points) : DependencyProperty.UnsetValue;
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-            => new Point[] { (value is Point p) ? p : new Point(0, 0) };
+            => new Point[] { (value is Point p) ? p : default };
+    }
+
+    class OutlineToCenterMeter : OneWayMultiConverter
+    {
+        public override object Convert(object[] values)
+        {
+            if(values.Length < 3 || values[0] is not Point[] outline || values[1] is not int mapImagePixelHeight 
+                || values[2] is not double mapImagePPM) return DependencyProperty.UnsetValue;
+            Point pixelCoord = MathAlgorithms.CalculatePolygonCenter(outline);
+            return CoordCalculationService.PixelCoordToMeterCoord(pixelCoord, mapImagePixelHeight, mapImagePPM);
+        }
     }
 
     class GetAppResource : OneWayConverterParam
@@ -508,7 +517,4 @@ namespace IndoorMapTools.Helper
         public override object Convert(object value, object parameter)
             => (parameter is string postfix) ? Application.Current.Resources[value + postfix] : null;
     }
-
-    class Win32Cursor : OneWayConverter
-    { public override object Convert(object value) => Win32CursorLoader.Load(value as string); }
 }

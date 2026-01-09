@@ -62,6 +62,7 @@ namespace EnhancedCommands.System.Windows.Input.DialogCommands
             else if(result == MessageBoxResult.No) NoCommand?.Execute(CommandParameter);
         }
 
+        public override bool CanExecute(object parameter) => true;
         protected override Freezable CreateInstanceCore() => new MessageBoxCommand();
     }
 }

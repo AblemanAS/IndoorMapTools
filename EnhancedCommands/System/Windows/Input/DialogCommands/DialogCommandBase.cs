@@ -17,13 +17,7 @@ namespace EnhancedCommands.System.Windows.Input.DialogCommands
         public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(nameof(Title), typeof(string),
             typeof(DialogCommandBase), new FrameworkPropertyMetadata(""));
 
-        public override void Execute(object parameter)
-        {
-            Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentUICulture;
-            Thread.CurrentThread.CurrentUICulture = CultureInfo.CurrentUICulture;
-            Open();
-        }
-
+        public override void Execute(object parameter) => Open();
         protected abstract void Open();
     }
 }

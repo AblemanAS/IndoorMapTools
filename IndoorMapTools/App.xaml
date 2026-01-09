@@ -1,12 +1,11 @@
 ﻿<Application x:Class="IndoorMapTools.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:sys="clr-namespace:System;assembly=mscorlib"
-             StartupUri="View/MainWindow.xaml">
+             xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <Application.Resources>
         <ResourceDictionary >
             <ResourceDictionary.MergedDictionaries >
-                <ResourceDictionary Source="XamlResources/SliderToggleButton.xaml"/>
+                <!--<ResourceDictionary Source="XamlResources/SliderToggleButton.xaml"/>-->
                 <ResourceDictionary Source="XamlResources/SystemButton.xaml"/>
                 <ResourceDictionary Source="XamlResources/ColumnSplitter.xaml"/>
                 <ResourceDictionary Source="XamlResources/BetterLookGroupBox.xaml"/>
@@ -16,7 +15,7 @@
             </ResourceDictionary.MergedDictionaries>
         
             <!-- 앱 버전 정보 Generation.MajorRevision.MinorRevision.BugFix -->
-            <sys:String x:Key="AppVersion">0.5.0.0</sys:String>
+            <sys:String x:Key="AppVersion">0.7.t.3</sys:String>
 
             <!-- App.xaml.cs 에서 로드되는 DynamicResources -->
             <x:Null x:Key="StairCursor"/>
@@ -25,12 +24,13 @@
             <x:Null x:Key="EntranceCursor"/>
             <x:Null x:Key="StationCursor"/>
             <x:Null x:Key="MarkCursor"/>
+            <x:Null x:Key="UnmarkCursor"/>
             <sys:String x:Key="TileSourceURL">https://tile.openstreetmap.org/{z}/{x}/{y}.png</sys:String>
 
             <!-- 기본값 -->
             <Point x:Key="DefaultLonlat" X="127.36554" Y="36.37417"/>
             
-            <!-- 컬러브러시, 이펙트 -->
+            <!-- Map View용 컬러브러시, 이펙트 -->
             <SolidColorBrush x:Key="TransparentWhite" Color="White" Opacity="0.5"/>
             <SolidColorBrush x:Key="TransparentLightBlue" Color="LightBlue" Opacity="0.6"/>
             <SolidColorBrush x:Key="TransparentAliceBlue" Color="AliceBlue" Opacity="0.6"/>
@@ -57,15 +57,6 @@
                     <Trigger Property="DataContext" Value="{x:Null}">
                         <Setter Property="IsEnabled" Value="False"/>
                         <Setter Property="Background" Value="LightGray"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-
-            <Style TargetType="Button" >
-                <Setter Property="IsTabStop" Value="False"/>
-                <Style.Triggers>
-                    <Trigger Property="DataContext" Value="{x:Null}">
-                        <Setter Property="IsEnabled" Value="False"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>

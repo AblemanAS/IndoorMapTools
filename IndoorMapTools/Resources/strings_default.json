@@ -10,7 +10,7 @@
 
   "NewProject": "New project",
   "LoadProject": "Load project",
-  "LoadProjectFilter": "Indoor Map Tools Project Files (*.imtproj)|*.imtproj|Indoor Map JSON Files (*.impj)|*.impj|All Files (*.*)|*.*",
+  "LoadProjectFilter": "Indoor Map Tools Project Files (*.imtproj)|*.imtproj|KAILOS Map Tools Project Files (legacy) (*.kmtproj)|*.kmtproj|Indoor Map JSON Files (*.impj)|*.impj|All Files (*.*)|*.*",
   "LoadProjectStatusDesc": "Loading project file",
   "ImportProjectStatusDesc": "Importing indoor map JSON file",
   "SaveProject": "Save project",
@@ -26,7 +26,9 @@
   "ReplicateFloor": "Replicate floor",
   "ReplicateFloorMessagePrefix": "Replicate this floor with the same layout by ",
   "ReplicateFloorMessagePostfix": " times",
-  "ModifyMapImage": "Modify map image",
+  "PadCropMapImage": "Pad/Crop map image",
+  "ReplaceMapImage": "Replace map image",
+  "ReplaceMapImageSizeUnmatchErrorMessage": "The dimensions of the new image do not match those of the existing image, so the operation cannot be completed.\nPlease use the [Pad/Crop map image] tool to align the image dimensions and try again.",
   "BatchRenameFloors": "Batch rename floors",
 
   "BuildingInfo": "Building information",

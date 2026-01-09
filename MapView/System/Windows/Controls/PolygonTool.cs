@@ -9,13 +9,6 @@ namespace MapView.System.Windows.Controls
     public class PolygonTool : MouseTool
     {
         [Bindable(true)]
-        public ObservableCollection<Point> PolygonVisual
-            => (ObservableCollection<Point>)GetValue(PolygonVisualPropertyKey.DependencyProperty);
-        public static readonly DependencyPropertyKey PolygonVisualPropertyKey =
-            DependencyProperty.RegisterReadOnly(nameof(PolygonVisual), typeof(ObservableCollection<Point>),
-                typeof(PolygonTool), new FrameworkPropertyMetadata());
-
-        [Bindable(true)]
         public Point[] PolygonSource // 뷰모델 폴리곤
         {
             get => (Point[])GetValue(PolygonSourceProperty);
@@ -33,6 +26,18 @@ namespace MapView.System.Windows.Controls
                 Array.ForEach(instance.PolygonSource, e => instance.PolygonVisual.Add(e));
         }
 
+
+        [Bindable(true)]
+        public ObservableCollection<Point> PolygonVisual // 뷰모델 폴리곤
+        {
+            get => (ObservableCollection<Point>)GetValue(PolygonVisualProperty);
+            set => SetValue(PolygonVisualProperty, value);
+        }
+        public static readonly DependencyProperty PolygonVisualProperty =
+            DependencyProperty.Register(nameof(PolygonVisual), typeof(ObservableCollection<Point>), typeof(PolygonTool),
+                new FrameworkPropertyMetadata { BindsTwoWayByDefault = true, DefaultValue = new ObservableCollection<Point>()});
+
+
         [Bindable(true)]
         public bool IsDrawing // 편집 중
         {
@@ -43,12 +48,14 @@ namespace MapView.System.Windows.Controls
             DependencyProperty.Register(nameof(IsDrawing), typeof(bool), typeof(PolygonTool),
                 new FrameworkPropertyMetadata(OnIsDrawingChanged));
 
+
         private static void OnIsDrawingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if(!(d is PolygonTool instance && e.NewValue is bool newval)) return;
             if(newval) instance.StartDrawing();
             else instance.EndDrawing();
         }
+
 
         public PolygonTool()
         {
@@ -57,7 +64,6 @@ namespace MapView.System.Windows.Controls
             OnMouseLeftDown = new MouseToolCommand((e) => PolygonVisual.Add(e.Position));
             OnMouseRightDown = new MouseToolCommand((e) => SetValue(IsDrawingProperty, false));
             OnMouseXButton1Down = new MouseToolCommand(DeductCurrent);
-            SetValue(PolygonVisualPropertyKey, new ObservableCollection<Point>());
         }
 
         private class MouseToolCommand : ICommand
@@ -87,8 +93,10 @@ namespace MapView.System.Windows.Controls
 
         private void StartDrawing()
         {
+            // 시작점 추가
             if(PolygonVisual.Count == 0) PolygonVisual.Add(new Point());
-            else PolygonVisual.Add(PolygonVisual[0]);
+            else if(PolygonVisual.Count == 2) PolygonVisual.RemoveAt(1);
+            else if(PolygonVisual.Count > 2) PolygonVisual.Add(PolygonVisual[0]);
         }
 
         private void DrawCurrent(MouseToolEventArgs e)

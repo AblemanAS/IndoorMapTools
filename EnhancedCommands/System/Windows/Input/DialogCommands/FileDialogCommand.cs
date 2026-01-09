@@ -77,6 +77,10 @@ namespace EnhancedCommands.System.Windows.Input.DialogCommands
         }
 
         protected abstract FileDialog CreateDialog();
+
+        // 단일 커맨드 패턴이므로 실행 대상 커맨드를 미러
+        public override bool CanExecute(object parameter)
+            => Command == null || Command.CanExecute(CommandParameter);
     }
 
 

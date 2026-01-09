@@ -3,18 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:imt="clr-namespace:IndoorMapTools"
         xmlns:view="clr-namespace:IndoorMapTools.View"
+        xmlns:model="clr-namespace:IndoorMapTools.Model"
+        xmlns:viewModel="clr-namespace:IndoorMapTools.ViewModel"
         xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls"
-        xmlns:vm="clr-namespace:IndoorMapTools.ViewModel"
+        xmlns:excm="clr-namespace:IndoorMapTools.MVVMExtensions.ComponentModel"
         xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
         xmlns:dc="clr-namespace:EnhancedCommands.System.Windows.Input.DialogCommands;assembly=EnhancedCommands"
         Title="{DynamicResource strings.AppName}"
         WindowStartupLocation="CenterScreen" MinWidth="1280" MinHeight="720"
         mc:Ignorable="d" d:DesignHeight="720" d:DesignWidth="1280">
 
-    <Grid x:Name="mainGrid" DataContext="{x:Static vm:AppVM.Current}"
-          d:DataContext="{d:DesignInstance Type=vm:AppVM}"
+    <Grid x:Name="mainGrid" d:DataContext="{d:DesignInstance Type=viewModel:MainWindowVM}"
           Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -42,7 +44,7 @@
 
             <Button Grid.Column="0" IsTabStop="False" Style="{StaticResource SystemButtonStyle}"
                     ToolTip="{DynamicResource strings.NewProject}"
-                    Visibility="{Binding Project, Converter={cvt:NonNullityToVisibility}}">
+                    Visibility="{Binding Model, Converter={cvt:NullityToVisibility}}">
                 <Image Source="/Resources/new.png" Opacity="0.9"/>
                 <Button.Command>
                     <dc:MessageBoxCommand Title="{DynamicResource strings.NewProject}"
@@ -50,7 +52,7 @@
                                           Message="{DynamicResource strings.SaveAndNewProjectWarningMessage}"
                                           NoCommand="{Binding NewProjectCommand}">
                         <dc:MessageBoxCommand.Command>
-                            <dc:SaveFileDialogCommand Command="{Binding Project.SaveAndNewProjectCommand}"
+                            <dc:SaveFileDialogCommand Command="{Binding SaveAndNewProjectCommand}"
                                                       Filter="{DynamicResource strings.SaveProjectFilter}"/>
                         </dc:MessageBoxCommand.Command>
                     </dc:MessageBoxCommand>
@@ -59,7 +61,7 @@
 
             <Button Grid.Column="0" IsTabStop="False" Style="{StaticResource SystemButtonStyle}"
                     ToolTip="{DynamicResource strings.NewProject}"
-                    Visibility="{Binding Project, Converter={cvt:NullityToVisibility}}"
+                    Visibility="{Binding Model, Converter={cvt:NonNullityToVisibility}}"
                     Command="{Binding NewProjectCommand}">
                 <Image Source="/Resources/new.png" Opacity="0.9"/>
             </Button>
@@ -77,7 +79,7 @@
 
             <Button Grid.Column="4" IsTabStop="False" Style="{StaticResource SystemButtonStyle}"
                     ToolTip="{DynamicResource strings.SaveProject}"
-                    DataContext="{Binding Project}">
+                    IsEnabled="{Binding Model, Converter={cvt:IsNotNull}}">
                 <Button.Command>
                     <dc:SaveFileDialogCommand Title="{DynamicResource strings.SaveProject}"
                                               Command="{Binding SaveProjectCommand}" 
@@ -90,11 +92,11 @@
 
             <Button Grid.Column="6" IsTabStop="False" Style="{StaticResource SystemButtonStyle}"
                     ToolTip="{DynamicResource strings.AnalyzeReachability}"
-                    DataContext="{Binding Project}">
+                    DataContext="{Binding Model}">
                 <Button.Command>
                     <dc:TemplatedDialogCommand Title="{DynamicResource strings.AnalyzeReachability}"
                                                DialogContext="{Binding}">
-                        <DataTemplate DataType="{x:Type vm:Project}">
+                        <DataTemplate DataType="{x:Type model:Project}">
                             <view:AnalysisForm/>
                         </DataTemplate>
                     </dc:TemplatedDialogCommand>
@@ -103,27 +105,31 @@
             </Button>
 
             <Button Grid.Column="8" IsTabStop="False" Style="{StaticResource SystemButtonStyle}"
-                    ToolTip="{DynamicResource strings.ExportProject}"
-                    DataContext="{Binding Project}">
+                    IsEnabled="{Binding Model, Converter={cvt:IsNotNull}}"
+                    ToolTip="{DynamicResource strings.ExportProject}">
                 <Button.Command>
-                    <dc:TemplatedDialogCommand Title="{DynamicResource strings.ExportProject}"
-                                               DialogContext="{Binding}">
-                        <DataTemplate DataType="{x:Type vm:Project}">
+                    <dc:TemplatedConfirmDialogCommand Title="{DynamicResource strings.ExportProject}"
+                                               OnOpeningCommand="{Binding Evm.InitDialogStateCommand}"
+                                               DialogContext="{Binding Evm}">
+                        <dc:TemplatedConfirmDialogCommand.OKCommand>
+                            <dc:SaveFileDialogCommand Command="{Binding Evm.ExportProjectCommand}"
+                                  CommandParameter="{Binding FileName, RelativeSource={RelativeSource Self}}"
+                                  Filter="{DynamicResource strings.ExportProjectFilter}"/>
+                        </dc:TemplatedConfirmDialogCommand.OKCommand>
+                        <DataTemplate DataType="{x:Type viewModel:ExportProjectVM}">
                             <view:ExportProjectForm/>
                         </DataTemplate>
-                    </dc:TemplatedDialogCommand>
+                    </dc:TemplatedConfirmDialogCommand>
                 </Button.Command>
                 <Image Source="/Resources/export.png" Opacity="0.9"/>
             </Button>
         </Grid>
 
         <uc:ListViewEx x:Name="floorList" Grid.Row="1" Margin="5,0,0,5" AlternationCount="99999999"
-                       DataContext="{Binding Project.Building}" ItemsSource="{Binding Floors}"
-                       d:DataContext="{d:DesignInstance Type=vm:Building}"
+                       ItemsSource="{Binding Model.Building.Floors}" 
+                       SelectedItem="{Binding SelectedFloor, Mode=TwoWay}"
+                       IsEnabled="{Binding Model, Converter={cvt:IsNotNull}}"
                        OnFileDropCommand="{Binding CreateFloorCommand}"
-                       SelectedItem="{Binding Tag.ParentFloor, Mode=OneWay, RelativeSource={RelativeSource Self}}"
-                       Tag="{Binding Children[2].DataContext, ElementName=floorPage, 
-                        Converter={cvt:ConservativeTypeFilter}, ConverterParameter={x:Type vm:Landmark}}"
                        ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <uc:ListViewEx.Style>
                 <Style TargetType="{x:Type uc:ListViewEx}">
@@ -144,17 +150,18 @@
                     <TextBlock Grid.Column="0" Grid.ColumnSpan="2"
                                HorizontalAlignment="Center" VerticalAlignment="Center" 
                                Text="{DynamicResource strings.FloorsList}"/>
-                    <uc:HierarchyCheckBox x:Name="chkboxMaster" Grid.Column="0" VerticalAlignment="Center"
-                                        Style="{StaticResource VisibilityCheckBoxStyle}" IsChecked="True"/>
+                    <CheckBox x:Name="chkboxMaster" Grid.Column="0" VerticalAlignment="Center"
+                              Style="{StaticResource VisibilityCheckBoxStyle}" 
+                              IsChecked="{Binding FloorsVisible}"/>
                 </Grid>
             </uc:ListViewEx.Header>
+
             <uc:ListViewEx.ItemTemplate>
-                <DataTemplate DataType="{x:Type vm:Floor}">
+                <DataTemplate DataType="{x:Type model:Floor}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
-                        <uc:HierarchyCheckBox VerticalAlignment="Center"
-                                       Master="{Binding ElementName=chkboxMaster}"
-                                       Style="{StaticResource VisibilityCheckBoxStyle}"
-                                       IsChecked="{Binding Visible}"/>
+                        <CheckBox x:Name="ddsaw" VerticalAlignment="Center" Style="{StaticResource VisibilityCheckBoxStyle}"
+                                  Tag="{excm:StateBinding Key={Binding}, Map={Binding DataContext.Gvm.FloorStates, ElementName=floorList}}"
+                                  IsChecked="{Binding Tag.Visible, RelativeSource={RelativeSource Self}}"/>
                         <TextBlock Text="{Binding Name}" Margin="10,0,0,0"/>
                     </StackPanel>
                 </DataTemplate>
@@ -162,43 +169,73 @@
 
             <uc:ListViewEx.ItemContainerStyle>
                 <Style TargetType="uc:EnhancedListViewItem">
+                    <Style.Resources>
+                        <uc:BindingProxy x:Key="dcproxy" Data="{Binding DataContext.Fvm, Source={x:Reference floorList}}"/>
+                    </Style.Resources>
+                    <Setter Property="Tag" Value="{Binding DataContext.Fvm, ElementName=floorList}"/>
                     <Setter Property="DeleteCommand" Value="{Binding DeleteCommand}"/>
-                    <Setter Property="ReorderCommand" Value="{Binding ReorderCommand}"/>
+                    <Setter Property="ReorderCommand" Value="{Binding Data.ReorderFloorCommand, Source={StaticResource dcproxy}}"/>
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="ContextMenu">
                         <Setter.Value>
                             <ContextMenu>
                                 <MenuItem Header="{DynamicResource strings.ReplicateFloor}">
                                     <MenuItem.Command>
-                                        <dc:TemplatedDialogCommand Title="{DynamicResource strings.ReplicateFloor}"
-                                                           DialogContext="{Binding}">
-                                            <DataTemplate DataType="{x:Type vm:Floor}">
-                                                <StackPanel Orientation="Vertical" Margin="5">
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="{DynamicResource strings.ReplicateFloorMessagePrefix}"/>
-                                                        <uc:EditableText x:Name="textCount" Value="1" VisualType="HyperText" Validator="Natural"/>
-                                                        <TextBlock Text="{DynamicResource strings.ReplicateFloorMessagePostfix}"/>
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                                        <uc:OKButton Content="{DynamicResource strings.OK}"
-                                                             Command="{Binding ReplicateCommand}"
-                                                             CommandParameter="{Binding Value, 
-                                                                ElementName=textCount, Converter={cvt:AssertInt}}"/>
-                                                        <uc:CancelButton Content="{DynamicResource strings.Cancel}"/>
-                                                    </StackPanel>
+                                        <dc:TemplatedConfirmDialogCommand Title="{DynamicResource strings.ReplicateFloor}"
+                                                DialogContext="{Binding Data, Source={StaticResource dcproxy}}"
+                                                OKCommand="{Binding Data.ReplicateFloorCommand, Source={StaticResource dcproxy}}"
+                                                OnOpeningCommand="{Binding Data.InitDialogStateCommand, Source={StaticResource dcproxy}}"
+                                                OnOpeningCommandParameter="{Binding}">
+                                            <DataTemplate DataType="{x:Type viewModel:FloorListItemVM}">
+                                                <StackPanel Orientation="Horizontal" Margin="10">
+                                                    <TextBlock Text="{DynamicResource strings.ReplicateFloorMessagePrefix}"/>
+                                                    <uc:EditableText Value="{Binding ReplicationCount}" Validator="Natural"/>
+                                                    <TextBlock Text="{DynamicResource strings.ReplicateFloorMessagePostfix}"/>
                                                 </StackPanel>
                                             </DataTemplate>
-                                        </dc:TemplatedDialogCommand>
+                                        </dc:TemplatedConfirmDialogCommand>
                                     </MenuItem.Command>
                                 </MenuItem>
-                                <MenuItem Header="{DynamicResource strings.ModifyMapImage}">
+                                <MenuItem Header="{DynamicResource strings.PadCropMapImage}">
                                     <MenuItem.Command>
-                                        <dc:TemplatedDialogCommand Title="{DynamicResource strings.ModifyMapImage}"
-                                                                   DialogContext="{Binding}">
-                                            <DataTemplate DataType="{x:Type vm:Floor}">
-                                                <view:ManageImageForm/>
+                                        <dc:TemplatedConfirmDialogCommand Title="{DynamicResource strings.PadCropMapImage}"
+                                                DialogContext="{Binding Data, Source={StaticResource dcproxy}}"
+                                                OnOpeningCommand="{Binding Data.InitDialogStateCommand, Source={StaticResource dcproxy}}"
+                                                OKCommand="{Binding Data.PadCropMapImageCommand, Source={StaticResource dcproxy}}"
+                                                OnOpeningCommandParameter="{Binding}">
+                                            <DataTemplate DataType="{x:Type viewModel:MapImageEditVM}">
+                                                <view:PadCropForm/>
                                             </DataTemplate>
-                                        </dc:TemplatedDialogCommand>
+                                        </dc:TemplatedConfirmDialogCommand>
+                                    </MenuItem.Command>
+                                </MenuItem>
+                                <MenuItem Header="{DynamicResource strings.ReplaceMapImage}">
+                                    <MenuItem.Command>
+                                        <dc:TemplatedConfirmDialogCommand Title="{DynamicResource strings.ReplaceMapImage}"
+                                                DialogContext="{Binding Data, Source={StaticResource dcproxy}}"
+                                                OKCommand="{Binding Data.ReplaceMapImageCommand, Source={StaticResource dcproxy}}"
+                                                OnOpeningCommand="{Binding Data.InitDialogStateCommand, Source={StaticResource dcproxy}}"
+                                                OnOpeningCommandParameter="{Binding}">
+                                            <DataTemplate DataType="{x:Type viewModel:FloorListItemVM}">
+                                                <Grid Margin="10" uc:FileDropBehavior.FileDropCommand="{Binding LoadReplacementImageCommand}">
+                                                    <Viewbox MinHeight="250" MinWidth="400" MaxHeight="500" MaxWidth="800"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <Grid Background="White">
+                                                            <Image Source="{Binding Model.MapImage}"/>
+                                                            <Image Source="{Binding ReplacementImage}"/>
+                                                        </Grid>
+                                                    </Viewbox>
+                                                    <StackPanel Orientation="Vertical" IsEnabled="False" IsHitTestVisible="False"
+                                                                VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                        <StackPanel.Effect>
+                                                            <DropShadowEffect ShadowDepth="0" Color="White" BlurRadius="5"/>
+                                                        </StackPanel.Effect>
+                                                        <TextBlock TextAlignment="Center" Text="{DynamicResource strings.AlternateImageDescLine1}"/>
+                                                        <TextBlock TextAlignment="Center" Text="{DynamicResource strings.AlternateImageDescLine2}"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </dc:TemplatedConfirmDialogCommand>
                                     </MenuItem.Command>
                                 </MenuItem>
                             </ContextMenu>
@@ -215,12 +252,12 @@
         </uc:ListViewEx>
 
         <TabControl Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Margin="5"
-                    DataContext="{Binding Project.Building}">
+                    IsEnabled="{Binding Model, Converter={cvt:IsNotNull}}">
             <TabItem Header="{DynamicResource strings.GlobalMapInfo}">
-                <view:BuildingPage DataContext="{Binding SelectedItem, ElementName=floorList}"/>
+                <view:GlobalMapUI DataContext="{Binding Gvm}"/>
             </TabItem>
             <TabItem Header="{DynamicResource strings.IndoorMapInfo}">
-                <view:FloorPage x:Name="floorPage" DataContext="{Binding SelectedItem, ElementName=floorList}"/>
+                <view:IndoorMapUI DataContext="{Binding Ivm}"/>
             </TabItem>
         </TabControl>
 
@@ -239,20 +276,20 @@
 
             <StatusBarItem Grid.Column="0" HorizontalAlignment="Right" Margin="0,-2,0,-2">
                 <Grid HorizontalAlignment="Left">
-                    <ProgressBar x:Name="progBar" Value="{Binding BackgroundWorker.ProgressPercentage}" 
+                    <ProgressBar x:Name="progBar" Value="{Binding ProgressPercentage, Mode=OneWay}" 
                                  Width="100" Height="20" Minimum="0" Maximum="100"
-                                 IsIndeterminate="{Binding BackgroundWorker.ProgressIndeterminated}"/>
+                                 IsIndeterminate="{Binding ProgressIndeterminated}"/>
 
-                    <TextBlock Text="{Binding BackgroundWorker.ProgressPercentage, StringFormat=\{0:D\} \%}"
+                    <TextBlock Text="{Binding ProgressPercentage, StringFormat=\{0:D\} \%}"
                                HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Visibility" Value="Visible"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding BackgroundWorker.IsBusy}" Value="False">
+                                    <DataTrigger Binding="{Binding IsBusy}" Value="False">
                                         <Setter Property="Visibility" Value="Hidden"/>
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding BackgroundWorker.ProgressIndeterminated}" Value="True">
+                                    <DataTrigger Binding="{Binding ProgressIndeterminated}" Value="True">
                                         <Setter Property="Visibility" Value="Hidden"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -263,13 +300,13 @@
             </StatusBarItem>
             
             <StatusBarItem Grid.Column="1" HorizontalAlignment="Left" Margin="0,-2,-2,-2">
-                <TextBlock x:Name="textBlockStatus" Text="{Binding BackgroundWorker.TaskName}"
-                           Visibility="{Binding BackgroundWorker.IsBusy, Converter={cvt:BoolToVisibility}}"/>
+                <TextBlock x:Name="textBlockStatus" Text="{Binding TaskName}"
+                           Visibility="{Binding IsBusy, Converter={cvt:BoolToVisibility}}"/>
             </StatusBarItem>
 
             <StatusBarItem Grid.Column="1" HorizontalAlignment="Right" Height="24">
                 <StackPanel Orientation="Horizontal">
-                    <Image Source="/KAILOSMapTools;component/Resources/globe.png" 
+                    <Image Source="pack://application:,,,/Resources/globe.png" 
                            Height="24" Margin="0,-4,0,-4"/>
                     <ComboBox Height="24" Margin="5,-4,10,-4" VerticalContentAlignment="Center"
                               DataContext="{x:Static Application.Current}"
@@ -285,8 +322,7 @@
 
         <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Grid.ColumnSpan="2"
                 Margin="0,0,0,2" Background="White" Opacity="0.5" Cursor="Wait"
-                IsHitTestVisible="{Binding BackgroundWorker.IsBusy}" 
-                d:Visibility="Hidden" Visibility="{Binding BackgroundWorker.IsBusy, 
-                    Converter={cvt:BoolToVisibility}}"/>
+                IsHitTestVisible="{Binding IsBusy}" d:Visibility="Hidden" 
+                Visibility="{Binding IsBusy, Converter={cvt:BoolToVisibility}}"/>
     </Grid>
 </Window>

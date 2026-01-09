@@ -16,12 +16,13 @@
 
     <sys:String x:Key="strings.NewProject">새 실내지도 작업</sys:String>
     <sys:String x:Key="strings.LoadProject">작업 불러오기</sys:String>
-    <sys:String x:Key="strings.LoadProjectFilter">Indoor Map Tools 프로젝트 파일 (*.imtproj)|*.imtproj|실내지도 JSON 파일 (*.impj)|*.impj|모든 파일 (*.*)|*.*</sys:String>
+    <sys:String x:Key="strings.LoadProjectFilter">Indoor Map Tools 프로젝트 파일 (*.imtproj)|*.imtproj|KAILOS Map Tools 프로젝트 파일 (레거시) (*.kmtproj)|*.kmtproj|실내지도 JSON 파일 (*.impj)|*.impj|모든 파일 (*.*)|*.*</sys:String>
     <sys:String x:Key="strings.LoadProjectStatusDesc">작업 파일 불러오는 중</sys:String>
     <sys:String x:Key="strings.ImportProjectStatusDesc">실내지도 JSON 파일 불러오는 중</sys:String>
     <sys:String x:Key="strings.SaveProject">작업 저장하기</sys:String>
     <sys:String x:Key="strings.SaveProjectFilter">Indoor Map Tools 프로젝트 파일 (*.imtproj)|*.imtproj</sys:String>
-    <sys:String x:Key="strings.SaveAndNewProjectWarningMessage">작업 중인 데이터가 있습니다. 새 데이터를 생성하기 전, 먼저 작업을 저장하시겠습니까?</sys:String>
+    <sys:String x:Key="strings.SaveAndNewProjectWarningMessage">작업 중인 데이터가 있습니다. 
+        새 데이터를 생성하기 전, 먼저 작업을 저장하시겠습니까?</sys:String>
     <sys:String x:Key="strings.SaveProjectStatusDesc">작업 파일 저장하는 중</sys:String>
     <sys:String x:Key="strings.AnalyzeReachability">실내공간 접근성 분석</sys:String>
     <sys:String x:Key="strings.ExportProject">DB 업로드용 파일 내보내기</sys:String>
@@ -32,7 +33,10 @@
     <sys:String x:Key="strings.ReplicateFloor">층 복제</sys:String>
     <sys:String x:Key="strings.ReplicateFloorMessagePrefix">이 층을 동일한 레이아웃으로</sys:String>
     <sys:String x:Key="strings.ReplicateFloorMessagePostfix">개 복제합니다</sys:String>
-    <sys:String x:Key="strings.ModifyMapImage">맵 이미지 수정</sys:String>
+    <sys:String x:Key="strings.PadCropMapImage">맵 이미지 패딩/크롭</sys:String>
+    <sys:String x:Key="strings.ReplaceMapImage">맵 이미지 교체</sys:String>
+    <sys:String x:Key="strings.ReplaceMapImageSizeUnmatchErrorMessage">기존 이미지와 신규 이미지의 크기가 일치하지 않아 작업을 진행할 수 없습니다.
+        [맵 이미지 패딩/크롭] 도구를 사용하여 이미지 크기를 일치시킨 후 다시 시도해 주십시오.</sys:String>
     <sys:String x:Key="strings.BatchRenameFloors">층 이름 일괄 재설정</sys:String>
 
     <sys:String x:Key="strings.BuildingInfo">건물 정보</sys:String>

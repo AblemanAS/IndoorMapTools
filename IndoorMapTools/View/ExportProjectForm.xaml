@@ -6,13 +6,13 @@
       xmlns:local="clr-namespace:IndoorMapTools.View"
       xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls" 
       xmlns:dc="clr-namespace:EnhancedCommands.System.Windows.Input.DialogCommands;assembly=EnhancedCommands"
-      xmlns:vm="clr-namespace:IndoorMapTools.ViewModel"
+      xmlns:viewModel="clr-namespace:IndoorMapTools.ViewModel"
+      xmlns:model="clr-namespace:IndoorMapTools.Model"
       xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
-      d:Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}"
-      Margin="5"
-      d:DataContext="{d:DesignInstance Type=vm:Project}"
       mc:Ignorable="d"
-      d:DesignHeight="300" d:DesignWidth="400">
+      d:Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}"
+      d:DataContext="{d:DesignInstance Type=viewModel:ExportProjectVM}">
+    
     <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="Auto"/>
@@ -24,18 +24,17 @@
         <StackPanel Orientation="Vertical" Margin="10,10,10,0">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="EPSG : "/>
-                <uc:EditableText VisualType="HyperText" Validator="Natural" Value="{Binding CRS}"/>
+                <uc:EditableText Validator="Natural" Value="{Binding Model.CRS}"/>
             </StackPanel>
-            <TextBlock ToolTip="{Binding CRS, Converter={cvt:EPSGToWKT}}"
-                       HorizontalAlignment="Right" FontWeight="Bold"
+            <TextBlock ToolTip="{Binding CRSWKT}" HorizontalAlignment="Right" FontWeight="Bold"
                        ToolTipService.InitialShowDelay="0" Margin="0,5,0,5">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
-                        <Setter Property="Text" Value="{Binding CRS, Converter={cvt:EPSGToName}}"/>
+                        <Setter Property="Text" Value="{Binding CRSName}"/>
                         <Setter Property="Foreground" Value="Blue"/>
                         <Setter Property="ToolTipService.IsEnabled" Value="True"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding CRS, Converter={cvt:EPSGToName}}" Value="">
+                            <DataTrigger Binding="{Binding CRSValid}" Value="False">
                                 <Setter Property="Text" Value="{DynamicResource strings.CRSNotFound}"/>
                                 <Setter Property="Foreground" Value="Red"/>
                                 <Setter Property="ToolTipService.IsEnabled" Value="False"/>
@@ -52,12 +51,12 @@
             <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
                 <TextBlock Text="{DynamicResource strings.OGMCellSize}"/>
                 <TextBlock Text=" : "/>
-                <uc:EditableText VisualType="HyperText" PostfixText=" m²" Validator="PositiveDouble"
-                                 Value="{Binding ReachableResolution}"/>
+                <uc:EditableText Value="{Binding Model.ReachableResolution}"
+                                 Postfix=" m²" Validator="PositiveDouble"/>
             </StackPanel>
             <CheckBox Margin="0,5,0,5" VerticalAlignment="Center" 
                       Content="{DynamicResource strings.ConservativeOGMCellCheck}"
-                      IsChecked="{Binding ConservativeCellValidation}"
+                      IsChecked="{Binding Model.ConservativeCellValidation}"
                       ToolTip="{DynamicResource strings.ConservativeOGMCellCheckToolTipText}"
                       ToolTipService.InitialShowDelay="0"/>
         </StackPanel>
@@ -76,26 +75,4 @@
             </Style>
         </TextBlock.Style>
     </TextBlock>
-
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
-                Grid.Row="3">
-        <uc:OKButton Content="{DynamicResource strings.OK}" CommandParameter="{Binding}">
-            <Button.Command>
-                <dc:SaveFileDialogCommand Command="{Binding ExportProjectCommand}"
-                              CommandParameter="{Binding FileName, RelativeSource={RelativeSource Self}}"
-                              Filter="{DynamicResource strings.ExportProjectFilter}"/>
-            </Button.Command>
-            <Button.Style>
-                <Style TargetType="{x:Type Button}">
-                    <Setter Property="IsEnabled" Value="{Binding AreLandmarkOutlinesComplete}"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding CRS, Converter={cvt:EPSGToName}}" Value="">
-                            <Setter Property="IsEnabled" Value="False"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Button.Style>
-        </uc:OKButton>
-        <uc:CancelButton Content="{DynamicResource strings.Cancel}"/>
-    </StackPanel>
 </Grid>

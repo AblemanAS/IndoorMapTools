@@ -19,9 +19,9 @@ namespace IndoorMapTools.View.UserControls
         private static readonly Brush POLYGON_FILL_NORMAL = new SolidColorBrush(Colors.AliceBlue) { Opacity = 0.6 };
         private static readonly Brush POLYGON_FILL_HIGH = new SolidColorBrush(Colors.LightBlue) { Opacity = 0.6 };
         private static readonly DropShadowEffect ICON_EFFECT_NORMAL = null;
-        private static readonly DropShadowEffect ICON_EFFECT_HIGH = new DropShadowEffect { Color = Colors.Blue, ShadowDepth = 0, BlurRadius = 0 };
+        private static readonly DropShadowEffect ICON_EFFECT_HIGH = new() { Color = Colors.Blue, ShadowDepth = 0, BlurRadius = 0 };
         private static readonly DropShadowEffect ARROW_EFFECT_NORMAL = null;
-        private static readonly DropShadowEffect ARROW_EFFECT_HIGH = new DropShadowEffect { Color = Colors.AliceBlue, ShadowDepth = 0, BlurRadius = 10 };
+        private static readonly DropShadowEffect ARROW_EFFECT_HIGH = new() { Color = Colors.AliceBlue, ShadowDepth = 0, BlurRadius = 10 };
 
         [Bindable(true)]
         public Point Location
@@ -186,7 +186,7 @@ namespace IndoorMapTools.View.UserControls
 
         private static void OnArrowVisualChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if(!(d is LandmarkElement instance)) return;
+            if(d is not LandmarkElement instance) return;
             instance.arrow.UpdateGeometry(instance.ArrowLength, instance.ArrowHeadSize,
                 instance.ArrowHeads != 1, instance.ArrowHeads != -1);
         }
@@ -218,7 +218,7 @@ namespace IndoorMapTools.View.UserControls
 
         private static void OnPolygonPointsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if(!(d is LandmarkElement instance)) return;
+            if(d is not LandmarkElement instance) return;
 
             instance.UpdatePolygonGeometry(e.NewValue as IEnumerable<Point>, instance.CoordinateScale);
             if(e.OldValue is INotifyCollectionChanged inccOld)

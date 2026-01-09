@@ -24,14 +24,12 @@ namespace IndoorMapTools.OpenStreetMapControl
         private const string RESOURCE_FAILED_TILE_IMAGE = "FailedTileImage";
         private const int MAX_OSM_ZOOM_SUPPORTED = 19;
 
-        private readonly MapPolygon outlinePolygon;
-
         [Bindable(true)]
         public new Point Center
         { get => (Point)GetValue(CenterProperty); set => SetValue(CenterProperty, value); }
         public static new readonly DependencyProperty CenterProperty =
             DependencyProperty.Register(nameof(Center), typeof(Point), typeof(OSMControl),
-                new FrameworkPropertyMetadata(OnCenterChanged));
+                new FrameworkPropertyMetadata(OnCenterChanged) { BindsTwoWayByDefault = true });
 
         private static void OnCenterChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -117,7 +115,7 @@ namespace IndoorMapTools.OpenStreetMapControl
             var instance = d as OSMControl;
             if(e.NewValue is MouseTool newTool)
                 instance.Cursor = newTool.DefaultCursor;
-            else instance.Cursor = UngrabCursor;
+            else instance.Cursor = instance.UngrabCursor;
         }
 
 
@@ -130,15 +128,21 @@ namespace IndoorMapTools.OpenStreetMapControl
         public static readonly DependencyProperty OnFileDropCommandProperty =
             DependencyProperty.Register(nameof(OnFileDropCommand), typeof(ICommand), typeof(OSMControl));
 
+        public Cursor GrabCursor { get; set; }
+        public Cursor ungrabCursor;
+        public Cursor UngrabCursor { get => ungrabCursor; set { ungrabCursor = value;  Cursor = ungrabCursor; } }
 
-        private static readonly Cursor UngrabCursor = MapView.System.Windows.Controls.Map.UngrabCursor;
-        private static readonly Cursor GrabCursor = MapView.System.Windows.Controls.Map.GrabCursor;
+        //private static readonly Cursor UngrabCursor = MapView.System.Windows.Controls.Map.UngrabCursor;
+        //private static readonly Cursor GrabCursor = MapView.System.Windows.Controls.Map.GrabCursor;
         private readonly OSMTileLayer tileLayer;
+        private readonly MapPolygon outlinePolygon;
+
 
         public OSMControl()
         {
             IsTabStop = false;
             AllowDrop = true;
+            Mode = new MercatorMode();
 
             // 맵 레이어 초기화
             LayoutUpdated += RemoveOverlayTextBlock;
@@ -147,12 +151,12 @@ namespace IndoorMapTools.OpenStreetMapControl
 
             // 폴리곤 레이어 초기화
             outlinePolygon = new MapPolygon();
-            Children.Add(outlinePolygon);
             outlinePolygon.Locations = new LocationCollection();
             outlinePolygon.Fill = new SolidColorBrush(Colors.White) { Opacity = 0.25 };
             outlinePolygon.Stroke = new SolidColorBrush(Colors.Black);
             outlinePolygon.StrokeThickness = 1;
             outlinePolygon.StrokeLineJoin = PenLineJoin.Bevel;
+            Children.Add(outlinePolygon);
 
             ViewChangeEnd += (sender, e) =>
             {
@@ -160,8 +164,11 @@ namespace IndoorMapTools.OpenStreetMapControl
                 SetCurrentValue(CenterProperty, new Point(changedViewLoc.Longitude, changedViewLoc.Latitude));
             };
 
-            // 기본 커서 설정
-            Cursor = UngrabCursor;
+            //IsVisibleChanged += (_, __) =>
+            //{
+            //    if(IsVisible && !Children.Contains(tileLayer)) Children.Insert(0, tileLayer);
+            //    else Children.Remove(tileLayer);
+            //};
         }
 
         private void RemoveOverlayTextBlock(object sender, EventArgs e)
@@ -220,7 +227,7 @@ namespace IndoorMapTools.OpenStreetMapControl
             
             if(ActiveTool == null)
             {
-                Cursor = GrabCursor;  // 기본 툴 : 커서 변경
+                if(GrabCursor != null) Cursor = GrabCursor;  // 기본 툴 : 커서 변경
                 base.OnMouseLeftButtonDown(e);
             }
             else // 기타 툴 : 클릭 커서 있으면 커서 변경 후, MouseTool LB Down 핸들러 호출
@@ -236,7 +243,7 @@ namespace IndoorMapTools.OpenStreetMapControl
 
             if(ActiveTool == null)
             {
-                Cursor = UngrabCursor;  // 기본 툴 : 커서 변경
+                if(UngrabCursor != null) Cursor = UngrabCursor;  // 기본 툴 : 커서 변경
                 base.OnMouseLeftButtonUp(e);
             }
             else // 기타 툴
@@ -311,7 +318,7 @@ namespace IndoorMapTools.OpenStreetMapControl
                         client = new HttpClient();
                         string appVersion = (string)Application.Current.FindResource("AppVersion");
                         client.DefaultRequestHeaders.UserAgent.Clear();
-                        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("KAILOSMapTools", appVersion));
+                        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("IndoorMapTools", appVersion));
                         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("(Windows NT 10.0; Win64; x64)"));
                         client.DefaultRequestHeaders.Accept.ParseAdd("image/avif,image/webp,image/apng,image/*,*/*;q=0.8");
                     }

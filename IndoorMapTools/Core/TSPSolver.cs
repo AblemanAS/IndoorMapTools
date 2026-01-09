@@ -1,9 +1,14 @@
-﻿using IndoorMapTools.ViewModel;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace IndoorMapTools.Core
 {
+    // FGA 행렬 (locality를 위해서 FG가 아닌 G-row, F-col의 구조로 기록)
+    // FGA Matrix는 Cell의 기본값이 Null이고, Area 값은 0으로 시작함
+    // 이에 Null Cell과 Area 값 0 구분을 위해 Area 값에 +1 하여 대입
+    // 따라서 값이 0인 경우는 Null Cell을 의미함
+    public interface IFGASolver { public int[] Solve(int[,] fgaMatrix); }
+
     public class TSPSolver : IFGASolver
     {
         private const int SCORE_SAME_AREA = 1;

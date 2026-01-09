@@ -1,12 +1,14 @@
-﻿using IndoorMapTools.Core;
-using IndoorMapTools.Helper;
+﻿using IndoorMapTools.Helper;
+using IndoorMapTools.Services.Infrastructure.INI;
+using IndoorMapTools.ViewModel;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Threading;
 using System.Web.Script.Serialization;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Markup;
 
 namespace IndoorMapTools
@@ -23,16 +25,16 @@ namespace IndoorMapTools
 
         private const string RESOURCE_TILE_SOURCE_URL = "TileSourceURL";
 
-        private readonly Tuple<string, string, double, double, double>[] WIN32_CURSOR_DEFS =
+        private readonly Tuple<string, string>[] CURSOR_DEFS =
         {
-            Tuple.Create("StairCursor", "pack://application:,,,/Resources/stair.png", 0.5, 0.5, 2.0),
-            Tuple.Create("ElevatorCursor", "pack://application:,,,/Resources/elevator.png", 0.5, 0.5, 2.0),
-            Tuple.Create("EscalatorCursor", "pack://application:,,,/Resources/escalator.png", 0.5, 0.5, 2.0),
-            Tuple.Create("EntranceCursor", "pack://application:,,,/Resources/entrance.png", 0.5, 0.5, 2.0),
-            Tuple.Create("StationCursor", "pack://application:,,,/Resources/station.png", 0.5, 0.5, 2.0),
-            Tuple.Create("MarkCursor", "pack://application:,,,/Resources/mark.png", 0.3125, 0.3125, 1.0),
-            Tuple.Create("UnmarkCursor", "pack://application:,,,/Resources/unmark.png", 0.3125, 0.3125, 1.0)
-        }; // 커서 리소스 정의 (Resource Key, Path, X HotSpot, Y HotSpot, Scale)
+            Tuple.Create("StairCursor", "pack://application:,,,/Resources/stair.cur"),
+            Tuple.Create("ElevatorCursor", "pack://application:,,,/Resources/elevator.cur"),
+            Tuple.Create("EscalatorCursor", "pack://application:,,,/Resources/escalator.cur"),
+            Tuple.Create("EntranceCursor", "pack://application:,,,/Resources/entrance.cur"),
+            Tuple.Create("StationCursor", "pack://application:,,,/Resources/station.cur"),
+            Tuple.Create("MarkCursor", "pack://application:,,,/Resources/mark.cur"),
+            Tuple.Create("UnmarkCursor", "pack://application:,,,/Resources/unmark.cur")
+        }; // 커서 리소스 정의 (Resource Key, Path)
 
         public List<CultureInfo> AvailableCultures { get; private set; }
         private readonly Dictionary<CultureInfo, Dictionary<string, string>> dicts = new Dictionary<CultureInfo, Dictionary<string, string>>();
@@ -43,28 +45,26 @@ namespace IndoorMapTools
             get => culture ??= new CultureInfo(DEFAULT_CULTURE_CODE);
             set
             {
+                if(value == null) return;
                 if(!dicts.ContainsKey(value)) return;
-
                 culture = value;
+                CultureInfo.DefaultThreadCurrentCulture = value;
+                CultureInfo.DefaultThreadCurrentUICulture = value;
                 CultureInfo.CurrentCulture = value;
                 CultureInfo.CurrentUICulture = value;
-                Thread.CurrentThread.CurrentCulture = value;
-                Thread.CurrentThread.CurrentUICulture = value;
-
-                foreach(Window window in Windows)
-                    window.Language = XmlLanguage.GetLanguage(value.Name);
-
-                foreach(var kvString in dicts[value])
-                    Resources["strings." + kvString.Key] = kvString.Value;
+                var lang = XmlLanguage.GetLanguage(value.IetfLanguageTag);
+                foreach(Window window in Windows) window.Language = lang;
+                foreach(var kvString in dicts[value]) Resources["strings." + kvString.Key] = kvString.Value;
             }
         }
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            //new GPUAcc().Test(); // GPU Acceleration Test (ILGPU)
+            //AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
+            //AppDomain.CurrentDomain.TypeResolve += CurrentDomain_TypeResolve;
 
             // Read INI
-            string tilesSource = new INIModule(INI_PATH).ReadValue(INI_APP_OPEN_STREET_MAP, INI_KEY_TILE_SOURCE_URL);
+            string tilesSource = new INIReader(INI_PATH).ReadValue(INI_APP_OPEN_STREET_MAP, INI_KEY_TILE_SOURCE_URL);
             if(tilesSource != null) Resources[RESOURCE_TILE_SOURCE_URL] = tilesSource;
 
             
@@ -98,10 +98,76 @@ namespace IndoorMapTools
             Culture = new CultureInfo(DEFAULT_CULTURE_CODE); // 기본 문자열 셋 로드 (영어, 미국)
             Culture = systemCulture; // 지역 문자열 셋 로드 (OS 시스템 언어)
             
-            foreach(var def in WIN32_CURSOR_DEFS) // 커서 리소스 로드
-                Resources[def.Item1] = Win32CursorLoader.Load(def.Item2, def.Item3, def.Item4, def.Item5);
-            
-            base.OnStartup(e);
+            foreach((string name, string uri) in CURSOR_DEFS) // 커서 리소스 로드
+            {
+                using var st = GetResourceStream(new Uri(uri)).Stream;
+                Resources[name] = new Cursor(st, true);
+            }
+
+
+            // 종속성 주입
+            var services = new ServiceCollection(); 
+            services.AddSingleton<Services.Application.FloorMapEditService>();
+            services.AddSingleton<Services.Application.IMessageService, Services.Presentation.MessageBoxService>();
+            services.AddSingleton<Services.Application.IProjectPersistenceService, Services.Infrastructure.ProtoBuf.ProtoBufService>();
+            services.AddSingleton<Services.Application.IResourceStringService, Services.Presentation.ResourceStringService>();
+            services.AddSingleton<Services.Infrastructure.IMPJ.IMPJImportService>();
+            services.AddSingleton<Services.Infrastructure.IMPJ.IMPJExportService>();
+            services.AddSingleton<Services.Presentation.BackgroundService>();
+            services.AddSingleton<ViewModel.ExportProjectVM>();
+            services.AddSingleton<ViewModel.GlobalMapVM>();
+            services.AddSingleton<ViewModel.IndoorMapVM>();
+            services.AddSingleton<ViewModel.MainWindowVM>();
+            services.AddSingleton<ViewModel.MapImageEditVM>();
+            services.AddSingleton<ViewModel.FloorListItemVM>();
+            services.AddSingleton<ViewModel.LandmarkTreeItemVM>();
+            services.AddSingleton<View.MainWindow>();
+
+            var provider = services.BuildServiceProvider();
+            var mainWindow = provider.GetRequiredService<View.MainWindow>();
+            mainWindow.Show();
         }
+
+
+        //private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        //{
+        //    var requested = new AssemblyName(args.Name).Name;
+
+        //    if(requested == "KAILOSMapTools")
+        //    {
+        //        Console.WriteLine("=== KAILOSMapTools requested ===");
+        //        Console.WriteLine(args.Name);
+        //        Console.WriteLine(new System.Diagnostics.StackTrace(true).ToString());
+        //        Console.WriteLine("================================");
+
+        //        return typeof(IndoorMapTools.Model.Project).Assembly;
+        //    }
+
+        //    return null;
+        //}
+
+        //private static Assembly CurrentDomain_TypeResolve(object sender, ResolveEventArgs args)
+        //{
+        //    Console.WriteLine($"[TypeResolve] {args.Name}");
+
+        //    var name = args.Name;
+        //    var comma = name.IndexOf(',');
+        //    if(comma >= 0) name = name.Substring(0, comma);
+
+        //    const string oldNs = "KAILOSMapTools.ViewModel.";
+        //    const string newNs = "IndoorMapTools.Model.";
+
+        //    if(name.StartsWith(oldNs, StringComparison.Ordinal))
+        //    {
+        //        var mapped = newNs + name.Substring(oldNs.Length);
+        //        var asm = typeof(Project).Assembly;
+
+        //        // 실제로 존재하는 타입인지 확인하고 있으면 해당 어셈블리 반환
+        //        if(asm.GetType(mapped, throwOnError: false, ignoreCase: false) != null)
+        //            return asm;
+        //    }
+
+        //    return null;
+        //}
     }
 }

@@ -2,8 +2,6 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Markup;
-
 namespace MapView.System.Windows.Controls
 {
     // 맵뷰 내 마우스 툴 정의

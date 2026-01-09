@@ -4,8 +4,8 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:view="clr-namespace:IndoorMapTools.View"
-      xmlns:vm="clr-namespace:IndoorMapTools.ViewModel"
-      xmlns:sc="clr-namespace:IndoorMapTools.ViewModel.Service"
+      xmlns:model="clr-namespace:IndoorMapTools.Model"
+      xmlns:scpr="clr-namespace:IndoorMapTools.Services.Presentation"
       xmlns:mv="clr-namespace:MapView.System.Windows.Controls;assembly=MapView"
       xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
       xmlns:fga="clr-namespace:IndoorMapTools.View.FGAView"
@@ -15,7 +15,7 @@
       Width="1280" Height="640" Margin="5"
       mc:Ignorable="d" d:DesignHeight="640" d:DesignWidth="1024"
       Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}"
-      d:DataContext="{d:DesignInstance Type={x:Type vm:Project}}">
+      d:DataContext="{d:DesignInstance Type={x:Type model:Project}}">
 
     <Grid.ColumnDefinitions>
         <ColumnDefinition/>
@@ -41,7 +41,7 @@
                 <fga:FGAMatrix x:Name="fgaMatrix" DataContext="{Binding Report}">
                     <fga:FGAItemsControl ItemsSource="{Binding Areas}">
                         <fga:FGAItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:Area}">
+                            <DataTemplate DataType="{x:Type model:Area}">
                                 <fvs:FGAArea GroupIds="{Binding Nodes, Converter={cvt:GetGroupIds}}"
                                              FloorId="{Binding FloorId}" AreaId="{Binding AreaId}"/>
                             </DataTemplate>
@@ -50,7 +50,7 @@
 
                     <fga:FGAItemsControl x:Name="fgaNodeControl" ItemsSource="{Binding Landmarks}">
                         <fga:FGAItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:Landmark}">
+                            <DataTemplate DataType="{x:Type model:Landmark}">
                                 <Image Height="48" Width="48" Style="{StaticResource clickEffectItemContentStyle}"  
                                     Source="{Binding ParentGroup.Type, ConverterParameter=SpriteSource, 
                                     Converter={cvt:GetAppResource}}"/>
@@ -94,7 +94,7 @@
                     <ItemsControl x:Name="fgaGraphControl" Opacity="0.5"
                                   ItemsSource="{Binding ReachableClusters, Mode=OneTime}">
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:GraphNode}">
+                            <DataTemplate DataType="{x:Type model:GraphNode}">
                                 <ItemsControl ItemsSource="{Binding Converter={cvt:RecursiveEdgeExtractor}, Mode=OneWay}">
                                     <ItemsControl.Style>
                                         <Style TargetType="{x:Type ItemsControl}">
@@ -146,17 +146,17 @@
                   ScrollViewer.VerticalScrollBarVisibility="Auto"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <ListView.ItemTemplate>
-                <DataTemplate DataType="{x:Type vm:GraphNode}">
+                <DataTemplate DataType="{x:Type model:GraphNode}">
                     <ContentControl x:Name="labelControl" Content="{Binding Data}">
                         <ContentControl.Resources>
-                            <DataTemplate DataType="{x:Type vm:Landmark}">
+                            <DataTemplate DataType="{x:Type model:Landmark}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{DynamicResource strings.Cluster}"/>
                                     <TextBlock Text=" "/>
                                     <TextBlock Text="{Binding}"/>
                                 </StackPanel>
                             </DataTemplate>
-                            <DataTemplate DataType="{x:Type vm:Area}">
+                            <DataTemplate DataType="{x:Type model:Area}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{DynamicResource strings.IsolatedArea}"/>
                                     <TextBlock>
@@ -181,8 +181,8 @@
                 <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
                     <TextBlock Text="{DynamicResource strings.OGMCellSize}"/>
                     <TextBlock Text=" : "/>
-                    <uc:EditableText VisualType="HyperText" PostfixText=" m²"
-                                 Value="{Binding ReachableResolution}" Validator="PositiveDouble"/>
+                    <uc:EditableText Value="{Binding ReachableResolution}" 
+                                     Postfix=" m²" Validator="PositiveDouble"/>
                 </StackPanel>
                 <CheckBox Margin="0,5,0,5" VerticalAlignment="Center"
                           Content="{DynamicResource strings.ConservativeOGMCellCheck}"
@@ -213,30 +213,30 @@
             <mv:Map x:Name="mapView" Grid.Row="0"
                     Tag="{Binding SelectedItem.ParentFloor, ElementName=fgaNodeControl, Mode=OneWay}"
                     MapImageSource="{Binding Tag.MapImage, RelativeSource={RelativeSource self}}">
-
-                <uc:SelectorControl SelectedItem="{Binding SelectedItem, ElementName=fgaNodeControl,
-                                        Converter={cvt:TypeFilter}, ConverterParameter={x:Type BitmapImage}}"
-                                    mv:Map.ScaledOnZoom="True">
-                    <uc:SelectorControl.ItemsSource>
-                        <MultiBinding Converter="{cvt:DictKeytoValue}">
-                            <Binding Path="Report.ReachableAreas"/>
-                            <Binding Path="Tag" ElementName="mapView"/>
-                        </MultiBinding>
-                    </uc:SelectorControl.ItemsSource>
-                    <uc:SelectorControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type BitmapImage}">
-                            <uc:Indexed1HitTestImage Source="{Binding}"
+                <mv:Map.MapOverlays>
+                    <uc:SelectorControl SelectedItem="{Binding SelectedItem, ElementName=fgaNodeControl,
+                                        Converter={cvt:TypeFilter}, ConverterParameter={x:Type BitmapImage}}">
+                        <uc:SelectorControl.ItemsSource>
+                            <MultiBinding Converter="{cvt:DictKeytoValue}">
+                                <Binding Path="Report.ReachableAreas"/>
+                                <Binding Path="Tag" ElementName="mapView"/>
+                            </MultiBinding>
+                        </uc:SelectorControl.ItemsSource>
+                        <uc:SelectorControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type BitmapImage}">
+                                <uc:Indexed1HitTestImage Source="{Binding}"
                                 Style="{StaticResource clickEffectItemContentStyle}"/>
-                        </DataTemplate>
-                    </uc:SelectorControl.ItemTemplate>
-                </uc:SelectorControl>
+                            </DataTemplate>
+                        </uc:SelectorControl.ItemTemplate>
+                    </uc:SelectorControl>
+                </mv:Map.MapOverlays>
 
                 <uc:SelectorControl ItemsSource="{Binding SelectedItem.ParentFloor.Landmarks, ElementName=fgaNodeControl}"
                                     SelectedItem="{Binding SelectedItem, ElementName=fgaNodeControl,
                                         
-                    Converter={cvt:TypeFilter}, ConverterParameter={x:Type vm:Landmark}}">
+                    Converter={cvt:TypeFilter}, ConverterParameter={x:Type model:Landmark}}">
                     <uc:SelectorControl.ItemTemplate>
-                        <DataTemplate DataType="vm:Landmark">
+                        <DataTemplate DataType="model:Landmark">
                             <uc:LandmarkElement IconImageSource="{Binding ParentGroup.Type, ConverterParameter=SpriteSource,
                                     Converter={cvt:GetAppResource}}" ArrowDirection="{Binding Direction}" 
                                         Location="{Binding Outline, Converter={cvt:PolygonCenter}}"

@@ -9,7 +9,7 @@
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PlatformTarget>x64</PlatformTarget>
-	  <LangVersion>8.0</LangVersion>
+    <LangVersion>9.0</LangVersion>
 	  <Platforms>x64</Platforms>
 	  <StartupObject>IndoorMapTools.App</StartupObject>
 	  <ApplicationIcon>Resources\appicon.ico</ApplicationIcon>
@@ -22,14 +22,8 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <!--<OutputType>WinExe</OutputType>-->
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="config.ini" />
-    <None Remove="Resources\search.png" />
-  </ItemGroup>
   
   <ItemGroup>
     <Content Include="config.ini">
@@ -40,7 +34,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="ILGPU" Version="1.5.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
     <PackageReference Include="Microsoft.Maps.MapControl.WPF" Version="1.0.0.3" />
     <PackageReference Include="ProjNet" Version="2.0.0" />
     <PackageReference Include="ProjNet.SRID" Version="1.0.1" />
@@ -60,13 +54,19 @@
   <ItemGroup>
     <Resource Include="Resources\analysis.png" />
     <Resource Include="Resources\building.png" />
+    <Resource Include="Resources\elevator.cur" />
     <Resource Include="Resources\elevator_sprite.png" />
+    <Resource Include="Resources\entrance.cur" />
     <Resource Include="Resources\entrance_sprite.png" />
+    <Resource Include="Resources\escalator.cur" />
     <Resource Include="Resources\escalator_sprite.png" />
     <Resource Include="Resources\failed_tile.png" />
     <Resource Include="Resources\globe.png" />
+    <Resource Include="Resources\mark.cur" />
     <Resource Include="Resources\mark.png" />
+    <Resource Include="Resources\stair.cur" />
     <Resource Include="Resources\stair_sprite.png" />
+    <Resource Include="Resources\station.cur" />
     <Resource Include="Resources\station.png" />
     <Resource Include="Resources\checked.png" />
     <Resource Include="Resources\elevator.png" />
@@ -89,6 +89,7 @@
     <Resource Include="Resources\strings_default.json" />
     <Resource Include="Resources\treshcan.png" />
     <Resource Include="Resources\unchecked.png" />
+    <Resource Include="Resources\unmark.cur" />
     <Resource Include="Resources\unmark.png" />
   </ItemGroup>
 

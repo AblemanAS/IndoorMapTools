@@ -126,8 +126,7 @@ namespace IndoorMapTools.View.UserControls
 
                 foreach(string filePath in (string[])e.Data.GetData(DataFormats.FileDrop))
                 {
-                    try { OnFileDropCommand.Execute(filePath); }
-                    catch { }// (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Warning); }
+                    OnFileDropCommand.Execute(filePath);// (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Warning); }
                 }
             }
         }
