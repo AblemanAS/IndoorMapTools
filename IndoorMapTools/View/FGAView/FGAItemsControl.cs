@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 
@@ -15,13 +14,6 @@ namespace IndoorMapTools.View.FGAView
         {
             ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(typeof(FGAPanel)));
             IsTabStop = false;
-        }
-
-        protected override void OnSelectionChanged(SelectionChangedEventArgs e)
-        {
-            base.OnSelectionChanged(e);
-            foreach(FGAItem item in Items.OfType<object>().Select(i => ItemContainerGenerator.ContainerFromItem(i)).OfType<FGAItem>())
-                item.IsSelected = Equals(SelectedItem, item.DataContext);
         }
     }
 }

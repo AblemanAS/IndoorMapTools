@@ -19,7 +19,6 @@ namespace IndoorMapTools.View.UserControls
         /// Source가 변경될 경우 픽셀 데이터를 캐시.
         /// 지원 포맷이 아닐 경우 null로 초기화.
         /// </summary>
-        /// <param name="e"></param>
         protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
         {
             base.OnPropertyChanged(e);
@@ -41,7 +40,7 @@ namespace IndoorMapTools.View.UserControls
 
         protected override HitTestResult HitTestCore(PointHitTestParameters hitTestParameters)
         {
-            if(Source is BitmapImage source && pixelDataCache != null)
+            if(Source is BitmapSource source && pixelDataCache != null)
             {
                 var x = (int)(hitTestParameters.HitPoint.X / ActualWidth * source.PixelWidth);
                 var y = (int)(hitTestParameters.HitPoint.Y / ActualHeight * source.PixelHeight);

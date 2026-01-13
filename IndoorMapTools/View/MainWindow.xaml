@@ -92,11 +92,11 @@
 
             <Button Grid.Column="6" IsTabStop="False" Style="{StaticResource SystemButtonStyle}"
                     ToolTip="{DynamicResource strings.AnalyzeReachability}"
-                    DataContext="{Binding Model}">
+                    IsEnabled="{Binding Model, Converter={cvt:IsNotNull}}">
                 <Button.Command>
                     <dc:TemplatedDialogCommand Title="{DynamicResource strings.AnalyzeReachability}"
                                                DialogContext="{Binding}">
-                        <DataTemplate DataType="{x:Type model:Project}">
+                        <DataTemplate DataType="{x:Type viewModel:MainWindowVM}">
                             <view:AnalysisForm/>
                         </DataTemplate>
                     </dc:TemplatedDialogCommand>

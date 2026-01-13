@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using IndoorMapTools.Core;
 using IndoorMapTools.Model;
 using IndoorMapTools.Services.Application;
+using IndoorMapTools.Services.Domain;
 using IndoorMapTools.Services.Infrastructure.IMPJ;
 using IndoorMapTools.Services.Presentation;
 using System;
@@ -56,16 +57,8 @@ namespace IndoorMapTools.ViewModel
 
         [RelayCommand] private void InitDialogState()
         {
-            foreach(var group in Model.Building.LandmarkGroups)
-                foreach(var landmark in group.Landmarks)
-                    if(landmark.Outline.Length < 2)
-                    {
-                        IsLayoutValid = AreLandmarkOutlinesComplete = false;
-                        return;
-                    }
-
-            AreLandmarkOutlinesComplete = true;
-            IsLayoutValid = CRSValid;
+            AreLandmarkOutlinesComplete = EntityValidator.AreLandmarkOutlinesComplete(Model.Building.LandmarkGroups);
+            IsLayoutValid = CRSValid && AreLandmarkOutlinesComplete;
         }
 
         [RelayCommand(CanExecute = nameof(IsLayoutValid))] private void ExportProject(string filePath)

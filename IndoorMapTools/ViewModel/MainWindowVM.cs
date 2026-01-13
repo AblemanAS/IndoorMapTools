@@ -14,8 +14,8 @@ namespace IndoorMapTools.ViewModel
     public partial class MainWindowVM : ObservableObject
     {
         // 서비스
-        private readonly BackgroundService backgroundSvc;
-        private readonly IResourceStringService stringSvc;
+        private readonly BackgroundService bgSvc;
+        private readonly IResourceStringService strSvc;
         private readonly IProjectPersistenceService projectIOSvc;
         private readonly IMPJImportService impjImportSvc;
 
@@ -24,34 +24,35 @@ namespace IndoorMapTools.ViewModel
         public IndoorMapVM Ivm { get; }
         public ExportProjectVM Evm { get; }
         public FloorListItemVM Fvm { get; }
+        public AnalysisFormVM Avm { get; }
 
         [ObservableProperty] private Project model; // 모델
         [ObservableProperty] private Floor selectedFloor;
         [ObservableProperty] private bool floorsVisible;
-
-        public string TaskName => backgroundSvc.TaskName;
-        public int ProgressPercentage => backgroundSvc.ProgressPercentage;
-        public bool ProgressIndeterminated => backgroundSvc.ProgressIndeterminated;
-        public bool IsBusy => backgroundSvc.IsBusy;
+        
+        public string TaskName => bgSvc.TaskName;
+        public int ProgressPercentage => bgSvc.ProgressPercentage;
+        public bool ProgressIndeterminated => bgSvc.ProgressIndeterminated;
+        public bool IsBusy => bgSvc.IsBusy;
 
         private bool guardFloorSync = false;
 
-        public MainWindowVM(GlobalMapVM gvm, IndoorMapVM ivm, ExportProjectVM evm, FloorListItemVM fvm,
-                            BackgroundService backgroundSvc, IResourceStringService stringSvc, 
+        public MainWindowVM(GlobalMapVM gvm, IndoorMapVM ivm, ExportProjectVM evm, FloorListItemVM fvm, AnalysisFormVM avm,
+                            BackgroundService bgSvc, IResourceStringService strSvc, 
                             IProjectPersistenceService projectIOSvc, IMPJImportService impjImportSvc)
         {
-            Gvm = gvm; Ivm = ivm; Evm = evm; Fvm = fvm;
-            this.backgroundSvc = backgroundSvc;
-            this.stringSvc = stringSvc;
+            Gvm = gvm; Ivm = ivm; Evm = evm; Fvm = fvm; Avm = avm;
+            this.bgSvc = bgSvc;
+            this.strSvc = strSvc;
             this.projectIOSvc = projectIOSvc;
             this.impjImportSvc = impjImportSvc;
 
-            backgroundSvc.PropertyChanged += (sender, e) => 
+            bgSvc.PropertyChanged += (sender, e) => 
             { if(!string.IsNullOrEmpty(e.PropertyName)) OnPropertyChanged(e.PropertyName); };
 
-            backgroundSvc.Run(() => GeoLocationModule.Initialize(), "Init PROJ Net");
+            bgSvc.Run(() => GeoLocationModule.Initialize(), "Init PROJ Net");
 
-            Ivm.PropertyChanged += (sender, e) => // IVM의 모델 변경 감시 -> 자신의 층선택에 동기화
+            Ivm.PropertyChanged += (sender, e) => // IVM의 모델 변경 감시 -> 자신의 층선택을 동기화
             {
                 if(e.PropertyName == nameof(Ivm.Model) && SelectedFloor != Ivm.Model)
                     SelectedFloor = Ivm.Model;
@@ -77,10 +78,13 @@ namespace IndoorMapTools.ViewModel
 
         partial void OnModelChanged(Project oldModel, Project newModel)
         {
-            // 기존 모델 상태 구조 해제
-            SelectedFloor = null;
+            // 기존 모델 상태 구조 해제, 속성 초기화
             Gvm.Model = null;
             Ivm.Model = null;
+            Evm.Model = null;
+            Fvm.Model = null;
+            Avm.Model = null;
+            SelectedFloor = null;
             FloorsVisible = true;
 
             if(newModel == null) return;
@@ -88,6 +92,7 @@ namespace IndoorMapTools.ViewModel
             // 새로운 모델 상태 구조 구축
             Gvm.Model = newModel.Building;
             Evm.Model = newModel;
+            Avm.Model = newModel;
         }
 
 
@@ -123,18 +128,18 @@ namespace IndoorMapTools.ViewModel
         {
             Action loadBehavior = Path.GetExtension(filePath) switch
             {
-                ".impj" => () => Model = impjImportSvc.Import(filePath, backgroundSvc.ReportProgress),
+                ".impj" => () => Model = impjImportSvc.Import(filePath, bgSvc.ReportProgress),
                 ".imtproj" => () => Model = projectIOSvc.LoadProject(filePath),
                 ".kmtproj" => () => Model = projectIOSvc.LoadProject(filePath), // 호환성
                 _ => null
             };
 
             if(loadBehavior == null) return;
-            backgroundSvc.Run(loadBehavior, stringSvc["strings.LoadProjectStatusDesc"]);
+            bgSvc.Run(loadBehavior, strSvc["strings.LoadProjectStatusDesc"]);
         }
 
         [RelayCommand] private void SaveProject(string filePath)
-            => backgroundSvc.Run(() => projectIOSvc.SaveProject(Model, filePath), stringSvc["strings.SaveProjectStatusDesc"]);
+            => bgSvc.Run(() => projectIOSvc.SaveProject(Model, filePath), strSvc["strings.SaveProjectStatusDesc"]);
 
         [RelayCommand] private void SaveAndNewProject(string filePath)
         {
@@ -144,8 +149,19 @@ namespace IndoorMapTools.ViewModel
 
         // 층 리스트 핸들러
         [RelayCommand] private void CreateFloor(string filePath)
-            => backgroundSvc.Run(() => Model?.Building.CreateFloor(ImageAlgorithms.BitmapImageFromFile(filePath), Gvm.GlobalMapFocus));
+            => bgSvc.Run(() => Model?.Building.CreateFloor(ImageAlgorithms.BitmapImageFromFile(filePath), Gvm.GlobalMapFocus));
 
         [RelayCommand] private void BatchFloorName() => EntityNamer.BatchFloorName(Model.Building.Floors);
+
+
+
+        // 테스트
+        [ObservableProperty] private AnalysisReport result;
+        [RelayCommand] private void Analyze()
+        {
+            bgSvc.Run(() => Result = new AnalysisReport(Model.Building, Model.ReachableResolution,
+                Model.ConservativeCellValidation, Model.DirectedReachableCluster, bgSvc.ReportProgress),
+                strSvc["strings.ReachableClusterAnalysisStatusDesc"]);
+        }
     }
 }

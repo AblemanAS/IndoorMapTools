@@ -15,7 +15,7 @@
             </ResourceDictionary.MergedDictionaries>
         
             <!-- 앱 버전 정보 Generation.MajorRevision.MinorRevision.BugFix -->
-            <sys:String x:Key="AppVersion">0.7.t.3</sys:String>
+            <sys:String x:Key="AppVersion">0.7.t.4</sys:String>
 
             <!-- App.xaml.cs 에서 로드되는 DynamicResources -->
             <x:Null x:Key="StairCursor"/>
@@ -35,7 +35,7 @@
             <SolidColorBrush x:Key="TransparentLightBlue" Color="LightBlue" Opacity="0.6"/>
             <SolidColorBrush x:Key="TransparentAliceBlue" Color="AliceBlue" Opacity="0.6"/>
             <SolidColorBrush x:Key="TransparentRed" Color="Red" Opacity="0.3"/>
-            <DropShadowEffect x:Key="TransparentBlueEffect" Color="Blue" ShadowDepth="0" BlurRadius="0"/>
+            <DropShadowEffect x:Key="TransparentBlueEffect" Color="DeepSkyBlue" ShadowDepth="0" BlurRadius="0"/>
             <DropShadowEffect x:Key="AliceBlueEffect" Color="AliceBlue" ShadowDepth="0" BlurRadius="5"/>
 
             <!-- 범용 스타일 -->
@@ -66,16 +66,6 @@
                     <Trigger Property="IsEnabled" Value="False">
                         <Setter Property="Opacity" Value="0.5"/>
                     </Trigger>
-                </Style.Triggers>
-            </Style>
-
-            <Style x:Key="clickEffectItemContentStyle" TargetType="FrameworkElement">
-                <Setter Property="Effect" Value="{x:Null}"/>
-                <Style.Triggers>
-                    <DataTrigger Binding="{Binding TemplatedParent.IsSelected, 
-                                            RelativeSource={RelativeSource TemplatedParent}}" Value="True">
-                        <Setter Property="Effect" Value="{StaticResource TransparentBlueEffect}"/>
-                    </DataTrigger>
                 </Style.Triggers>
             </Style>
 

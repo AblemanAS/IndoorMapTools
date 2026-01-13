@@ -289,110 +289,109 @@ namespace IndoorMapTools.Helper
         }
     }
 
-    class LandmarkEdgeExtractor : OneWayMultiConverter
-    {
-        public override object Convert(object[] values)
-        {
-            if(!(values[0] is Building building && 
-                values[1] is Dictionary<Landmark, GraphNode> landmarktoNode)) return null;
+    //class LandmarkEdgeExtractor : OneWayMultiConverter
+    //{
+    //    public override object Convert(object[] values)
+    //    {
+    //        if(!(values[0] is Building building && 
+    //            values[1] is Dictionary<Landmark, GraphNode> landmarktoNode)) return null;
             
-            List<object[]> result = new List<object[]>();
-            var floorList = building.Floors;
+    //        List<object[]> result = new List<object[]>();
+    //        var floorList = building.Floors;
 
-            foreach(LandmarkGroup group in building.LandmarkGroups)
-            {
-                if(group.Landmarks.Count < 2) continue;
+    //        foreach(LandmarkGroup group in building.LandmarkGroups)
+    //        {
+    //            if(group.Landmarks.Count < 2) continue;
 
-                var tempLandmarks = group.Landmarks.OrderBy(lm => floorList.IndexOf(lm.ParentFloor)).ToList();
+    //            var tempLandmarks = group.Landmarks.OrderBy(lm => floorList.IndexOf(lm.ParentFloor)).ToList();
 
-                for(int i = 1; i < tempLandmarks.Count; i++)
-                {
-                    var startNode = landmarktoNode[tempLandmarks[i - 1]];
-                    var endNode = landmarktoNode[tempLandmarks[i]];
-                    result.Add(new object[] { startNode.Floor, startNode.Group, startNode.Area,
-                        endNode.Floor, endNode.Group, endNode.Area});
-                }
-            }
+    //            for(int i = 1; i < tempLandmarks.Count; i++)
+    //            {
+    //                var startNode = landmarktoNode[tempLandmarks[i - 1]];
+    //                var endNode = landmarktoNode[tempLandmarks[i]];
+    //                result.Add(new object[] { startNode.Floor, startNode.Group, startNode.Area,
+    //                    endNode.Floor, endNode.Group, endNode.Area});
+    //            }
+    //        }
 
-            return result;
-        }
-    }
+    //        return result;
+    //    }
+    //}
 
-    class RecursiveEdgeExtractor : OneWayConverter
-    {
-        public override object Convert(object value)
-        {
-            if(!(value is GraphNode rootNode)) return default;
+    //class RecursiveEdgeExtractor : OneWayConverter
+    //{
+    //    public override object Convert(object value)
+    //    {
+    //        if(!(value is GraphNode rootNode)) return default;
 
-            List<object[]> result = new List<object[]>();
-            var nodeScanQueue = new Queue<GraphNode>();
-            var checkedNodes = new HashSet<GraphNode>(); // 체크된 노드들
+    //        List<object[]> result = new List<object[]>();
+    //        var nodeScanQueue = new Queue<GraphNode>();
+    //        var checkedNodes = new HashSet<GraphNode>(); // 체크된 노드들
 
-            nodeScanQueue.Enqueue(rootNode); // BFS 시작
-            while(nodeScanQueue.Count > 0)
-            {
-                GraphNode curNode = nodeScanQueue.Dequeue(); // 큐에서 꺼내기
-                if(checkedNodes.Contains(curNode)) continue;
-                checkedNodes.Add(curNode); // 체크된 노드에 추가
+    //        nodeScanQueue.Enqueue(rootNode); // BFS 시작
+    //        while(nodeScanQueue.Count > 0)
+    //        {
+    //            GraphNode curNode = nodeScanQueue.Dequeue(); // 큐에서 꺼내기
+    //            if(checkedNodes.Contains(curNode)) continue;
+    //            checkedNodes.Add(curNode); // 체크된 노드에 추가
 
-                foreach(GraphNode nextNode in curNode.Children)
-                {
-                    result.Add(new object[] { curNode.Floor, curNode.Group, curNode.Area,
-                        nextNode.Floor, nextNode.Group, nextNode.Area, 
-                        nextNode.Children.Contains(curNode) ? EdgeHeader.Circle : EdgeHeader.Arrow });
-                    nodeScanQueue.Enqueue(nextNode); // 큐에 추가
-                }
-            }
+    //            foreach(GraphNode nextNode in curNode.Children)
+    //            {
+    //                result.Add(new object[] { curNode.Floor, curNode.Group, curNode.Area,
+    //                    nextNode.Floor, nextNode.Group, nextNode.Area, 
+    //                    nextNode.Children.Contains(curNode) ? EdgeHeader.Circle : EdgeHeader.Arrow });
+    //                nodeScanQueue.Enqueue(nextNode); // 큐에 추가
+    //            }
+    //        }
 
-            return result;
-        }
-    }
+    //        return result;
+    //    }
+    //}
+
 
     class GetGroupIds : OneWayConverter
     {
         public override object Convert(object value)
         {
-            if(!(value is List<GraphNode> nodes && nodes.Count > 0)) return new int[0];
-
-            var result = new int[nodes.Count];
-            for(int i = 0; i < nodes.Count; i++)
-                result[i] = nodes[i].Group;
-            return result;
+            if(value is not IList<Landmark> nodes) return Array.Empty<int>();
+            if(nodes.Count == 0) Console.WriteLine("GetGroupIds: Empty landmark list received.");
+            return nodes.Select(lm => lm.ParentGroup.ParentBuilding.LandmarkGroups.IndexOf(lm.ParentGroup)).ToArray();
         }
     }
 
-    class GetAreaPresentation : OneWayConverter
-    {
-        public override object Convert(object value)
-        {
-            if(!(value is List<GraphNode> nodes && nodes.Count > 0)) return default;
 
-            List<object[]> result = new List<object[]>();
-            var landmarkPresentCell = new HashSet<int>();
+    //class GetAreaPresentation : OneWayConverter
+    //{
+    //    public override object Convert(object value)
+    //    {
+    //        if(!(value is List<GraphNode> nodes && nodes.Count > 0)) return default;
 
-            landmarkPresentCell.Clear();
-            int minGroup = nodes[0].Group;
-            int maxGroup = nodes[0].Group;
+    //        List<object[]> result = new List<object[]>();
+    //        var landmarkPresentCell = new HashSet<int>();
 
-            foreach(var node in nodes)
-            {
-                landmarkPresentCell.Add(node.Group);
-                if(node.Group < minGroup) minGroup = node.Group;
-                if(node.Group > maxGroup) maxGroup = node.Group;
-            }
+    //        landmarkPresentCell.Clear();
+    //        int minGroup = nodes[0].Group;
+    //        int maxGroup = nodes[0].Group;
 
-            for(int groupIndex = minGroup; groupIndex <= maxGroup; groupIndex++)
-            {
-                bool left = (groupIndex > minGroup);
-                bool center = landmarkPresentCell.Contains(groupIndex);
-                bool right = (groupIndex < maxGroup);
+    //        foreach(var node in nodes)
+    //        {
+    //            landmarkPresentCell.Add(node.Group);
+    //            if(node.Group < minGroup) minGroup = node.Group;
+    //            if(node.Group > maxGroup) maxGroup = node.Group;
+    //        }
+
+    //        for(int groupIndex = minGroup; groupIndex <= maxGroup; groupIndex++)
+    //        {
+    //            bool left = (groupIndex > minGroup);
+    //            bool center = landmarkPresentCell.Contains(groupIndex);
+    //            bool right = (groupIndex < maxGroup);
                     
-                result.Add(new object[] { nodes[0].Floor, groupIndex, nodes[0].Area, left, center, right });
-            }
+    //            result.Add(new object[] { nodes[0].Floor, groupIndex, nodes[0].Area, left, center, right });
+    //        }
 
-            return result;
-        }
-    }
+    //        return result;
+    //    }
+    //}
 
     internal class InverseTransformCache
     {

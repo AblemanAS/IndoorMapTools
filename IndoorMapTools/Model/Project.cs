@@ -15,21 +15,12 @@ namespace IndoorMapTools.Model
 
         // 분석 영역 비주얼
         [ObservableProperty] private List<BitmapImage> reachableClusters;
-        [ObservableProperty] private AnalysisResult report;
 
         // Export 옵션
         [ObservableProperty] private int _CRS = 0;
         [ObservableProperty] private double reachableResolution = 0.25;
         [ObservableProperty] private bool conservativeCellValidation = true;
         [ObservableProperty] private bool directedReachableCluster = true;
-
-        //[RelayCommand] private void AnalyzeReachability()
-        //{
-        //    Report = null; GC.Collect();
-        //    backgroundWorker.Run(() => Report = new AnalysisReport(Building, ReachableResolution,
-        //        ConservativeCellValidation, DirectedReachableCluster, backgroundWorker.ReportProgress),
-        //      (string)Application.Current.Resources["strings.ReachableClusterAnalysisStatusDesc"]);
-        //}
 
         internal Project() => Building = new Building(this);
 

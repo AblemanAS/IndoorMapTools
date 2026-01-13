@@ -7,5 +7,4 @@ namespace IndoorMapTools.ViewModel
     {
         [ObservableProperty] private bool visible = true;
     }
-
 }

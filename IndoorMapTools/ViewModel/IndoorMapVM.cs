@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IndoorMapTools.Core;
-using IndoorMapTools.Helper;
 using IndoorMapTools.Model;
 using IndoorMapTools.Services.Domain;
 using System;

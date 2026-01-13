@@ -1,11 +1,24 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace IndoorMapTools.Helper
 {
-    public static class ObservableCollctionSorter
+    public static class CollectionExtensions
     {
+        public static int IndexOf<T>(this IReadOnlyList<T> self, T elementToFind)
+        {
+            int i = 0;
+            foreach(T element in self)
+            {
+                if(Equals(element, elementToFind))
+                    return i;
+                i++;
+            }
+            return -1;
+        }
+
         public static void Sort<TSource, TKey>(this ObservableCollection<TSource> source, Func<TSource, TKey> keySelector)
         {
             if(!(source != null && source.Count > 0)) return;

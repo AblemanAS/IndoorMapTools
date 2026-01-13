@@ -13,6 +13,8 @@ namespace IndoorMapTools.View.UserControls
         protected override bool IsItemItsOwnContainerOverride(object item) => item is SelectorItem;
         protected override DependencyObject GetContainerForItemOverride() => new SelectorItem();
 
+        public SelectorControl() => IsTabStop = false;
+
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             if(e.Key == Key.Delete && SelectedItem != null &&

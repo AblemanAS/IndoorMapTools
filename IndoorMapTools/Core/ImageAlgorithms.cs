@@ -6,7 +6,6 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Bitmap = System.Drawing.Bitmap;
 using Drawing2D = System.Drawing.Drawing2D;
@@ -24,21 +23,20 @@ namespace IndoorMapTools.Core
             ~AllocationTerminator() => stream.Dispose();
         }
 
-        private static readonly ConditionalWeakTable<BitmapImage, AllocationTerminator> msTable = new ConditionalWeakTable<BitmapImage, AllocationTerminator>();
-
         public static BitmapImage BitmapImageFromBuffer(byte[] buffer)
-            => BitmapImageFromMemoryStream(new MemoryStream(buffer));
+        {
+            using var stream = new MemoryStream(buffer);
+            return BitmapImageFromMemoryStream(stream);
+        }
 
         public static BitmapImage BitmapImageFromFile(string filePath)
         {
-
             // 원본 Bitmap 로드 및 DPI 변경
-            Bitmap originalBitmap = new Bitmap(filePath);
+            using Bitmap originalBitmap = new Bitmap(filePath);
             originalBitmap.SetResolution(96, 96);
 
             // BitmapImage로 변환
             BitmapImage result = BitmapImageFromBitmap(originalBitmap);
-            originalBitmap.Dispose();
             //Console.WriteLine("DPI : " + result.DpiX + ", " + result.DpiY);
             //Console.WriteLine("Format : " + result.Format);
 
@@ -47,13 +45,11 @@ namespace IndoorMapTools.Core
 
         public static Bitmap ToBitmap(this BitmapSource source)
         {
-            Bitmap bitmap;
-
-            using MemoryStream stream = new MemoryStream();
-            PngBitmapEncoder enc = new PngBitmapEncoder();
+            using var stream = new MemoryStream();
+            var enc = new PngBitmapEncoder();
             enc.Frames.Add(BitmapFrame.Create(source));
             enc.Save(stream);
-            bitmap = new Bitmap(stream);
+            var bitmap = new Bitmap(stream);
             bitmap.SetResolution(96, 96);
 
             return bitmap;
@@ -62,33 +58,24 @@ namespace IndoorMapTools.Core
         public static BitmapImage BitmapImageFromBitmap(Bitmap bitmap)
         {
             // 메모리 스트림 잡고 png 압축
-            MemoryStream stream = new MemoryStream();
+            using MemoryStream stream = new MemoryStream();
             bitmap.Save(stream, ImageFormat.Png);
             return BitmapImageFromMemoryStream(stream);
         }
 
-        /// <summary>
-        /// 스트림에 들어가 있는 png 이미지를 BitmapImage로 링크
-        /// <para>스트림은 BitmapImage가 해제될 때 같이 해제되므로, 
-        /// 본 함수 호출 후에도 살아 있을 스트림을 사용해야 함</para>
-        /// </summary>
-        /// <param name="stream">원본 스트림</param>
-        /// <returns>출력 BitmapImage</returns>
+
         public static BitmapImage BitmapImageFromMemoryStream(MemoryStream stream)
-        {
+        {            
             // BitmapImage 생성
-            BitmapImage image = new BitmapImage();
+            var image = new BitmapImage();
             image.BeginInit();
-            image.CacheOption = BitmapCacheOption.None;
+            image.CacheOption = BitmapCacheOption.OnLoad;
             image.StreamSource = stream;
             image.EndInit();
             image.Freeze();
-
-            // 메모리 스트림 약한참조 등록
-            msTable.Add(image, new AllocationTerminator(stream));
-
             return image;
         }
+
 
         public static void DrawPolygonsOnBitmap(Bitmap bitmap, Point[][] polygons)
         {
@@ -126,7 +113,7 @@ namespace IndoorMapTools.Core
                 g.PixelOffsetMode = PixelOffsetMode.Half;
             }
 
-            Drawing2D.Matrix matrix = new Drawing2D.Matrix();
+            var matrix = new Drawing2D.Matrix();
             matrix.Translate((newWidth - bitmap.Width) / 2, (newHeight - bitmap.Height) / 2, Drawing2D.MatrixOrder.Append);
             matrix.RotateAt((float)rotation, new System.Drawing.PointF(newWidth / 2, newHeight / 2), Drawing2D.MatrixOrder.Append);
             g.Transform = matrix;
@@ -148,8 +135,8 @@ namespace IndoorMapTools.Core
             CopyBitmapImageWithPads(bufferImage, original, leftPad, topPad, rightPad, bottomPad);
 
             // 새 스트림을 잡아 png로 인코딩
-            MemoryStream stream = new MemoryStream();
-            PngBitmapEncoder encoder = new PngBitmapEncoder();
+            using var stream = new MemoryStream();
+            var encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(bufferImage));
             encoder.Save(stream);
 

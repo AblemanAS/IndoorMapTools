@@ -15,6 +15,8 @@ namespace IndoorMapTools.View.FGAView.FGAVisuals
 
         static FGAArea()
         {
+            OverrideForegroundProperty();
+
             leftGeometry = new PathGeometry
             {
                 Figures = new PathFigureCollection
@@ -62,8 +64,8 @@ namespace IndoorMapTools.View.FGAView.FGAVisuals
             get => (int)GetValue(FloorIdProperty);
             set => SetValue(FloorIdProperty, value);
         }
-        public static readonly DependencyProperty FloorIdProperty =
-            DependencyProperty.Register(nameof(FloorId), typeof(int), typeof(FGAArea));
+        public static readonly DependencyProperty FloorIdProperty = DependencyProperty.Register(nameof(FloorId), 
+            typeof(int), typeof(FGAArea), new FrameworkPropertyMetadata(OnFGAChanged));
 
         [Bindable(true)]
         public ICollection<int> GroupIds
@@ -71,12 +73,8 @@ namespace IndoorMapTools.View.FGAView.FGAVisuals
             get => (ICollection<int>)GetValue(GroupIdsProperty);
             set => SetValue(GroupIdsProperty, value);
         }
-        public static readonly DependencyProperty GroupIdsProperty =
-            DependencyProperty.Register(nameof(GroupIds), typeof(ICollection<int>), typeof(FGAArea),
-                new FrameworkPropertyMetadata(OnGroupIdsChanged));
-
-        private static void OnGroupIdsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-            => (d as FGAArea)?.UpdateSegments();
+        public static readonly DependencyProperty GroupIdsProperty = DependencyProperty.Register(nameof(GroupIds), 
+            typeof(ICollection<int>), typeof(FGAArea), new FrameworkPropertyMetadata(OnFGAChanged));
 
         [Bindable(true)]
         public int AreaId
@@ -84,26 +82,45 @@ namespace IndoorMapTools.View.FGAView.FGAVisuals
             get => (int)GetValue(AreaIdProperty);
             set => SetValue(AreaIdProperty, value);
         }
-        public static readonly DependencyProperty AreaIdProperty =
-            DependencyProperty.Register(nameof(AreaId), typeof(int), typeof(FGAArea));
+        public static readonly DependencyProperty AreaIdProperty = DependencyProperty.Register(nameof(AreaId), 
+            typeof(int), typeof(FGAArea), new FrameworkPropertyMetadata(OnFGAChanged));
 
-        private readonly FGAPanel innerPanel = new FGAPanel();
+        private static void OverrideForegroundProperty() => 
+            ForegroundProperty.OverrideMetadata(typeof(FGAArea), new FrameworkPropertyMetadata(OnFGAChanged));
 
-        public FGAArea() => Content = innerPanel;
+        private static void OnFGAChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if(d is not FGAArea instance) return;
+            instance.isSegmentsValid = false;
+            instance.InvalidateMeasure();
+        }
+
+        private readonly FGAPanel innerPanel;
+        private bool isSegmentsValid;
+
+        public FGAArea()
+        {
+            innerPanel = new FGAPanel();
+            Content = innerPanel;
+            isSegmentsValid = false;
+            SetCurrentValue(ForegroundProperty, Brushes.AliceBlue);
+        }
 
         protected override Size MeasureOverride(Size constraint)
         {
-            UpdateSegments();
+            if(!isSegmentsValid) UpdateSegments();
             return base.MeasureOverride(constraint);
         }
+
 
         private void UpdateSegments()
         {
             innerPanel.Children.Clear();
+            isSegmentsValid = true;
             if(GroupIds == null || GroupIds.Count == 0) return;
 
             // Shape 렌더링 변수
-            int innerMargin = GridSize / 16;    
+            int innerMargin = GridSize / 16;
 
             // 단일 Segment Area일 경우 원 하나만 추가
             if(GroupIds.Count == 1)
@@ -118,19 +135,20 @@ namespace IndoorMapTools.View.FGAView.FGAVisuals
                 int maxGroup = GroupIds.Max();
 
                 // Left Segment 추가
-                LocateSegment(new Path { Fill = Brushes.AliceBlue, StrokeThickness = 0, Stretch = Stretch.Fill, Data = leftGeometry,
+                LocateSegment(new Path { Fill = Foreground, StrokeThickness = 0, Stretch = Stretch.Fill, Data = leftGeometry,
                     Margin = new Thickness(innerMargin, innerMargin, 0, innerMargin) }, FloorId, minGroup, AreaId);
 
                 // Right Segment 추가
-                LocateSegment(new Path { Fill = Brushes.AliceBlue, StrokeThickness = 0, Stretch = Stretch.Fill, Data = rightGeometry,
+                LocateSegment(new Path { Fill = Foreground, StrokeThickness = 0, Stretch = Stretch.Fill, Data = rightGeometry,
                     Margin = new Thickness(0, innerMargin, innerMargin, innerMargin) }, FloorId, maxGroup, AreaId);
 
                 // 중간 Segment 추가
-                for(int i = minGroup + 1; i < maxGroup; i++)
-                    LocateSegment(new Rectangle { Fill = Brushes.AliceBlue, StrokeThickness = 0, Stretch = Stretch.Fill,
-                        Margin = new Thickness(0, innerMargin, 0, innerMargin) }, FloorId, i, AreaId);
+                for(int groupIndex = minGroup + 1; groupIndex < maxGroup; groupIndex++)
+                    LocateSegment(new Rectangle { Fill = Foreground, StrokeThickness = 0, Stretch = Stretch.Fill,
+                        Margin = new Thickness(-1, innerMargin, -1, innerMargin) }, FloorId, groupIndex, AreaId);
             }
         }
+
 
         private void LocateSegment(FrameworkElement fe, int floor, int group, int area)
         {

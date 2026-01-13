@@ -4,23 +4,29 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 using Bitmap = System.Drawing.Bitmap;
+using Vector = System.Numerics.Vector;
 
 namespace IndoorMapTools.Core
 {
     public class ReachableAlgorithms
     {
-        private const int BRTH_ABS = 50;
-        private const int BRTH_REL = 20;
+        private const byte BRTH_ABS = 150;
+        private const byte BRTH_REL = 20;
+        private readonly static Vector<byte> BRTH_ABS_VEC = new(BRTH_ABS);
+        private readonly static Vector<byte> BRTH_REL_VEC = new(BRTH_REL);
         private readonly static Color UNMARK_COLOR = Color.FromArgb(0, 0, 0, 0);
         private readonly static Color MARK_COLOR = Color.FromArgb(200, 230, 230, 255);
         private readonly static System.Drawing.Color UNMARK_COLOR_DRAW = System.Drawing.Color.FromArgb(0, 0, 0, 0);
         private readonly static System.Drawing.Color MARK_COLOR_DRAW = System.Drawing.Color.FromArgb(200, 230, 230, 255);
-        private readonly static BitmapPalette PALETTE_INDEX = new BitmapPalette(new List<Color> { UNMARK_COLOR, MARK_COLOR });
+        private readonly static BitmapPalette PALETTE_INDEX = new(new List<Color> { UNMARK_COLOR, MARK_COLOR });
+
 
         /// <summary>
         /// 주어진 이미지 규격, DPI에 해당하는 Reachable 작업영역 이미지를 생성
@@ -35,21 +41,33 @@ namespace IndoorMapTools.Core
 
         /// <summary>
         /// Single Mark의 flood fill 수행에 필요한 Gray Scale 룩업 캐시 생성
+        /// <para>Flood Fill 가속을 위해 64 byte의 배수 stride로 생성됨</para>
         /// </summary>
         /// <param name="mapImage">원본 Map Image</param>
         /// <returns>출력 Gray Scale 룩업 캐시</returns>
         public static byte[] GetGrayArray(BitmapImage mapImage)
         {
             // Reachable 마킹용 참조 맵 그레이스케일 이미지 변환 및 초기화
-            FormatConvertedBitmap grayImage = new FormatConvertedBitmap();
+            var grayImage = new FormatConvertedBitmap();
             grayImage.BeginInit();
             grayImage.Source = mapImage;
             grayImage.DestinationFormat = PixelFormats.Gray8;
             grayImage.EndInit();
 
             // 참조 바이트 배열
-            byte[] grayArray = new byte[grayImage.PixelHeight * grayImage.PixelWidth];
-            grayImage.CopyPixels(grayArray, grayImage.PixelWidth, 0); // 원본 이미지로부터 데이터 미러
+            int imageWidth = grayImage.PixelWidth;
+            int imageHeight = grayImage.PixelHeight;
+            int stride = (imageWidth + 63) & ~63;
+            byte[] grayArray = new byte[imageHeight * stride];
+            grayImage.CopyPixels(grayArray, stride, 0); // 원본 이미지로부터 데이터 미러
+
+            // 우측 패딩 zero fill
+            int clearWidth = stride - imageWidth;
+            for(int y = 0; y < imageHeight; y++)
+            {
+                int zerofillOffset = y * stride + imageWidth;
+                grayArray.AsSpan(zerofillOffset, clearWidth).Clear();
+            }
             return grayArray;
         }
 
@@ -67,88 +85,596 @@ namespace IndoorMapTools.Core
             if(targetInImage.X < 0 || targetInImage.X >= reachable.PixelWidth ||
                 targetInImage.Y < 0 || targetInImage.Y >= reachable.PixelHeight) return;
 
-            reachable.Lock();
+            Int32Rect dirty;
 
+            reachable.Lock();
             unsafe
             {
-                FloodFill(grayArray, (byte*)reachable.BackBuffer.ToPointer(),
+                dirty = FloodFill(grayArray, (byte*)reachable.BackBuffer.ToPointer(),
                     reachable.PixelWidth, reachable.PixelHeight, reachable.BackBufferStride,
                     bitSet, ((int)targetInImage.X, (int)targetInImage.Y));
             }
 
-            reachable.AddDirtyRect(new Int32Rect(0, 0, reachable.PixelWidth, reachable.PixelHeight));
+            if(!dirty.IsEmpty) reachable.AddDirtyRect(dirty);
             reachable.Unlock();
         }
 
 
-        private static unsafe void FloodFill(byte[] grayArray, byte* reachableBufferPtr,
+        //private enum FloodFillPhase { BitHead, ByteHead, Body, ByteTail, BitTail, Finished }
+
+        // TODO : Vector의 Count 32, 16, fallback 기준으로 각각 짜야 함
+        // ## Scanline logic
+        // 64byte 단위로 interval 처리 로직
+        // buffer : 기존대로 ulong 단위로 읽어 (64bit) all clear 확인
+        // grayarray: 처음 클릭 위치의 interval 찾고, Vector 로 all 확인
+        // all clear 시 즉시 달리고, all not clear 시 ulong -> byte로 fallback
+        // 최종 fallback 기준에서, bit fallback, byte fallback에 따라 
+        // bit head로 시작하는지 byte head로 시작하는지 구분하여 처리
+        // bit head - byte head - body (= interval run) - byte tail - bit tail 로 fill 하며 left, right 찾기
+        // ## Branch sampling logic
+        // left, right로, 윗줄, 아랫줄에 대해 동일 방식 phase 기반 처리
+        // gray array의 경우 64 all clear -> Vector all, 8 all clear -> ulong MAX/0, 1 clear -> byte lookup
+
+
+        //// SIMD32 기준
+        //private static unsafe Int32Rect FloodFill(byte[] grayArray, byte* reachableBufferPtr,
+        //    int imageWidth, int imageHeight, int bufferStride, bool value, (int X, int Y) targetInImage)
+        //{
+        //    // 픽셀 범위 검사
+        //    if(targetInImage.X < 0 || targetInImage.X >= imageWidth ||
+        //        targetInImage.Y < 0 || targetInImage.Y >= imageHeight) return Int32Rect.Empty;
+
+        //    // 픽셀 데이터 검사
+        //    if(isBitSet(reachableBufferPtr, targetInImage.Y * bufferStride, targetInImage.X) == value) return Int32Rect.Empty;
+
+        //    // Gray Array stride 계산
+        //    int arrayStride = (imageWidth + 63) & ~63;
+
+        //    // 출발점 픽셀 밝기 확인
+        //    byte targetBrightness = grayArray[targetInImage.Y * arrayStride + targetInImage.X];
+        //    if(targetBrightness < BRTH_ABS) return Int32Rect.Empty;
+
+        //    // 해당 픽셀 칠하고 큐에 해당 픽셀 넣으며 알고리즘 시작
+        //    if(value) setBit(reachableBufferPtr, targetInImage.Y * bufferStride, targetInImage.X);
+        //    else clearBit(reachableBufferPtr, targetInImage.Y * bufferStride, targetInImage.X);
+        //    var markTargetStack = new Stack<(int, int)>(512); // x, y
+        //    markTargetStack.Push(targetInImage);
+
+        //    // dirty rect
+        //    int minX = int.MaxValue;
+        //    int minY = int.MaxValue;
+        //    int maxX = int.MinValue;
+        //    int maxY = int.MinValue;
+
+        //    // 탐색 관련 변수
+        //    FloodFillPhase state;
+        //    int ptr;
+        //    int left, right;
+        //    int startX;
+        //    int targetUpperY, targetLowerY;
+        //    int bufferOffsetY, bufferOffsetUpperY, bufferOffsetLowerY;
+        //    int arrayOffsetY, arrayOffsetUpperY, arrayOffsetLowerY;
+        //    int headCount;
+        //    int headBufferOffset;
+        //    int headArrayOffset;
+        //    int headBufferOffsetX = 0;
+
+        //    var targetBrVec = new Vector<byte>(targetBrightness);
+
+        //    // scanline floodfill
+        //    if(value) // true (= 1) 로 칠할 때
+        //    {
+        //        while(markTargetStack.Count > 0)
+        //        {
+        //            var (targetX, targetY) = markTargetStack.Pop(); // 스택에서 대상을 하나 꺼내고
+
+        //            bufferOffsetY = targetY * bufferStride;
+        //            arrayOffsetY = targetY * arrayStride;
+
+        //            int intervalOffset = arrayOffsetY + targetX & ~63; // 초기 인터벌 오프셋
+
+        //            /*** 왼쪽으로 탐색 ***/
+        //            state = FloodFillPhase.BitHead;
+        //            while(state != FloodFillPhase.Finished)
+        //            {
+        //                switch(state)
+        //                {
+        //                    case FloodFillPhase.BitHead:
+        //                        startX = targetX; // Bit head 시작 X 좌표 (비트 단위)
+        //                        headBufferOffsetX = startX / 8; // Bit head 끝 X 오프셋
+        //                        headCount = startX & 7; // Bit head 의 총 비트수
+        //                        headBufferOffset = bufferOffsetY + headBufferOffsetX; // Bit head 끝의 버퍼 오프셋
+        //                        headArrayOffset = arrayOffsetY + startX - headCount; // Bit head 끝의 어레이 오프셋
+        //                        for(ptr = headCount - 1; ptr >= 0; ptr--) // ptr : bit 단위
+        //                        {
+        //                            if(isBitSetNew(reachableBufferPtr, headBufferOffset, ptr)) break; // 픽셀 데이터 검사
+        //                            if(!isBrightnessValid(grayArray, targetBrightness, headArrayOffset, ptr)) break; // 밝기 검사
+        //                            setBitNew(reachableBufferPtr, headBufferOffset, ptr);
+        //                        }
+        //                        ptr++; // 한 칸 돌아가기
+
+        //                        if(ptr == 0) state = FloodFillPhase.ByteHead; // Byte head 로 전환
+        //                        else // Bit head 내에 left가 있음 (Byte head 및 Body가 없음)
+        //                        { 
+        //                            left = startX & ~7 + ptr;
+        //                            state = FloodFillPhase.Finished;
+        //                        }
+        //                        break;
+
+        //                    case FloodFillPhase.ByteHead:
+        //                        startX = headBufferOffsetX; // Byte head X 좌표 (바이트단위)
+        //                        headBufferOffsetX = startX / 8; // Byte head 끝 X 오프셋
+        //                        headCount = startX & 7; // Byte head 의 총 바이트 수
+        //                        headBufferOffset = bufferOffsetY + headBufferOffsetX; // Byte head 끝의 버퍼 오프셋
+        //                        headArrayOffset = arrayOffsetY + startX - headCount; // Byte head 끝의 어레이 오프셋
+        //                        for(ptr = headCount - 1; ptr >= 0; ptr--) // ptr : byte 단위
+        //                        {
+        //                            if(reachableBufferPtr[headBufferOffset + ptr] != 0) break; // 픽셀 데이터 검사
+        //                            var vPixels = new Vector<byte>(grayArray, ptr);
+        //                            Vector<byte> diff = Vector.Max(Vector..SubtractSaturate(vPixels, vTarget),
+        //                                       Vector.SubtractSaturate(vTarget, vPixels));
+        //                            for()
+        //                                if(!isBrightnessValid(grayArray, targetBrightness, headArrayOffset, ptr)) break; // 밝기 검사
+        //                            setBitNew(reachableBufferPtr, headBufferOffset, ptr);
+        //                        }
+        //                        ptr++; // 한 칸 돌아가기
+        //                        break;
+        //                }
+
+
+        //            }
+
+
+
+        //            for(left = targetX - 1; left >= 0; left--)
+        //            {
+        //                if(isBitSet(reachableBufferPtr, bufferOffsetY, left)) break; // 픽셀 데이터 검사
+        //                if(!isBrightnessValid(grayArray, targetBrightness, arrayOffsetY, left)) break; // 밝기 검사
+        //                setBit(reachableBufferPtr, bufferOffsetY, left); // 다 통과했을 경우 칠
+        //            }
+        //            left++;
+
+        //            // 오른쪽으로 진행
+        //            for(right = targetX + 1; right < imageWidth; right++)
+        //            {
+        //                if(isBitSet(reachableBufferPtr, bufferOffsetY, right)) break; // 픽셀 데이터 검사
+        //                if(!isBrightnessValid(grayArray, targetBrightness, arrayOffsetY, right)) break; // 밝기 검사
+        //                setBit(reachableBufferPtr, bufferOffsetY, right); // 다 통과했을 경우 칠
+        //            }
+        //            right--;
+
+        //            // 윗줄 브랜치
+        //            if((targetUpperY = targetY - 1) >= 0)
+        //            {
+        //                bufferOffsetUpperY = bufferOffsetY - bufferStride; // Y offset 계산
+        //                arrayOffsetUpperY = arrayOffsetY - imageWidth;
+        //                bool opened = false; // 처음은 닫힌 상태
+        //                for(int curX = left; curX <= right; curX++)
+        //                {
+        //                    bool isOpenedBit = !isBitSet(reachableBufferPtr, bufferOffsetUpperY, curX) // 픽셀 데이터 검사
+        //                        && isBrightnessValid(grayArray, targetBrightness, arrayOffsetUpperY, curX);
+        //                    if(opened) { if(!isOpenedBit) opened = false; } // 열려 있다가 닫힐 때
+        //                    else if(isOpenedBit)
+        //                    {
+        //                        setBit(reachableBufferPtr, bufferOffsetUpperY, curX);
+        //                        markTargetStack.Push((curX, targetUpperY));
+        //                        opened = true;
+        //                    }
+
+        //                }
+        //            }
+
+        //            // 아랫줄 브랜치
+        //            if((targetLowerY = targetY + 1) < imageHeight)
+        //            {
+        //                bufferOffsetLowerY = bufferOffsetY + bufferStride; // Y offset 계산
+        //                arrayOffsetLowerY = arrayOffsetY + imageWidth;
+        //                bool opened = false; // 처음은 닫힌 상태
+        //                for(int curX = left; curX <= right; curX++)
+        //                {
+        //                    bool isOpenedBit = !isBitSet(reachableBufferPtr, bufferOffsetLowerY, curX) // 픽셀 데이터 검사
+        //                        && isBrightnessValid(grayArray, targetBrightness, arrayOffsetLowerY, curX);
+        //                    if(opened) { if(!isOpenedBit) opened = false; } // 열려 있다가 닫힐 때
+        //                    else if(isOpenedBit)
+        //                    {
+        //                        setBit(reachableBufferPtr, bufferOffsetLowerY, curX);
+        //                        markTargetStack.Push((curX, targetLowerY));
+        //                        opened = true;
+        //                    }
+        //                }
+        //            }
+
+        //            if(left < minX) minX = left;
+        //            if(right > maxX) maxX = right;
+        //            if(targetY < minY) minY = targetY;
+        //            if(targetY > maxY) maxY = targetY;
+        //        }
+        //    }
+        //    else // false (= 0) 로 칠할 때
+        //    {
+        //        while(markTargetStack.Count > 0)
+        //        {
+        //            var (targetX, targetY) = markTargetStack.Pop(); // 스택에서 대상을 하나 꺼내고
+
+        //            bufferOffsetY = targetY * bufferStride;
+        //            arrayOffsetY = targetY * imageWidth;
+
+        //            // 왼쪽으로 진행
+        //            for(left = targetX - 1; left >= 0; left--)
+        //            {
+        //                if(!isBitSet(reachableBufferPtr, bufferOffsetY, left)) break; // 픽셀 데이터 검사
+        //                if(!isBrightnessValid(grayArray, targetBrightness, arrayOffsetY, left)) break; // 밝기 검사
+        //                clearBit(reachableBufferPtr, bufferOffsetY, left); // 다 통과했을 경우 칠
+        //            }
+        //            left++;
+
+        //            // 오른쪽으로 진행
+        //            for(right = targetX + 1; right < imageWidth; right++)
+        //            {
+        //                if(!isBitSet(reachableBufferPtr, bufferOffsetY, right)) break; // 픽셀 데이터 검사
+        //                if(!isBrightnessValid(grayArray, targetBrightness, arrayOffsetY, right)) break; // 밝기 검사
+        //                clearBit(reachableBufferPtr, bufferOffsetY, right); // 다 통과했을 경우 칠
+        //            }
+        //            right--;
+
+        //            // 윗줄 브랜치
+        //            if((targetUpperY = targetY - 1) >= 0)
+        //            {
+        //                bufferOffsetUpperY = bufferOffsetY - bufferStride; // Y offset 계산
+        //                arrayOffsetUpperY = arrayOffsetY - imageWidth;
+        //                bool opened = false; // 처음은 닫힌 상태
+        //                for(int curX = left; curX <= right; curX++)
+        //                {
+        //                    bool isOpenedBit = isBitSet(reachableBufferPtr, bufferOffsetUpperY, curX) // 픽셀 데이터 검사
+        //                        && isBrightnessValid(grayArray, targetBrightness, arrayOffsetUpperY, curX);
+        //                    if(opened) { if(!isOpenedBit) opened = false; } // 열려 있다가 닫힐 때
+        //                    else if(isOpenedBit)
+        //                    {
+        //                        clearBit(reachableBufferPtr, bufferOffsetUpperY, curX);
+        //                        markTargetStack.Push((curX, targetUpperY));
+        //                        opened = true;
+        //                    }
+
+        //                }
+        //            }
+
+        //            // 아랫줄 브랜치
+        //            if((targetLowerY = targetY + 1) < imageHeight)
+        //            {
+        //                bufferOffsetLowerY = bufferOffsetY + bufferStride; // Y offset 계산
+        //                arrayOffsetLowerY = arrayOffsetY + imageWidth;
+        //                bool opened = false; // 처음은 닫힌 상태
+        //                for(int curX = left; curX <= right; curX++)
+        //                {
+        //                    bool isOpenedBit = isBitSet(reachableBufferPtr, bufferOffsetLowerY, curX) // 픽셀 데이터 검사
+        //                        && isBrightnessValid(grayArray, targetBrightness, arrayOffsetLowerY, curX);
+        //                    if(opened) { if(!isOpenedBit) opened = false; } // 열려 있다가 닫힐 때
+        //                    else if(isOpenedBit)
+        //                    {
+        //                        clearBit(reachableBufferPtr, bufferOffsetLowerY, curX);
+        //                        markTargetStack.Push((curX, targetLowerY));
+        //                        opened = true;
+        //                    }
+        //                }
+        //            }
+
+        //            if(left < minX) minX = left;
+        //            if(right > maxX) maxX = right;
+        //            if(targetY < minY) minY = targetY;
+        //            if(targetY > maxY) maxY = targetY;
+        //        }
+        //    }
+
+        //    return new Int32Rect(minX, minY, maxX - minX, maxY - minY);
+
+
+        //    // Gray Array 룩업 로컬 함수 (대상 픽셀 밝기 검사)
+        //    static bool isBrightnessValid(byte[] lookupArray, byte stdBrightness, int offset, int i)
+        //    {
+        //        byte curBrightness = lookupArray[offset + i];
+        //        return (curBrightness > BRTH_ABS) && (Math.Abs(stdBrightness - curBrightness) < BRTH_REL);
+        //    }
+
+        //    // 비트연산을 위한 로컬 함수 정의
+
+        //    static bool isBitSetNew(byte* basePtr, int byteOffset, int i)
+        //        => (basePtr[byteOffset] & ((byte)(1 << (7 - i)))) != 0;
+
+        //    static void setBitNew(byte* basePtr, int byteOffset, int i)
+        //        => basePtr[byteOffset] |= (byte)(1 << (7 - i));
+
+
+
+        //    static bool isBitSet(byte* basePtr, int offsetY, int x)
+        //        => (basePtr[offsetY + (x / 8)] & ((byte)(1 << (7 - x % 8)))) != 0;
+
+        //    static void setBit(byte* basePtr, int offsetY, int x)
+        //        => basePtr[offsetY + (x / 8)] |= (byte)(1 << (7 - x % 8));
+
+        //    static void clearBit(byte* basePtr, int offsetY, int x)
+        //        => basePtr[offsetY + (x / 8)] &= (byte)~(1 << (7 - x % 8));
+        //}
+
+
+
+
+
+        private static unsafe Int32Rect FloodFill(byte[] grayArray, byte* reachableBufferPtr,
             int imageWidth, int imageHeight, int bufferStride, bool value, (int X, int Y) targetInImage)
         {
             // 픽셀 범위 검사
             if(targetInImage.X < 0 || targetInImage.X >= imageWidth ||
-                targetInImage.Y < 0 || targetInImage.Y >= imageHeight) return;
+                targetInImage.Y < 0 || targetInImage.Y >= imageHeight) return Int32Rect.Empty;
 
             // 픽셀 데이터 검사
-            if(IsBitSet(reachableBufferPtr, bufferStride, targetInImage.X, targetInImage.Y) == value) return;
+            if(isBitSet(reachableBufferPtr, targetInImage.Y * bufferStride, targetInImage.X) == value) return Int32Rect.Empty;
 
-            // 출발점 픽셀 밝기
-            byte targetBrightness = grayArray[targetInImage.Y * imageWidth + targetInImage.X];
+            // Gray Array stride 계산
+            int arrayStride = (imageWidth + 63) & ~63;
 
-            // 큐에 해당 픽셀 넣으며 알고리즘 시작
-            var markTargetQueue = new Queue<(int, int)>(); // x, y
-            markTargetQueue.Enqueue(targetInImage);
+            // 출발점 픽셀 밝기 확인
+            byte targetBrightness = grayArray[targetInImage.Y * arrayStride + targetInImage.X];
+            if(targetBrightness < BRTH_ABS) return Int32Rect.Empty;
 
-            if(value)
+            // 해당 픽셀 칠하고 큐에 해당 픽셀 넣으며 알고리즘 시작
+            if(value) setBit(reachableBufferPtr, targetInImage.Y * bufferStride, targetInImage.X);
+            else clearBit(reachableBufferPtr, targetInImage.Y * bufferStride, targetInImage.X);
+            var markTargetStack = new Stack<(int, int)>(512); // x, y
+            markTargetStack.Push(targetInImage);
+
+            // dirty rect
+            int minX = int.MaxValue;
+            int minY = int.MaxValue;
+            int maxX = int.MinValue;
+            int maxY = int.MinValue;
+
+            // 탐색 관련 변수
+            int left, right;
+            int targetUpperY, targetLowerY;
+            int bufferOffsetY, bufferOffsetUpperY, bufferOffsetLowerY;
+            int arrayOffsetY, arrayOffsetUpperY, arrayOffsetLowerY;
+
+            // scanline floodfill
+            if(value) // true (= 1) 로 칠할 때
             {
-                while(markTargetQueue.Count > 0)
+                while(markTargetStack.Count > 0)
                 {
-                    var (targetX, targetY) = markTargetQueue.Dequeue();             // 큐에서 대상을 하나 꺼내고
-                    if(targetX < 0 || targetX >= imageWidth || targetY < 0 || targetY >= imageHeight) continue;  // 픽셀 범위 검사
-                    if(IsBitSet(reachableBufferPtr, bufferStride, targetX, targetY)) continue; // 픽셀 데이터 검사
-                    byte curBrightness = grayArray[targetY * imageWidth + targetX];
-                    if(curBrightness > BRTH_ABS && (Math.Abs(targetBrightness - curBrightness) < BRTH_REL))
+                    var (targetX, targetY) = markTargetStack.Pop(); // 스택에서 대상을 하나 꺼내고
+
+                    bufferOffsetY = targetY * bufferStride;
+                    arrayOffsetY = targetY * arrayStride;
+
+                    // 왼쪽으로 진행
+                    for(left = targetX - 1; left >= 0; left--)
                     {
-                        SetBit(reachableBufferPtr, bufferStride, targetX, targetY); // 값 대입
-                        // 큐에 다음 대상 값 추가
-                        markTargetQueue.Enqueue((targetX - 1, targetY));
-                        markTargetQueue.Enqueue((targetX, targetY - 1));
-                        markTargetQueue.Enqueue((targetX + 1, targetY));
-                        markTargetQueue.Enqueue((targetX, targetY + 1));
+                        if(isBitSet(reachableBufferPtr, bufferOffsetY, left)) break; // 픽셀 데이터 검사
+                        if(!isBrightnessValid(grayArray, targetBrightness, arrayOffsetY, left)) break; // 밝기 검사
+                        setBit(reachableBufferPtr, bufferOffsetY, left); // 다 통과했을 경우 칠
                     }
+                    left++;
+
+                    // 오른쪽으로 진행
+                    for(right = targetX + 1; right < arrayStride; right++)
+                    {
+                        if(isBitSet(reachableBufferPtr, bufferOffsetY, right)) break; // 픽셀 데이터 검사
+                        if(!isBrightnessValid(grayArray, targetBrightness, arrayOffsetY, right)) break; // 밝기 검사
+                        setBit(reachableBufferPtr, bufferOffsetY, right); // 다 통과했을 경우 칠
+                    }
+                    right--;
+
+                    // 윗줄 브랜치
+                    if((targetUpperY = targetY - 1) >= 0)
+                    {
+                        bufferOffsetUpperY = bufferOffsetY - bufferStride; // Y offset 계산
+                        arrayOffsetUpperY = arrayOffsetY - arrayStride;
+                        bool opened = false; // 처음은 닫힌 상태
+                        for(int curX = left; curX <= right; curX++)
+                        {
+                            bool isOpenedBit = !isBitSet(reachableBufferPtr, bufferOffsetUpperY, curX) // 픽셀 데이터 검사
+                                && isBrightnessValid(grayArray, targetBrightness, arrayOffsetUpperY, curX);
+                            if(opened) { if(!isOpenedBit) opened = false; } // 열려 있다가 닫힐 때
+                            else if(isOpenedBit)
+                            {
+                                setBit(reachableBufferPtr, bufferOffsetUpperY, curX);
+                                markTargetStack.Push((curX, targetUpperY));
+                                opened = true;
+                            }
+
+                        }
+                    }
+
+                    // 아랫줄 브랜치
+                    if((targetLowerY = targetY + 1) < imageHeight)
+                    {
+                        bufferOffsetLowerY = bufferOffsetY + bufferStride; // Y offset 계산
+                        arrayOffsetLowerY = arrayOffsetY + arrayStride;
+                        bool opened = false; // 처음은 닫힌 상태
+                        for(int curX = left; curX <= right; curX++)
+                        {
+                            bool isOpenedBit = !isBitSet(reachableBufferPtr, bufferOffsetLowerY, curX) // 픽셀 데이터 검사
+                                && isBrightnessValid(grayArray, targetBrightness, arrayOffsetLowerY, curX);
+                            if(opened) { if(!isOpenedBit) opened = false; } // 열려 있다가 닫힐 때
+                            else if(isOpenedBit)
+                            {
+                                setBit(reachableBufferPtr, bufferOffsetLowerY, curX);
+                                markTargetStack.Push((curX, targetLowerY));
+                                opened = true;
+                            }
+                        }
+                    }
+
+                    if(left < minX) minX = left;
+                    if(right > maxX) maxX = right;
+                    if(targetY < minY) minY = targetY;
+                    if(targetY > maxY) maxY = targetY;
                 }
             }
-            else
+            else // false (= 0) 로 칠할 때
             {
-                while(markTargetQueue.Count > 0)
+                while(markTargetStack.Count > 0)
                 {
-                    var (targetX, targetY) = markTargetQueue.Dequeue();             // 큐에서 대상을 하나 꺼내고
-                    if(targetX < 0 || targetX >= imageWidth || targetY < 0 || targetY >= imageHeight) continue;  // 픽셀 범위 검사
-                    if(!IsBitSet(reachableBufferPtr, bufferStride, targetX, targetY)) continue; // 픽셀 데이터 검사
-                    byte curBrightness = grayArray[targetY * imageWidth + targetX];
+                    var (targetX, targetY) = markTargetStack.Pop(); // 스택에서 대상을 하나 꺼내고
 
-                    if(curBrightness > BRTH_ABS && (Math.Abs(targetBrightness - curBrightness) < BRTH_REL))
+                    bufferOffsetY = targetY * bufferStride;
+                    arrayOffsetY = targetY * arrayStride;
+
+                    // 왼쪽으로 진행
+                    for(left = targetX - 1; left >= 0; left--)
                     {
-                        ClearBit(reachableBufferPtr, bufferStride, targetX, targetY); // 값 대입
-                        // 큐에 다음 대상 값 추가
-                        markTargetQueue.Enqueue((targetX - 1, targetY));
-                        markTargetQueue.Enqueue((targetX, targetY - 1));
-                        markTargetQueue.Enqueue((targetX + 1, targetY));
-                        markTargetQueue.Enqueue((targetX, targetY + 1));
+                        if(!isBitSet(reachableBufferPtr, bufferOffsetY, left)) break; // 픽셀 데이터 검사
+                        if(!isBrightnessValid(grayArray, targetBrightness, arrayOffsetY, left)) break; // 밝기 검사
+                        clearBit(reachableBufferPtr, bufferOffsetY, left); // 다 통과했을 경우 칠
                     }
+                    left++;
+
+                    // 오른쪽으로 진행
+                    for(right = targetX + 1; right < arrayStride; right++)
+                    {
+                        if(!isBitSet(reachableBufferPtr, bufferOffsetY, right)) break; // 픽셀 데이터 검사
+                        if(!isBrightnessValid(grayArray, targetBrightness, arrayOffsetY, right)) break; // 밝기 검사
+                        clearBit(reachableBufferPtr, bufferOffsetY, right); // 다 통과했을 경우 칠
+                    }
+                    right--;
+
+                    // 윗줄 브랜치
+                    if((targetUpperY = targetY - 1) >= 0)
+                    {
+                        bufferOffsetUpperY = bufferOffsetY - bufferStride; // Y offset 계산
+                        arrayOffsetUpperY = arrayOffsetY - arrayStride;
+                        bool opened = false; // 처음은 닫힌 상태
+                        for(int curX = left; curX <= right; curX++)
+                        {
+                            bool isOpenedBit = isBitSet(reachableBufferPtr, bufferOffsetUpperY, curX) // 픽셀 데이터 검사
+                                && isBrightnessValid(grayArray, targetBrightness, arrayOffsetUpperY, curX);
+                            if(opened) { if(!isOpenedBit) opened = false; } // 열려 있다가 닫힐 때
+                            else if(isOpenedBit)
+                            {
+                                clearBit(reachableBufferPtr, bufferOffsetUpperY, curX);
+                                markTargetStack.Push((curX, targetUpperY));
+                                opened = true;
+                            }
+
+                        }
+                    }
+
+                    // 아랫줄 브랜치
+                    if((targetLowerY = targetY + 1) < imageHeight)
+                    {
+                        bufferOffsetLowerY = bufferOffsetY + bufferStride; // Y offset 계산
+                        arrayOffsetLowerY = arrayOffsetY + arrayStride;
+                        bool opened = false; // 처음은 닫힌 상태
+                        for(int curX = left; curX <= right; curX++)
+                        {
+                            bool isOpenedBit = isBitSet(reachableBufferPtr, bufferOffsetLowerY, curX) // 픽셀 데이터 검사
+                                && isBrightnessValid(grayArray, targetBrightness, arrayOffsetLowerY, curX);
+                            if(opened) { if(!isOpenedBit) opened = false; } // 열려 있다가 닫힐 때
+                            else if(isOpenedBit)
+                            {
+                                clearBit(reachableBufferPtr, bufferOffsetLowerY, curX);
+                                markTargetStack.Push((curX, targetLowerY));
+                                opened = true;
+                            }
+                        }
+                    }
+
+                    if(left < minX) minX = left;
+                    if(right > maxX) maxX = right;
+                    if(targetY < minY) minY = targetY;
+                    if(targetY > maxY) maxY = targetY;
                 }
+            }
+
+            return new Int32Rect(minX, minY, maxX - minX, maxY - minY);
+
+
+            // Gray Array 룩업 로컬 함수 (대상 픽셀 밝기 검사)
+            static bool isBrightnessValid(byte[] lookupArray, byte stdBrightness, int offset, int i)
+            {
+                byte curBrightness = lookupArray[offset + i];
+                return (curBrightness > BRTH_ABS) && (Math.Abs(stdBrightness - curBrightness) < BRTH_REL);
             }
 
             // 비트연산을 위한 로컬 함수 정의
 
-            bool IsBitSet(byte* basePtr, int stride, int x, int y)
-                => (basePtr[(y * stride) + (x / 8)] & ((byte)(1 << (7 - x % 8)))) != 0;
+            static bool isBitSet(byte* basePtr, int offsetY, int x)
+                => (basePtr[offsetY + (x / 8)] & ((byte)(1 << (7 - x % 8)))) != 0;
 
-            void SetBit(byte* basePtr, int stride, int x, int y)
-                => basePtr[(y * stride) + (x / 8)] |= (byte)(1 << (7 - x % 8));
+            static void setBit(byte* basePtr, int offsetY, int x)
+                => basePtr[offsetY + (x / 8)] |= (byte)(1 << (7 - x % 8));
 
-            void ClearBit(byte* basePtr, int stride, int x, int y)
-                => basePtr[(y * stride) + (x / 8)] &= (byte)~(1 << (7 - x % 8));
+            static void clearBit(byte* basePtr, int offsetY, int x)
+                => basePtr[offsetY + (x / 8)] &= (byte)~(1 << (7 - x % 8));
         }
+
+        //private static unsafe void FloodFill(byte[] grayArray, byte* reachableBufferPtr,
+        //    int imageWidth, int imageHeight, int bufferStride, bool value, (int X, int Y) targetInImage)
+        //{
+        //    // 픽셀 범위 검사
+        //    if(targetInImage.X < 0 || targetInImage.X >= imageWidth ||
+        //        targetInImage.Y < 0 || targetInImage.Y >= imageHeight) return;
+
+        //    // 픽셀 데이터 검사
+        //    if(IsBitSet(reachableBufferPtr, bufferStride, targetInImage.X, targetInImage.Y) == value) return;
+
+        //    // 출발점 픽셀 밝기
+        //    byte targetBrightness = grayArray[targetInImage.Y * imageWidth + targetInImage.X];
+
+        //    // 큐에 해당 픽셀 넣으며 알고리즘 시작
+        //    var markTargetQueue = new Queue<(int, int)>(); // x, y
+        //    markTargetQueue.Enqueue(targetInImage);
+
+        //    // scanline floodfill
+        //    if(value)
+        //    {
+        //        while(markTargetQueue.Count > 0)
+        //        {
+        //            var (targetX, targetY) = markTargetQueue.Dequeue();             // 큐에서 대상을 하나 꺼내고
+        //            if(targetX < 0 || targetX >= imageWidth || targetY < 0 || targetY >= imageHeight) continue;  // 픽셀 범위 검사
+        //            if(IsBitSet(reachableBufferPtr, bufferStride, targetX, targetY)) continue; // 픽셀 데이터 검사
+        //            byte curBrightness = grayArray[targetY * imageWidth + targetX];
+        //            if(curBrightness > BRTH_ABS && (Math.Abs(targetBrightness - curBrightness) < BRTH_REL))
+        //            {
+        //                SetBit(reachableBufferPtr, bufferStride, targetX, targetY); // 값 대입
+        //                // 큐에 다음 대상 값 추가
+        //                markTargetQueue.Enqueue((targetX - 1, targetY));
+        //                markTargetQueue.Enqueue((targetX, targetY - 1));
+        //                markTargetQueue.Enqueue((targetX + 1, targetY));
+        //                markTargetQueue.Enqueue((targetX, targetY + 1));
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        while(markTargetQueue.Count > 0)
+        //        {
+        //            var (targetX, targetY) = markTargetQueue.Dequeue();             // 큐에서 대상을 하나 꺼내고
+        //            if(targetX < 0 || targetX >= imageWidth || targetY < 0 || targetY >= imageHeight) continue;  // 픽셀 범위 검사
+        //            if(!IsBitSet(reachableBufferPtr, bufferStride, targetX, targetY)) continue; // 픽셀 데이터 검사
+        //            byte curBrightness = grayArray[targetY * imageWidth + targetX];
+
+        //            if(curBrightness > BRTH_ABS && (Math.Abs(targetBrightness - curBrightness) < BRTH_REL))
+        //            {
+        //                ClearBit(reachableBufferPtr, bufferStride, targetX, targetY); // 값 대입
+        //                // 큐에 다음 대상 값 추가
+        //                markTargetQueue.Enqueue((targetX - 1, targetY));
+        //                markTargetQueue.Enqueue((targetX, targetY - 1));
+        //                markTargetQueue.Enqueue((targetX + 1, targetY));
+        //                markTargetQueue.Enqueue((targetX, targetY + 1));
+        //            }
+        //        }
+        //    }
+
+        //    // 비트연산을 위한 로컬 함수 정의
+
+        //    bool IsBitSet(byte* basePtr, int stride, int x, int y)
+        //        => (basePtr[(y * stride) + (x / 8)] & ((byte)(1 << (7 - x % 8)))) != 0;
+
+        //    void SetBit(byte* basePtr, int stride, int x, int y)
+        //        => basePtr[(y * stride) + (x / 8)] |= (byte)(1 << (7 - x % 8));
+
+        //    void ClearBit(byte* basePtr, int stride, int x, int y)
+        //        => basePtr[(y * stride) + (x / 8)] &= (byte)~(1 << (7 - x % 8));
+        //}
 
         /// <summary>
         /// 대상 Reachable 작업 영역 내의 정해진 영역에 주어진 값으로 마킹. 

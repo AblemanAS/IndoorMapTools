@@ -114,13 +114,14 @@ namespace IndoorMapTools
             services.AddSingleton<Services.Infrastructure.IMPJ.IMPJImportService>();
             services.AddSingleton<Services.Infrastructure.IMPJ.IMPJExportService>();
             services.AddSingleton<Services.Presentation.BackgroundService>();
+            services.AddSingleton<ViewModel.AnalysisFormVM>();
             services.AddSingleton<ViewModel.ExportProjectVM>();
+            services.AddSingleton<ViewModel.FloorListItemVM>();
             services.AddSingleton<ViewModel.GlobalMapVM>();
             services.AddSingleton<ViewModel.IndoorMapVM>();
+            services.AddSingleton<ViewModel.LandmarkTreeItemVM>();
             services.AddSingleton<ViewModel.MainWindowVM>();
             services.AddSingleton<ViewModel.MapImageEditVM>();
-            services.AddSingleton<ViewModel.FloorListItemVM>();
-            services.AddSingleton<ViewModel.LandmarkTreeItemVM>();
             services.AddSingleton<View.MainWindow>();
 
             var provider = services.BuildServiceProvider();

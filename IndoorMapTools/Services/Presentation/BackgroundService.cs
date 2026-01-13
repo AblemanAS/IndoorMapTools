@@ -64,7 +64,7 @@ namespace IndoorMapTools.Services.Presentation
         /// 주 작업을 백그라운드에서 실행하고 완료 시 추가 작업을 실행합니다.
         /// </summary>
         /// <param name="execute">실행할 작업</param>
-        /// <param name="executeOnCompleted">작업 완료 시 실행할 후속 작업</param>
+        /// <param name="executeOnCompleted">작업 완료 시 실행할 후속 작업 (UI 쓰레드에서 실행)</param>
         /// <param name="taskName">태스크 이름</param>
         public void Run(Action execute, Action executeOnCompleted, string taskName = "")
         {
