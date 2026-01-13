@@ -1,0 +1,96 @@
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using IndoorMapTools.Helper;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Media.Imaging;
+
+namespace IndoorMapTools.Model
+{
+    public partial class Building : ObservableObject
+    {
+        public Project ParentProject { get; }
+
+        [ObservableProperty] private string name = "Enter building name";
+        [ObservableProperty] private string address = "Enter address";
+        [ObservableProperty] private float defaultFloorHeight = 4.0f;
+        [ObservableProperty] private Point[] outline = new Point[] {};
+        public ObservableCollection<Floor> Floors { get; } = new();
+        public ObservableCollection<LandmarkGroup> LandmarkGroups { get; } = new();
+
+        public Building(Project parentProject) => ParentProject = parentProject;
+
+        public Floor CreateFloor(BitmapImage mapImage, Point lonlat)
+        {
+            var floor = new Floor(this, mapImage, lonlat.X, lonlat.Y);
+            Floors.Add(floor);
+            return floor;
+        }
+
+        public void AddFloor(Floor child) => Floors.Add(child);
+        public void SortFloors(Func<Floor, int> keySelector) => Floors.Sort(keySelector);
+        public void MoveFloor(Floor floor, int destIndex) => Floors.Move(Floors.IndexOf(floor), destIndex);
+        public void RemoveFloor(Floor child) => Floors.Remove(child);
+
+        public LandmarkGroup CreateLandmarkGroup(LandmarkType type)
+        {
+            var group = new LandmarkGroup(this, type);
+            LandmarkGroups.Add(group);
+            return group;
+        }
+
+        public Landmark CreateLandmark(LandmarkGroup group, Floor floor, Point position)
+        {
+            var newLandmark = new Landmark(group, floor, position);
+            group.AddLandmark(newLandmark);
+            floor.AddLandmark(newLandmark);
+            return newLandmark;
+        }
+
+        public void AddLandmarkGroup(LandmarkGroup child) => LandmarkGroups.Add(child);
+
+        public void SortLandmarks()
+        {
+            LandmarkGroups.Sort(gr => gr.Type);
+            foreach(var group in LandmarkGroups) group.SortLandmarks();
+        }
+
+        public void MoveLandmarkToGroup(Landmark target, LandmarkGroup newGroup)
+        {
+            if(newGroup == target.ParentGroup) return;
+            if(target.ParentGroup.Type != newGroup.Type) return;
+            target.ParentGroup.RemoveLandmark(target);
+            newGroup.AddLandmark(target);
+            target.ParentGroup = newGroup;
+        }
+
+        public void RemoveLandmarkGroup(LandmarkGroup child) => LandmarkGroups.Remove(child);
+
+        public void BatchLandmarkName()
+        {
+            // 임시 이름 할당
+            string tempPrefix = System.Guid.NewGuid().ToString();
+            int tempPostfix = 0;
+            foreach(var group in LandmarkGroups)
+                foreach(var lm in group.Landmarks)
+                    lm.Name = tempPrefix + tempPostfix++;
+
+            var nameDict = new Dictionary<string, int>();
+            foreach(var group in LandmarkGroups)
+                foreach(var lm in group.Landmarks)
+                {
+                    string curName = group.Name + "-" + lm.ParentFloor.Name;
+                    if(!nameDict.ContainsKey(curName))
+                    {
+                        nameDict[curName] = 0;
+                        lm.Name = curName;
+                    }
+                    else lm.Name = curName + ++nameDict[curName];
+                }
+        }
+
+        public override string ToString() => Name;
+        private Building() {}
+    }
+}

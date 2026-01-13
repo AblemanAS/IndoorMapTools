@@ -1,0 +1,78 @@
+﻿<Grid x:Class="IndoorMapTools.View.ExportProjectForm"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:IndoorMapTools.View"
+      xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls" 
+      xmlns:dc="clr-namespace:EnhancedCommands.System.Windows.Input.DialogCommands;assembly=EnhancedCommands"
+      xmlns:viewModel="clr-namespace:IndoorMapTools.ViewModel"
+      xmlns:model="clr-namespace:IndoorMapTools.Model"
+      xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
+      mc:Ignorable="d"
+      d:Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}"
+      d:DataContext="{d:DesignInstance Type=viewModel:ExportProjectVM}">
+    
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    
+    <GroupBox Header="{DynamicResource strings.CRS}" Grid.Row="0" Margin="5">
+        <StackPanel Orientation="Vertical" Margin="10,10,10,0">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="EPSG : "/>
+                <uc:EditableText Validator="Natural" Value="{Binding Model.CRS}"/>
+            </StackPanel>
+            <TextBlock ToolTip="{Binding CRSWKT}" HorizontalAlignment="Right" FontWeight="Bold"
+                       ToolTipService.InitialShowDelay="0" Margin="0,5,0,5">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Text" Value="{Binding CRSName}"/>
+                        <Setter Property="Foreground" Value="Blue"/>
+                        <Setter Property="ToolTipService.IsEnabled" Value="True"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CRSValid}" Value="False">
+                                <Setter Property="Text" Value="{DynamicResource strings.CRSNotFound}"/>
+                                <Setter Property="Foreground" Value="Red"/>
+                                <Setter Property="ToolTipService.IsEnabled" Value="False"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </StackPanel>
+    </GroupBox>
+    
+    <GroupBox Header="{DynamicResource strings.OGMRenderParameters}" Grid.Row="1" Margin="5">
+        <StackPanel Orientation="Vertical" Margin="5">
+            <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                <TextBlock Text="{DynamicResource strings.OGMCellSize}"/>
+                <TextBlock Text=" : "/>
+                <uc:EditableText Value="{Binding Model.ReachableResolution}"
+                                 Postfix=" m²" Validator="PositiveDouble"/>
+            </StackPanel>
+            <CheckBox Margin="0,5,0,5" VerticalAlignment="Center" 
+                      Content="{DynamicResource strings.ConservativeOGMCellCheck}"
+                      IsChecked="{Binding Model.ConservativeCellValidation}"
+                      ToolTip="{DynamicResource strings.ConservativeOGMCellCheckToolTipText}"
+                      ToolTipService.InitialShowDelay="0"/>
+        </StackPanel>
+    </GroupBox>
+
+    <TextBlock Grid.Row="2" HorizontalAlignment="Left" VerticalAlignment="Center" 
+               Margin="8,2,2,2" Foreground="Red" FontWeight="DemiBold"
+               Text="{StaticResource strings.LandmarkOutlineIncompleteErrorText}">
+        <TextBlock.Style>
+            <Style TargetType="TextBlock">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding AreLandmarkOutlinesComplete}" Value="True">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </TextBlock.Style>
+    </TextBlock>
+</Grid>

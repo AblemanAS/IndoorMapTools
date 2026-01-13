@@ -1,0 +1,25 @@
+NOTICE
+
+This product includes software developed by:
+
+  IndoorMapTools
+  Copyright (c) 2026–present Kyuho Son
+
+Official repository:
+  https://github.com/AblemanAS/IndoorMapTools
+
+---
+
+This project is licensed under the Apache License, Version 2.0.
+
+If you use, modify, or redistribute this software (or substantial portions of it),
+you must retain this NOTICE file and clearly indicate which parts of the software
+originate from the original project and which parts have been modified or added.
+
+---
+
+Original authorship and primary development:
+  Kyuho Son
+
+Contributions from third parties are listed in the repository history and
+are licensed under the same Apache License, Version 2.0, unless otherwise noted.

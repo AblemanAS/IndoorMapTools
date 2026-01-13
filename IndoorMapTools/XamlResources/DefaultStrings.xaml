@@ -1,0 +1,119 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <sys:String x:Key="strings.DEFAULT_LONGITUDE">127.36554</sys:String>
+    <sys:String x:Key="strings.DEFAULT_LATITUDE">36.37417</sys:String>
+
+    <sys:String x:Key="strings.AppName">실내지도 도구모음</sys:String>
+    <sys:String x:Key="strings.Name">이름</sys:String>
+    <sys:String x:Key="strings.OK">확인</sys:String>
+    <sys:String x:Key="strings.Cancel">취소</sys:String>
+
+    <sys:String x:Key="strings.GlobalMapInfo">전역 지도 정보</sys:String>
+    <sys:String x:Key="strings.IndoorMapInfo">실내 지도 정보</sys:String>
+    <sys:String x:Key="strings.ReachableAreaCluster">층별 접근 가능 영역 클러스터</sys:String>
+
+    <sys:String x:Key="strings.NewProject">새 실내지도 작업</sys:String>
+    <sys:String x:Key="strings.LoadProject">작업 불러오기</sys:String>
+    <sys:String x:Key="strings.LoadProjectFilter">Indoor Map Tools 프로젝트 파일 (*.imtproj)|*.imtproj|KAILOS Map Tools 프로젝트 파일 (레거시) (*.kmtproj)|*.kmtproj|실내지도 JSON 파일 (*.impj)|*.impj|모든 파일 (*.*)|*.*</sys:String>
+    <sys:String x:Key="strings.LoadProjectStatusDesc">작업 파일 불러오는 중</sys:String>
+    <sys:String x:Key="strings.ImportProjectStatusDesc">실내지도 JSON 파일 불러오는 중</sys:String>
+    <sys:String x:Key="strings.SaveProject">작업 저장하기</sys:String>
+    <sys:String x:Key="strings.SaveProjectFilter">Indoor Map Tools 프로젝트 파일 (*.imtproj)|*.imtproj</sys:String>
+    <sys:String x:Key="strings.SaveAndNewProjectWarningMessage">작업 중인 데이터가 있습니다. 
+        새 데이터를 생성하기 전, 먼저 작업을 저장하시겠습니까?</sys:String>
+    <sys:String x:Key="strings.SaveProjectStatusDesc">작업 파일 저장하는 중</sys:String>
+    <sys:String x:Key="strings.AnalyzeReachability">실내공간 접근성 분석</sys:String>
+    <sys:String x:Key="strings.ExportProject">DB 업로드용 파일 내보내기</sys:String>
+    <sys:String x:Key="strings.ExportProjectFilter">실내지도 JSON 파일 (*.impj)|*.impj</sys:String>
+    <sys:String x:Key="strings.ExportProjectStatusDesc">실내지도 JSON 파일 내보내는 중</sys:String>
+
+    <sys:String x:Key="strings.FloorsList">층 목록</sys:String>
+    <sys:String x:Key="strings.ReplicateFloor">층 복제</sys:String>
+    <sys:String x:Key="strings.ReplicateFloorMessagePrefix">이 층을 동일한 레이아웃으로</sys:String>
+    <sys:String x:Key="strings.ReplicateFloorMessagePostfix">개 복제합니다</sys:String>
+    <sys:String x:Key="strings.PadCropMapImage">맵 이미지 패딩/크롭</sys:String>
+    <sys:String x:Key="strings.ReplaceMapImage">맵 이미지 교체</sys:String>
+    <sys:String x:Key="strings.ReplaceMapImageSizeUnmatchErrorMessage">기존 이미지와 신규 이미지의 크기가 일치하지 않아 작업을 진행할 수 없습니다.
+        [맵 이미지 패딩/크롭] 도구를 사용하여 이미지 크기를 일치시킨 후 다시 시도해 주십시오.</sys:String>
+    <sys:String x:Key="strings.BatchRenameFloors">층 이름 일괄 재설정</sys:String>
+
+    <sys:String x:Key="strings.BuildingInfo">건물 정보</sys:String>
+    <sys:String x:Key="strings.BuildingAddress">주소</sys:String>
+    <sys:String x:Key="strings.DefaultFloorHeight">층고 기본값</sys:String>
+    <sys:String x:Key="strings.ReferenceCoordinates">기준 위경도</sys:String>
+    <sys:String x:Key="strings.ReferenceCoordinatesToolTipText">외곽선에 의해 자동으로 계산됨</sys:String>
+    <sys:String x:Key="strings.Longitude">경도</sys:String>
+    <sys:String x:Key="strings.Latitude">위도</sys:String>
+    <sys:String x:Key="strings.NumberOfLandmarksByCategory">랜드마크 종류별 개수</sys:String>
+    <sys:String x:Key="strings.DrawBuildingOutline">건물 외곽선 그리기</sys:String>
+    <sys:String x:Key="strings.EditBuildingOutline">건물 외곽선 수정</sys:String>
+    <sys:String x:Key="strings.CurrentFloorInfo">현재 층 정보</sys:String>
+    <sys:String x:Key="strings.FloorName">층 이름</sys:String>
+    <sys:String x:Key="strings.TotalLandmarks">총 랜드마크 수</sys:String>
+    <sys:String x:Key="strings.TotalGeofences">총 접근금지구역 수</sys:String>
+    <sys:String x:Key="strings.FloorHeight">층고</sys:String>
+    <sys:String x:Key="strings.RemoveFloorHeightOverrideToolTipText">입력된 층고 삭제하고 기본값으로 되돌리기</sys:String>
+    <sys:String x:Key="strings.MapScale">축척</sys:String>
+    <sys:String x:Key="strings.MapRotation">회전</sys:String>
+    <sys:String x:Key="strings.PlacementAvailableThroughMapViewToolTipText">지도 뷰를 통해서도 배치 가능</sys:String>
+    <sys:String x:Key="strings.PlaceMapAtCurrentFocus">현재 포커스에 맵 놓기</sys:String>
+    <sys:String x:Key="strings.FloorMapImageOpacity">층 이미지 투명도</sys:String>
+
+    <sys:String x:Key="strings.LocateLandmark">랜드마크 배치</sys:String>
+    <sys:String x:Key="strings.LocateStairToolTipText">랜드마크-계단 배치</sys:String>
+    <sys:String x:Key="strings.LocateElevatorToolTipText">랜드마크-엘리베이터 배치</sys:String>
+    <sys:String x:Key="strings.LocateEscalatorToolTipText">랜드마크-에스컬레이터 배치</sys:String>
+    <sys:String x:Key="strings.LocateEntranceToolTipText">랜드마크-건물출입구 배치</sys:String>
+    <sys:String x:Key="strings.LocateStationToolTipText">랜드마크-스테이션 배치</sys:String>
+    <sys:String x:Key="strings.LandmarkInfo">랜드마크 정보</sys:String>
+    <sys:String x:Key="strings.LandmarkName">이름</sys:String>
+    <sys:String x:Key="strings.AccessType">접근 유형</sys:String>
+    <sys:String x:Key="strings.EntryOnly">진입만 허용</sys:String>
+    <sys:String x:Key="strings.ExitOnly">이탈만 허용</sys:String>
+    <sys:String x:Key="strings.Entry/Exit">진입/이탈</sys:String>
+    <sys:String x:Key="strings.CenterLocation">중심점 좌표</sys:String>
+    <sys:String x:Key="strings.Entry/ExitDirection">출입 각도</sys:String>
+    <sys:String x:Key="strings.DrawLandmarkOutline">랜드마크 외곽선 그리기</sys:String>
+    <sys:String x:Key="strings.EditLandmarkOutline">랜드마크 외곽선 수정</sys:String>
+    <sys:String x:Key="strings.ReplicateLandmark">랜드마크 복제</sys:String>
+    <sys:String x:Key="strings.LeaveLandmarkGroup">현재 그룹에서 분리</sys:String>
+    <sys:String x:Key="strings.OverrideExistingLandmarks">기존 랜드마크 덮어쓰기</sys:String>
+    <sys:String x:Key="strings.OverrideExistingLandmarksToolTipText">원본을 제외한 그룹 내의 모든 기존 랜드마크를 삭제한 뒤 복제를 수행합니다</sys:String>
+    <sys:String x:Key="strings.SortLandmarks">랜드마크 정렬</sys:String>
+    <sys:String x:Key="strings.BatchRenameLandmarks">랜드마크 이름 일괄 재설정</sys:String>
+    <sys:String x:Key="strings.Reachable">접근 가능 영역</sys:String>
+    <sys:String x:Key="strings.Landmark">랜드마크</sys:String>
+    <sys:String x:Key="strings.Icon">아이콘</sys:String>
+    <sys:String x:Key="strings.Outline">외곽선</sys:String>
+
+    <sys:String x:Key="strings.ReachableClusterAnalysisParameter">접근 가능 영역 분석 파라미터</sys:String>
+    <sys:String x:Key="strings.Analyze">분석</sys:String>
+    <sys:String x:Key="strings.Cluster">클러스터</sys:String>
+    <sys:String x:Key="strings.IsolatedArea">고립영역</sys:String>
+    <sys:String x:Key="strings.ReachableClusterAnalysisStatusDesc">접근 가능 영역 분석 중</sys:String>
+    <sys:String x:Key="strings.DirectedReachableCluster">도달성 분석에 랜드마크 접근방향 반영</sys:String>
+    <sys:String x:Key="strings.DirectedReachableClusterToolTipText">도달성 분석 시 각 랜드마크의 접근방향을 반영하여, 방향성 그래프로 생성합니다</sys:String>
+
+    <sys:String x:Key="strings.CRS">기준 좌표계</sys:String>
+    <sys:String x:Key="strings.EPSGCode">EPSG 부호</sys:String>
+    <sys:String x:Key="strings.PROJ4String">PROJ4 문자열</sys:String>
+    <sys:String x:Key="strings.CRSNotFound">CRS를 찾을 수 없습니다</sys:String>
+    <sys:String x:Key="strings.ValidPROJ4String">유효한 PROJ4 문자열</sys:String>
+    <sys:String x:Key="strings.InvalidPROJ4String">유효하지 않은 문자열</sys:String>
+    <sys:String x:Key="strings.OGMRenderParameters">OGM 렌더링 매개변수</sys:String>
+    <sys:String x:Key="strings.OGMCellSize">OGM 셀 크기</sys:String>
+    <sys:String x:Key="strings.ConservativeOGMCellCheck">보수적인 OGM Cell 검정</sys:String>
+    <sys:String x:Key="strings.ConservativeOGMCellCheckToolTipText">출력 OGM의 각 Cell 내, 원본 접근 가능 영역 이미지 상 빈 픽셀이 있을 경우 해당 Cell은 접근 불가능한 것으로 판단합니다</sys:String>
+    <sys:String x:Key="strings.LandmarkOutlineIncompleteErrorText">외곽선이 입력되지 않은 랜드마크가 있습니다</sys:String>
+
+    <sys:String x:Key="strings.AlternateImageDescLine1">이미지 파일 (.png) 을 드래그 앤 드롭하여</sys:String>
+    <sys:String x:Key="strings.AlternateImageDescLine2">다른 이미지로 교체할 수 있습니다</sys:String>
+    <sys:String x:Key="strings.RemoveAlternativeImage">교체 이미지 제거</sys:String>
+    <sys:String x:Key="strings.TopPad">상측 패딩</sys:String>
+    <sys:String x:Key="strings.BottomPad">하측 패딩</sys:String>
+    <sys:String x:Key="strings.LeftPad">좌측 패딩</sys:String>
+    <sys:String x:Key="strings.RightPad">우측 패딩</sys:String>
+    <sys:String x:Key="strings.ImageDimension">이미지 규격</sys:String>
+</ResourceDictionary>

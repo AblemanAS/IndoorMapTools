@@ -1,0 +1,19 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <BitmapImage x:Key="BuildingImage" UriSource="pack://application:,,,/Resources/building.png"/>
+    <BitmapImage x:Key="CheckedImage" UriSource="pack://application:,,,/Resources/checked.png"/>
+    <BitmapImage x:Key="UncheckedImage" UriSource="pack://application:,,,/Resources/unchecked.png"/>
+    <BitmapImage x:Key="StairImage" UriSource="pack://application:,,,/Resources/stair.png"/>
+    <BitmapImage x:Key="ElevatorImage" UriSource="pack://application:,,,/Resources/elevator.png"/>
+    <BitmapImage x:Key="EscalatorImage" UriSource="pack://application:,,,/Resources/escalator.png"/>
+    <BitmapImage x:Key="EntranceImage" UriSource="pack://application:,,,/Resources/entrance.png"/>
+    <BitmapImage x:Key="StationImage" UriSource="pack://application:,,,/Resources/station.png"/>
+    <BitmapImage x:Key="StairSpriteSource" UriSource="pack://application:,,,/Resources/stair_sprite.png"/>
+    <BitmapImage x:Key="ElevatorSpriteSource" UriSource="pack://application:,,,/Resources/elevator_sprite.png"/>
+    <BitmapImage x:Key="EscalatorSpriteSource" UriSource="pack://application:,,,/Resources/escalator_sprite.png"/>
+    <BitmapImage x:Key="EntranceSpriteSource" UriSource="pack://application:,,,/Resources/entrance_sprite.png"/>
+    <BitmapImage x:Key="StationSpriteSource" UriSource="pack://application:,,,/Resources/station_sprite.png"/>
+    <BitmapImage x:Key="ShapeModImage" UriSource="pack://application:,,,/Resources/shape_mod.png"/>
+    <BitmapImage x:Key="EyeImage" UriSource="pack://application:,,,/Resources/eye.png"/>
+    <BitmapImage x:Key="FailedTile" UriSource="pack://application:,,,/Resources/failed_tile.png"/>
+</ResourceDictionary>

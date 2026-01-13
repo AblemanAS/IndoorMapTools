@@ -1,0 +1,597 @@
+﻿<Grid x:Class="IndoorMapTools.View.AnalysisForm"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
+      xmlns:model="clr-namespace:IndoorMapTools.Model"
+      xmlns:fga="clr-namespace:IndoorMapTools.View.FGAView"
+      xmlns:fvs="clr-namespace:IndoorMapTools.View.FGAView.FGAVisuals"
+      xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls"
+      xmlns:viewModel="clr-namespace:IndoorMapTools.ViewModel"
+      xmlns:mv="clr-namespace:MapView.System.Windows.Controls;assembly=MapView"
+      Width="1280" Height="640" Margin="5"
+      mc:Ignorable="d" d:DesignHeight="640" d:DesignWidth="1024"
+      Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}"
+      d:DataContext="{d:DesignInstance Type={x:Type viewModel:MainWindowVM}}">
+
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition/>
+        <ColumnDefinition Width="10"/>
+        <ColumnDefinition/>
+    </Grid.ColumnDefinitions>
+
+    <Grid Grid.Column="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <Border x:Name="fgaBlock" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,5"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                BorderThickness="1" Background="White">
+            <uc:PanZoomViewer VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                <fga:FGAMatrix x:Name="fgaMatrix" DataContext="{Binding Avm}">
+
+                    <fga:FGAItemsControl x:Name="fgaAreaSelctor" ItemsSource="{Binding Result.Areas}"
+                                         SelectedItem="{Binding SelectedFGAViewAreaItem}">
+                        <fga:FGAItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type model:Area}">
+                                <fvs:FGAArea GroupIds="{Binding Landmarks, Converter={cvt:GetGroupIds}}"
+                                             FloorId="{Binding FloorId}" AreaId="{Binding AreaId}"
+                                             Foreground="Lavender" Opacity="0.5" Cursor="Hand">
+                                    <fvs:FGAArea.Style>
+                                        <Style TargetType="fvs:FGAArea">
+                                            <Setter Property="Effect" Value="{x:Null}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{cvt:ObjectEqualsMulti}" Mode="OneWay">
+                                                            <Binding />
+                                                            <Binding Path="SelectedItem" ElementName="fgaAreaSelctor"/>
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="Effect" Value="{StaticResource TransparentBlueEffect}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </fvs:FGAArea.Style>
+                                </fvs:FGAArea>
+                            </DataTemplate>
+                        </fga:FGAItemsControl.ItemTemplate>
+                    </fga:FGAItemsControl>
+
+                    <fga:FGAItemsControl x:Name="fgaLandmarkSelector" ItemsSource="{Binding Result.Landmarks}"
+                                         SelectedItem="{Binding SelectedFGAViewLandmarkItem}">
+                        <fga:FGAItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type model:Landmark}">
+                                <Image Height="48" Width="48" Source="{Binding ParentGroup.Type, 
+                                    ConverterParameter=SpriteSource, Converter={cvt:GetAppResource}}">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Effect" Value="{x:Null}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{cvt:ObjectEqualsMulti}" Mode="OneWay">
+                                                            <Binding />
+                                                            <Binding Path="SelectedItem" ElementName="fgaLandmarkSelector"/>
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="Effect" Value="{StaticResource TransparentBlueEffect}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                            </DataTemplate>
+                        </fga:FGAItemsControl.ItemTemplate>
+                        <fga:FGAItemsControl.ItemContainerStyle>
+                            <Style TargetType="{x:Type fga:FGAItem}">
+                                <Setter Property="Tag">
+                                    <Setter.Value>
+                                        <MultiBinding Converter="{cvt:DictKeytoValue}">
+                                            <Binding Path="DataContext.Result.LandmarkToNode" ElementName="fgaLandmarkSelector"/>
+                                            <Binding/>
+                                        </MultiBinding>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="fga:FGAPanel.Floor" Value="{Binding Tag.Floor, RelativeSource={RelativeSource self}}" />
+                                <Setter Property="fga:FGAPanel.Group" Value="{Binding Tag.Group, RelativeSource={RelativeSource self}}"/>
+                                <Setter Property="fga:FGAPanel.Area" Value="{Binding Tag.Area, RelativeSource={RelativeSource self}}"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                            </Style>
+                        </fga:FGAItemsControl.ItemContainerStyle>
+                    </fga:FGAItemsControl>
+
+                    <ItemsControl x:Name="fgaEdgeControl" ItemsSource="{Binding IntraGroupEdges}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type viewModel:FGAEdgeData}">
+                                <fvs:FGAEdge Floor1="{Binding From.F}" Group1="{Binding From.G}" Area1="{Binding From.A}"
+                                             Floor2="{Binding To.F}" Group2="{Binding To.G}" Area2="{Binding To.A}"
+                                             Deduct1="24" Deduct2="24"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <ItemsControl x:Name="fgaGraphControl" Opacity="0.5"
+                                  ItemsSource="{Binding GraphEdges}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ItemsControl x:Name="fgaClusterControl" ItemsSource="{Binding Value}">
+                                    <ItemsControl.Style>
+                                        <Style TargetType="{x:Type ItemsControl}">
+                                            <Setter Property="Visibility" Value="Hidden"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{cvt:ObjectEqualsMulti}">
+                                                            <Binding Path="DataContext.Key" ElementName="fgaClusterControl"/>
+                                                            <Binding Path="DataContext.SelectedCluster" ElementName="fgaGraphControl"/>
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ItemsControl.Style>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type viewModel:FGAEdgeData}">
+                                            <fvs:FGAEdge StrokeThickness="4" HeadSize="8" Stroke="Red" TailType="Circle"
+                                                         Floor1="{Binding From.F}" Group1="{Binding From.G}" Area1="{Binding From.A}"
+                                                         Floor2="{Binding To.F}" Group2="{Binding To.G}" Area2="{Binding To.A}">
+                                                <fvs:FGAEdge.Style>
+                                                    <Style TargetType="fvs:FGAEdge">
+                                                        <Setter Property="Deduct2" Value="0"/>
+                                                        <Setter Property="HeadType" Value="Circle"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsDirected}" Value="true">
+                                                                <Setter Property="HeadType" Value="Arrow"/>
+                                                                <Setter Property="Deduct2" Value="12"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </fvs:FGAEdge.Style>
+                                            </fvs:FGAEdge>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                </fga:FGAMatrix>
+            </uc:PanZoomViewer>
+        </Border>
+
+        <ListView x:Name="clusterView" Grid.Row="1" Grid.Column="0"
+                  ItemsSource="{Binding Avm.Result.ReachableClusters}"
+                  SelectedItem="{Binding Avm.SelectedCluster}"
+                  Height="{Binding DesiredSize.Height, ElementName=paramInfo}"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListView.ItemTemplate>
+                <DataTemplate DataType="{x:Type model:GraphNode}">
+                    <ContentControl x:Name="labelControl" Content="{Binding Data}">
+                        <ContentControl.Resources>
+                            <DataTemplate DataType="{x:Type model:Landmark}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{DynamicResource strings.Cluster}"/>
+                                    <TextBlock Text=" "/>
+                                    <TextBlock Text="{Binding}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                            <DataTemplate DataType="{x:Type model:Area}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{DynamicResource strings.IsolatedArea}"/>
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat=" {0}-{1}">
+                                                <Binding Path="FloorId"/>
+                                                <Binding Path="AreaId"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ContentControl.Resources>
+                    </ContentControl>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <GroupBox x:Name="paramInfo" Header="{DynamicResource strings.ReachableClusterAnalysisParameter}" 
+                  Grid.Row="1" Grid.Column="1" Margin="5,0,-1,-1">
+            <StackPanel Orientation="Vertical" Margin="5">
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                    <TextBlock Text="{DynamicResource strings.OGMCellSize}"/>
+                    <TextBlock Text=" : "/>
+                    <uc:EditableText Value="{Binding Model.ReachableResolution}" 
+                                     Postfix=" m²" Validator="PositiveDouble"/>
+                </StackPanel>
+                <CheckBox Margin="0,5,0,5" VerticalAlignment="Center"
+                          Content="{DynamicResource strings.ConservativeOGMCellCheck}"
+                          IsChecked="{Binding Model.ConservativeCellValidation}"
+                          ToolTip="{DynamicResource strings.ConservativeOGMCellCheckToolTipText}"
+                          ToolTipService.InitialShowDelay="0"/>
+                <CheckBox Margin="0,5,0,5" VerticalAlignment="Center"
+                          Content="{DynamicResource strings.DirectedReachableCluster}"
+                          IsChecked="{Binding Model.DirectedReachableCluster}"
+                          ToolTip="{DynamicResource strings.DirectedReachableClusterToolTipText}"
+                          ToolTipService.InitialShowDelay="0"/>
+                <Button Content="{DynamicResource strings.Analyze}" MinHeight="30" Margin="2, 5, 2, 2"
+                        Command="{Binding Avm.AnalyzeReachabilityCommand}"/>
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+
+    <GridSplitter Grid.Column="1" Width="10" Style="{StaticResource ColumnSplitter}" />
+
+    <Border Grid.Column="2" BorderThickness="1" DataContext="{Binding Avm}"
+            BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <mv:Map x:Name="mapView" Center="{Binding MapViewFocus}"
+                    MapImageSource="{Binding SelectedFloor.MapImage}">
+                <mv:Map.MapOverlays>
+                    <uc:SelectorControl x:Name="mapViewAreaSelector" SelectedItem="{Binding SelectedMapViewAreaItem}">
+                        <uc:SelectorControl.ItemsSource>
+                            <MultiBinding Converter="{cvt:DictKeytoValue}">
+                                <Binding Path="Result.FloorToAreas"/>
+                                <Binding Path="SelectedFloor"/>
+                            </MultiBinding>
+                        </uc:SelectorControl.ItemsSource>
+                        <uc:SelectorControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type model:Area}">
+                                <uc:Indexed1HitTestImage Source="{Binding Reachable}">
+                                    <uc:Indexed1HitTestImage.Style>
+                                        <Style TargetType="uc:Indexed1HitTestImage">
+                                            <Setter Property="Effect" Value="{x:Null}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{cvt:ObjectEqualsMulti}" Mode="OneWay">
+                                                            <Binding />
+                                                            <Binding Path="SelectedItem" ElementName="mapViewAreaSelector"/>
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="Effect" Value="{StaticResource TransparentBlueEffect}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </uc:Indexed1HitTestImage.Style>
+                                </uc:Indexed1HitTestImage>
+                            </DataTemplate>
+                        </uc:SelectorControl.ItemTemplate>
+                    </uc:SelectorControl>
+                </mv:Map.MapOverlays>
+
+                <uc:SelectorControl x:Name="mapViewLandmarkSelector"
+                                    ItemsSource="{Binding SelectedFloor.Landmarks}"
+                                    SelectedItem="{Binding SelectedMapViewLandmarkItem}">
+                    <uc:SelectorControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type model:Landmark}">
+                            <uc:LandmarkElement IconImageSource="{Binding ParentGroup.Type, ConverterParameter=SpriteSource,
+                                                Converter={cvt:GetAppResource}}" ArrowDirection="{Binding Direction}" 
+                                                Location="{Binding Outline, Converter={cvt:PolygonCenter}}"
+                                                CoordinateScale="{Binding ImageScaleFactor, ElementName=mapView}"
+                                                IsPolygonVisible="False">
+                                <uc:LandmarkElement.Style>
+                                    <Style TargetType="uc:LandmarkElement">
+                                        <Setter Property="IsHighlighted" Value="False"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Value="True">
+                                                <DataTrigger.Binding>
+                                                    <MultiBinding Converter="{cvt:ObjectEqualsMulti}" Mode="OneWay">
+                                                        <Binding />
+                                                        <Binding Path="SelectedItem" ElementName="mapViewLandmarkSelector"/>
+                                                    </MultiBinding>
+                                                </DataTrigger.Binding>
+                                                <Setter Property="IsHighlighted" Value="True"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </uc:LandmarkElement.Style>
+                            </uc:LandmarkElement>
+                        </DataTemplate>
+                    </uc:SelectorControl.ItemTemplate>
+                </uc:SelectorControl>
+            </mv:Map>
+
+            <StatusBar Grid.Row="1">
+                <StatusBarItem Margin="5,0,5,0" Content="{Binding SelectedItemSummary}"/>
+            </StatusBar>
+        </Grid>
+    </Border>
+
+    <Border Grid.ColumnSpan="3" Margin="0,0,0,2" Background="White" Opacity="0.5" Cursor="Wait"
+            IsHitTestVisible="{Binding IsBusy}" d:Visibility="Hidden" 
+            Visibility="{Binding IsBusy, Converter={cvt:BoolToVisibility}}"/>
+</Grid>
+
+
+<!--
+<Grid x:Class="IndoorMapTools.View.AnalysisForm"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:view="clr-namespace:IndoorMapTools.View"
+      xmlns:model="clr-namespace:IndoorMapTools.Model"
+      xmlns:scpr="clr-namespace:IndoorMapTools.Services.Presentation"
+      xmlns:mv="clr-namespace:MapView.System.Windows.Controls;assembly=MapView"
+      xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
+      xmlns:fga="clr-namespace:IndoorMapTools.View.FGAView"
+      xmlns:fvs="clr-namespace:IndoorMapTools.View.FGAView.FGAVisuals"
+      xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls" 
+      xmlns:collections="clr-namespace:System.Collections;assembly=mscorlib"
+      Width="1280" Height="640" Margin="5"
+      mc:Ignorable="d" d:DesignHeight="640" d:DesignWidth="1024"
+      Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}"
+      d:DataContext="{d:DesignInstance Type={x:Type model:Project}}">
+
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition/>
+        <ColumnDefinition Width="10"/>
+        <ColumnDefinition/>
+    </Grid.ColumnDefinitions>
+
+    <Grid Grid.Column="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <Border x:Name="fgaBlock" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,5"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                BorderThickness="1" Background="White">
+            <uc:PanZoomViewer VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                <fga:FGAMatrix x:Name="fgaMatrix" DataContext="{Binding Report}">
+                    <fga:FGAItemsControl ItemsSource="{Binding Areas}">
+                        <fga:FGAItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type model:Area}">
+                                <fvs:FGAArea GroupIds="{Binding Nodes, Converter={cvt:GetGroupIds}}"
+                                             FloorId="{Binding FloorId}" AreaId="{Binding AreaId}"/>
+                            </DataTemplate>
+                        </fga:FGAItemsControl.ItemTemplate>
+                    </fga:FGAItemsControl>
+
+                    <fga:FGAItemsControl x:Name="fgaNodeControl" ItemsSource="{Binding Landmarks}">
+                        <fga:FGAItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type model:Landmark}">
+                                <Image Height="48" Width="48" Style="{StaticResource clickEffectItemContentStyle}"  
+                                    Source="{Binding ParentGroup.Type, ConverterParameter=SpriteSource, 
+                                    Converter={cvt:GetAppResource}}"/>
+                            </DataTemplate>
+                        </fga:FGAItemsControl.ItemTemplate>
+                        <fga:FGAItemsControl.ItemContainerStyle>
+                            <Style TargetType="{x:Type fga:FGAItem}">
+                                <Setter Property="Tag">
+                                    <Setter.Value>
+                                        <MultiBinding Converter="{cvt:DictKeytoValue}">
+                                            <Binding Path="DataContext.LandmarktoNode" ElementName="fgaNodeControl"/>
+                                            <Binding Path="."/>
+                                        </MultiBinding>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="fga:FGAPanel.Floor" Value="{Binding Tag.Floor, RelativeSource={RelativeSource self}}" />
+                                <Setter Property="fga:FGAPanel.Group" Value="{Binding Tag.Group, RelativeSource={RelativeSource self}}"/>
+                                <Setter Property="fga:FGAPanel.Area" Value="{Binding Tag.Area, RelativeSource={RelativeSource self}}"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                            </Style>
+                        </fga:FGAItemsControl.ItemContainerStyle>
+                    </fga:FGAItemsControl>
+
+                    <ItemsControl x:Name="fgaEdgeControl">
+                        <ItemsControl.ItemsSource>
+                            <MultiBinding Converter="{cvt:LandmarkEdgeExtractor}">
+                                <Binding Path="DataContext.Building" ElementName="fgaBlock"/>
+                                <Binding Path="DataContext.LandmarktoNode" ElementName="fgaMatrix"/>
+                            </MultiBinding>
+                        </ItemsControl.ItemsSource>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type x:ArrayExtension}">
+                                <fvs:FGAEdge Floor1="{Binding [0]}" Floor2="{Binding [3]}"
+                                             Group1="{Binding [1]}" Group2="{Binding [4]}"
+                                             Area1="{Binding [2]}" Area2="{Binding [5]}"
+                                             Deduct1="24" Deduct2="24"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <ItemsControl x:Name="fgaGraphControl" Opacity="0.5"
+                                  ItemsSource="{Binding ReachableClusters, Mode=OneTime}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type model:GraphNode}">
+                                <ItemsControl ItemsSource="{Binding Converter={cvt:RecursiveEdgeExtractor}, Mode=OneWay}">
+                                    <ItemsControl.Style>
+                                        <Style TargetType="{x:Type ItemsControl}">
+                                            <Setter Property="Visibility" Value="Hidden"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{cvt:ObjectEqualsMulti}">
+                                                            <Binding/>
+                                                            <Binding Path="SelectedItem" ElementName="clusterView"/>
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ItemsControl.Style>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type x:ArrayExtension}">
+                                            <fvs:FGAEdge StrokeThickness="4" HeadSize="8" Stroke="Red"
+                                                         Floor1="{Binding [0]}" Floor2="{Binding [3]}"
+                                                         Group1="{Binding [1]}" Group2="{Binding [4]}"
+                                                         Area1="{Binding [2]}" Area2="{Binding [5]}"
+                                                         TailType="Circle" HeadType="{Binding [6]}">
+                                                <fvs:FGAEdge.Style>
+                                                    <Style TargetType="fvs:FGAEdge">
+                                                        <Setter Property="Deduct2" Value="0"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding [6]}" Value="Arrow">
+                                                                <Setter Property="Deduct2" Value="12"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </fvs:FGAEdge.Style>
+                                            </fvs:FGAEdge>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </fga:FGAMatrix>
+            </uc:PanZoomViewer>
+        </Border>
+
+        <ListView x:Name="clusterView" Grid.Row="1" Grid.Column="0"
+                  ItemsSource="{Binding Report.ReachableClusters}"
+                  Height="{Binding DesiredSize.Height, ElementName=paramInfo}"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListView.ItemTemplate>
+                <DataTemplate DataType="{x:Type model:GraphNode}">
+                    <ContentControl x:Name="labelControl" Content="{Binding Data}">
+                        <ContentControl.Resources>
+                            <DataTemplate DataType="{x:Type model:Landmark}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{DynamicResource strings.Cluster}"/>
+                                    <TextBlock Text=" "/>
+                                    <TextBlock Text="{Binding}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                            <DataTemplate DataType="{x:Type model:Area}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{DynamicResource strings.IsolatedArea}"/>
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat=" {0}-{1}">
+                                                <Binding Path="FloorId"/>
+                                                <Binding Path="AreaId"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ContentControl.Resources>
+                    </ContentControl>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <GroupBox x:Name="paramInfo" Header="{DynamicResource strings.ReachableClusterAnalysisParameter}" 
+                  Grid.Row="1" Grid.Column="1" Margin="5,0,-1,-1">
+            <StackPanel Orientation="Vertical" Margin="5">
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                    <TextBlock Text="{DynamicResource strings.OGMCellSize}"/>
+                    <TextBlock Text=" : "/>
+                    <uc:EditableText Value="{Binding ReachableResolution}" 
+                                     Postfix=" m²" Validator="PositiveDouble"/>
+                </StackPanel>
+                <CheckBox Margin="0,5,0,5" VerticalAlignment="Center"
+                          Content="{DynamicResource strings.ConservativeOGMCellCheck}"
+                          IsChecked="{Binding ConservativeCellValidation}"
+                          ToolTip="{DynamicResource strings.ConservativeOGMCellCheckToolTipText}"
+                          ToolTipService.InitialShowDelay="0"/>
+                <CheckBox Margin="0,5,0,5" VerticalAlignment="Center"
+                          Content="{DynamicResource strings.DirectedReachableCluster}"
+                          IsChecked="{Binding DirectedReachableCluster}"
+                          ToolTip="{DynamicResource strings.DirectedReachableClusterToolTipText}"
+                          ToolTipService.InitialShowDelay="0"/>
+                <Button Content="{DynamicResource strings.Analyze}" MinHeight="30" Margin="2, 5, 2, 2"
+                        Command="{Binding AnalyzeReachabilityCommand}"/>
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+
+    <GridSplitter Grid.Column="1" Width="10" Style="{StaticResource ColumnSplitter}" />
+
+    <Border Grid.Column="2" BorderThickness="1"
+            BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <mv:Map x:Name="mapView" Grid.Row="0"
+                    Tag="{Binding SelectedItem.ParentFloor, ElementName=fgaNodeControl, Mode=OneWay}"
+                    MapImageSource="{Binding Tag.MapImage, RelativeSource={RelativeSource self}}">
+                <mv:Map.MapOverlays>
+                    <uc:SelectorControl SelectedItem="{Binding SelectedItem, ElementName=fgaNodeControl,
+                                        Converter={cvt:TypeFilter}, ConverterParameter={x:Type BitmapImage}}">
+                        <uc:SelectorControl.ItemsSource>
+                            <MultiBinding Converter="{cvt:DictKeytoValue}">
+                                <Binding Path="Report.ReachableAreas"/>
+                                <Binding Path="Tag" ElementName="mapView"/>
+                            </MultiBinding>
+                        </uc:SelectorControl.ItemsSource>
+                        <uc:SelectorControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type BitmapImage}">
+                                <uc:Indexed1HitTestImage Source="{Binding}"
+                                Style="{StaticResource clickEffectItemContentStyle}"/>
+                            </DataTemplate>
+                        </uc:SelectorControl.ItemTemplate>
+                    </uc:SelectorControl>
+                </mv:Map.MapOverlays>
+
+                <uc:SelectorControl ItemsSource="{Binding SelectedItem.ParentFloor.Landmarks, ElementName=fgaNodeControl}"
+                                    SelectedItem="{Binding SelectedItem, ElementName=fgaNodeControl,
+                                        
+                    Converter={cvt:TypeFilter}, ConverterParameter={x:Type model:Landmark}}">
+                    <uc:SelectorControl.ItemTemplate>
+                        <DataTemplate DataType="model:Landmark">
+                            <uc:LandmarkElement IconImageSource="{Binding ParentGroup.Type, ConverterParameter=SpriteSource,
+                                    Converter={cvt:GetAppResource}}" ArrowDirection="{Binding Direction}" 
+                                        Location="{Binding Outline, Converter={cvt:PolygonCenter}}"
+                                        CoordinateScale="{Binding ImageScaleFactor, ElementName=mapView}"
+                                        IsPolygonVisible="False">
+                                <uc:LandmarkElement.Style>
+                                    <Style TargetType="uc:LandmarkElement">
+                                        <Setter Property="IsHighlighted" Value="False"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TemplatedParent.IsSelected, 
+                                        RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                                                <Setter Property="IsHighlighted" Value="True"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </uc:LandmarkElement.Style>
+                            </uc:LandmarkElement>
+                        </DataTemplate>
+                    </uc:SelectorControl.ItemTemplate>
+                </uc:SelectorControl>
+            </mv:Map>
+
+            <StatusBar Grid.Row="1">
+                <StatusBarItem>
+                    <TextBlock Margin="5,0,5,0" Text="{Binding SelectedItem, 
+                        ElementName=fgaNodeControl, Mode=OneWay}"/>
+                </StatusBarItem>
+            </StatusBar>
+        </Grid>
+    </Border>
+
+    <Border Grid.ColumnSpan="3" Margin="0,0,0,2" Background="White" Opacity="0.5" Cursor="Wait"
+            IsHitTestVisible="{Binding BackgroundWorker.IsBusy}" d:Visibility="Hidden" 
+            Visibility="{Binding BackgroundWorker.IsBusy, Converter={cvt:BoolToVisibility}}"/>
+</Grid>
+-->

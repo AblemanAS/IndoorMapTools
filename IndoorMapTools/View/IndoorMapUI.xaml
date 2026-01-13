@@ -1,0 +1,368 @@
+﻿<Grid x:Class="IndoorMapTools.View.IndoorMapUI"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls"
+      xmlns:viewModel="clr-namespace:IndoorMapTools.ViewModel" 
+      xmlns:model="clr-namespace:IndoorMapTools.Model" 
+      xmlns:cvt="clr-namespace:IndoorMapTools.Helper" 
+      xmlns:mv="clr-namespace:MapView.System.Windows.Controls;assembly=MapView"
+      xmlns:dc="clr-namespace:EnhancedCommands.System.Windows.Input.DialogCommands;assembly=EnhancedCommands"
+      mc:Ignorable="d" d:DataContext="{d:DesignInstance Type={x:Type viewModel:IndoorMapVM}}"
+      d:DesignHeight="600" d:DesignWidth="1000"
+      x:Name="masterGrid" Margin="-2" 
+      Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}">
+
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="3*" />
+        <ColumnDefinition Width="1*" MinWidth="150" MaxWidth="300"/>
+    </Grid.ColumnDefinitions>
+
+    <!--#region 맵뷰 -->
+    <mv:Map x:Name="mapView" Grid.RowSpan="3" IsEnabled="{Binding Model, Converter={cvt:IsNotNull}}"
+            MapImageSource="{Binding Model.MapImage}" Center="{Binding IndoorMapFocus}">
+        <mv:Map.Resources>
+            <uc:BindingProxy x:Key="toolproxy" Data="{Binding ElementName=polygonTool}"/>
+        </mv:Map.Resources>
+        <mv:Map.MapOverlays>
+            <Image Source="{Binding Model.Reachable}" 
+               Visibility="{Binding ReachableVisible, Converter={cvt:BoolToVisibility}}"/>
+        </mv:Map.MapOverlays>
+        <uc:SelectorControl x:Name="lmelemSelector" ItemsSource="{Binding Model.Landmarks}" SelectedItem="{Binding SelectedMapViewItem}"
+                            IsHitTestVisible="{Binding ActiveTool, ElementName=mapView, Converter={cvt:IsNull}}" Cursor="None">
+            <uc:SelectorControl.ItemContainerStyle>
+                <Style TargetType="uc:SelectorItem">
+                    <Setter Property="DeleteCommand" Value="{Binding DeleteCommand}"/>
+                </Style>
+            </uc:SelectorControl.ItemContainerStyle>
+            <uc:SelectorControl.ItemTemplate>
+                <DataTemplate DataType="model:Landmark">
+                    <uc:LandmarkElement IconImageSource="{Binding ParentGroup.Type, 
+                                            ConverterParameter=SpriteSource, Converter={cvt:GetAppResource}}" 
+                                        Location="{Binding Outline, Converter={cvt:PolygonCenter}}"
+                                        ArrowDirection="{Binding Direction}" ArrowHeads="{Binding AccessType}"
+                                        CoordinateScale="{Binding ImageScaleFactor, ElementName=mapView}"
+                                        IsIconVisible="{Binding DataContext.IconVisible, ElementName=masterGrid}"
+                                        IsArrowVisible="{Binding DataContext.DirectionVisible, ElementName=masterGrid}"
+                                        IsPolygonVisible="{Binding DataContext.OutlineVisible, ElementName=masterGrid}">
+                        <uc:LandmarkElement.Style>
+                            <Style TargetType="uc:LandmarkElement">
+                                <Setter Property="IsHighlighted" Value="False"/>
+                                <Setter Property="PolygonPoints" Value="{Binding Outline}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Value="True">
+                                        <DataTrigger.Binding>
+                                            <MultiBinding Converter="{cvt:ObjectEqualsMulti}" Mode="OneWay">
+                                                <Binding />
+                                                <Binding Path="SelectedItem" ElementName="lmelemSelector"/>
+                                            </MultiBinding>
+                                        </DataTrigger.Binding>
+                                        <Setter Property="IsHighlighted" Value="True"/>
+                                        <Setter Property="PolygonPoints" Value="{Binding Data.PolygonVisual, Source={StaticResource toolproxy}}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Value="True">
+                                        <DataTrigger.Binding>
+                                            <MultiBinding Converter="{cvt:ObjectEqualsMulti}" Mode="OneWay">
+                                                <Binding Path="ParentGroup"/>
+                                                <Binding Path="DataContext.SelectedLandmarkViewItem" ElementName="masterGrid"/>
+                                            </MultiBinding>
+                                        </DataTrigger.Binding>
+                                        <Setter Property="IsHighlighted" Value="True"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </uc:LandmarkElement.Style>
+                    </uc:LandmarkElement>
+                </DataTemplate>
+            </uc:SelectorControl.ItemTemplate>
+        </uc:SelectorControl>
+
+        <mv:Map.KeyActivationTools>
+            <mv:MouseTool ActivationKey="LeftCtrl" DefaultCursor="{DynamicResource MarkCursor}"
+                          OnMouseLeftDrag="{Binding MarkCommand, Converter={cvt:MouseToolPosition}}"/>
+            <mv:MouseTool ActivationKey="LeftAlt" DefaultCursor="{DynamicResource UnmarkCursor}"
+                          OnMouseLeftDrag="{Binding UnmarkCommand, Converter={cvt:MouseToolPosition}}"/>
+            <mv:MouseTool ActivationKey="LeftShift" DefaultCursor="Cross" DragBoxEnabled="True"
+                          OnMouseLeftUp="{Binding RegionmarkCommand, Converter={cvt:MouseToolDragBox}}"/>
+            <mv:MouseTool ActivationKey="Z" DefaultCursor="Cross" DragBoxEnabled="True"
+                          OnMouseLeftUp="{Binding RegionUnmarkCommand, Converter={cvt:MouseToolDragBox}}"/>
+            <mv:MouseTool ActivationKey="Q" ToolName="Stair" DefaultCursor="{DynamicResource StairCursor}"
+                          OnMouseLeftDown="{Binding LocateStairCommand, Converter={cvt:MouseToolPosition}}"/>
+            <mv:MouseTool ActivationKey="W" ToolName="Elevator" DefaultCursor="{DynamicResource ElevatorCursor}"
+                          OnMouseLeftDown="{Binding LocateElevatorCommand, Converter={cvt:MouseToolPosition}}"/>
+            <mv:MouseTool ActivationKey="E" ToolName="Escalator" DefaultCursor="{DynamicResource EscalatorCursor}"
+                          OnMouseLeftDown="{Binding LocateEscalatorCommand, Converter={cvt:MouseToolPosition}}"/>
+            <mv:MouseTool ActivationKey="R" ToolName="Entrance" DefaultCursor="{DynamicResource EntranceCursor}"
+                          OnMouseLeftDown="{Binding LocateEntranceCommand, Converter={cvt:MouseToolPosition}}"/>
+            <mv:MouseTool ActivationKey="T" ToolName="Station" DefaultCursor="{DynamicResource StationCursor}"
+                          OnMouseLeftDown="{Binding LocateStationCommand, Converter={cvt:MouseToolPosition}}"/>
+        </mv:Map.KeyActivationTools>
+    </mv:Map>
+    <!--#endregion 맵뷰 -->
+
+    <GroupBox Header="{DynamicResource strings.LocateLandmark}" 
+              Grid.Row="0" Grid.Column="1" Margin="2">
+        <Grid Height="{Binding ActualWidth, Mode=OneWay, RelativeSource={RelativeSource Mode=Self},
+                        Converter={cvt:Multiplier}, ConverterParameter=0.215686}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*" />
+                <RowDefinition Height="9*" />
+                <RowDefinition Height="1*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="9*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="9*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="9*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="9*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="9*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <uc:ToolButton Grid.Row="1" Grid.Column="1" Style="{StaticResource RoundButtonStyle}"
+                           ActivationTarget="{Binding ActiveTool, ElementName=mapView}" 
+                           ToolTip="{DynamicResource strings.LocateStairToolTipText}"
+                           MatchByFamily="True">
+                <uc:ToolButton.Tool>
+                    <mv:MouseTool ToolName="Stair" DefaultCursor="{DynamicResource StairCursor}"
+                                  OnMouseLeftDown="{Binding LocateStairCommand, Converter={cvt:MouseToolPosition}}"/>
+                </uc:ToolButton.Tool>
+                <Image Source="{StaticResource StairImage}"/>
+            </uc:ToolButton>
+
+            <uc:ToolButton Grid.Row="1" Grid.Column="3" Style="{StaticResource RoundButtonStyle}"
+                           ActivationTarget="{Binding ActiveTool, ElementName=mapView}"
+                           ToolTip="{DynamicResource strings.LocateElevatorToolTipText}"
+                           MatchByFamily="True">
+                <uc:ToolButton.Tool>
+                    <mv:MouseTool ToolName="Elevator" DefaultCursor="{DynamicResource ElevatorCursor}"
+                                  OnMouseLeftDown="{Binding LocateElevatorCommand, Converter={cvt:MouseToolPosition}}"/>
+                </uc:ToolButton.Tool>
+                <Image Source="{StaticResource ElevatorImage}"/>
+            </uc:ToolButton>
+
+            <uc:ToolButton Grid.Row="1" Grid.Column="5" Style="{StaticResource RoundButtonStyle}" 
+                           ActivationTarget="{Binding ActiveTool, ElementName=mapView}" 
+                           ToolTip="{DynamicResource strings.LocateEscalatorToolTipText}"
+                           MatchByFamily="True">
+                <uc:ToolButton.Tool>
+                    <mv:MouseTool ToolName="Escalator" DefaultCursor="{DynamicResource EscalatorCursor}"
+                                  OnMouseLeftDown="{Binding LocateEscalatorCommand, Converter={cvt:MouseToolPosition}}"/>
+                </uc:ToolButton.Tool>
+                <Image Source="{StaticResource EscalatorImage}"/>
+            </uc:ToolButton>
+
+            <uc:ToolButton Grid.Row="1" Grid.Column="7" Style="{StaticResource RoundButtonStyle}" 
+                           ActivationTarget="{Binding ActiveTool, ElementName=mapView}"
+                           ToolTip="{DynamicResource strings.LocateEntranceToolTipText}"
+                           MatchByFamily="True">
+                <uc:ToolButton.Tool>
+                    <mv:MouseTool ToolName="Entrance" DefaultCursor="{DynamicResource EntranceCursor}"
+                                  OnMouseLeftDown="{Binding LocateEntranceCommand, Converter={cvt:MouseToolPosition}}"/>
+                </uc:ToolButton.Tool>
+                <Image Source="{StaticResource EntranceImage}"/>
+            </uc:ToolButton>
+
+            <uc:ToolButton Grid.Row="1" Grid.Column="9" Style="{StaticResource RoundButtonStyle}"
+                           ActivationTarget="{Binding ActiveTool, ElementName=mapView}"
+                           ToolTip="{DynamicResource strings.LocateStationToolTipText}" 
+                           MatchByFamily="True">
+                <uc:ToolButton.Tool>
+                    <mv:MouseTool ToolName="Station" DefaultCursor="{DynamicResource StationCursor}"
+                                  OnMouseLeftDown="{Binding LocateStationCommand, Converter={cvt:MouseToolPosition}}"/>
+                </uc:ToolButton.Tool>
+                <Image Source="{StaticResource StationImage}"/>
+            </uc:ToolButton>
+        </Grid>
+    </GroupBox>
+
+    <GroupBox Header="{DynamicResource strings.LandmarkInfo}" 
+              Grid.Row="1" Grid.Column="1" Margin="2">
+        <StackPanel Margin="10" Orientation="Vertical">
+            <StackPanel Margin="2" Orientation="Horizontal"
+                        DataContext="{Binding SelectedLandmarkViewItem}"
+                        d:DataContext="{d:DesignInstance Type={x:Type model:Entity}}">
+                <TextBlock Text="{DynamicResource strings.LandmarkName}"/>
+                <TextBlock Text=" : "/>
+                <uc:EditableText Value="{Binding Name}" Validator="Name"/>
+            </StackPanel>
+            <StackPanel Orientation="Vertical" 
+                        DataContext="{Binding SelectedMapViewItem}">
+                <StackPanel Margin="2" Orientation="Horizontal">
+                    <TextBlock Text="{DynamicResource strings.AccessType}" VerticalAlignment="Center"/>
+                    <TextBlock Text=" : " VerticalAlignment="Center"/>
+                    <uc:SelectableText SelectedValue="{Binding AccessType, FallbackValue=10}" 
+                                   SelectedValuePath="Tag">
+                        <ComboBoxItem Content="{DynamicResource strings.EntryOnly}" Tag="-1"/>
+                        <ComboBoxItem Content="{DynamicResource strings.Entry/Exit}" Tag="0"/>
+                        <ComboBoxItem Content="{DynamicResource strings.ExitOnly}" Tag="1"/>
+                    </uc:SelectableText>
+                </StackPanel>
+                <StackPanel Margin="2" Orientation="Horizontal">
+                    <TextBlock Text="{DynamicResource strings.CenterLocation}"/>
+                    <TextBlock Text="(m) :"/>
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding Converter="{cvt:OutlineToCenterMeter}" StringFormat="{}{0: 0.00}">
+                                <Binding Path="Outline"/>
+                                <Binding Path="ParentFloor.MapImage.PixelHeight"/>
+                                <Binding Path="ParentFloor.MapImagePPM"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </StackPanel>
+                <Grid Margin="2,4,2,4" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="4*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{DynamicResource strings.Entry/ExitDirection}"/>
+                    <TextBlock Grid.Column="1" Text=" : "/>
+                    <Slider x:Name="sliderDir" Grid.Column="2" IsMoveToPointEnabled="True"
+                        Value="{Binding Direction, Converter={cvt:Multiplier}, ConverterParameter=-1, Mode=TwoWay}" 
+                        TickFrequency="15" IsSnapToTickEnabled="True" Minimum="-180" Maximum="180" HorizontalAlignment="Stretch"/>
+                    <uc:EditableText Grid.Column="3" Postfix="°" Validator="Int"
+                                 Value="{Binding Value, ElementName=sliderDir, Mode=TwoWay, StringFormat=\{0:F0\}}"/>
+                </Grid>
+                <uc:ToolButton MinHeight="30" Margin="2, 5, 2, 2"
+                               ActivationTarget="{Binding ActiveTool, ElementName=mapView}"
+                               IsChecked="{Binding IsDrawing, ElementName=polygonTool, Mode=TwoWay}">
+                    <uc:ToolButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Content" Value="{DynamicResource strings.EditLandmarkOutline}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Outline}" Value="{x:Null}">
+                                    <Setter Property="IsChecked" Value="False"/>
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Outline.Length}" Value="1">
+                                    <Setter Property="Content" Value="{DynamicResource strings.DrawLandmarkOutline}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </uc:ToolButton.Style>
+                    <uc:ToolButton.Tool>
+                        <mv:PolygonTool x:Name="polygonTool" PolygonSource="{Binding Outline}"/>
+                    </uc:ToolButton.Tool>
+                </uc:ToolButton>
+            </StackPanel>
+        </StackPanel>
+    </GroupBox>
+
+    <uc:TreeViewEx x:Name="landmarkView" Grid.Row="2" Grid.Column="1" Margin="3"
+                   SelectedItem="{Binding SelectedLandmarkViewItem, Mode=TwoWay}"
+                   ItemsSource="{Binding DataContext.Model.Building.LandmarkGroups, 
+                                RelativeSource={RelativeSource AncestorType=TabControl}}"
+                   ChildSelector="{Binding ChildSelector}"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <uc:TreeViewEx.ItemContainerStyle>
+            <Style TargetType="uc:TreeViewItemEx">
+                <Style.Resources>
+                    <uc:BindingProxy x:Key="dcproxy" Data="{Binding DataContext.Lvm, Source={x:Reference landmarkView}}"/>
+                </Style.Resources>
+                <Setter Property="DeleteCommand" Value="{Binding DeleteCommand}"/>
+                <Setter Property="ContextMenu">
+                    <Setter.Value>
+                        <ContextMenu StaysOpen="true" Focusable="False">
+                            <MenuItem Header="{DynamicResource strings.ReplicateLandmark}"
+                                      Command="{Binding Data.CopyToFloorsCommand, Source={StaticResource dcproxy}}"/>
+                            <MenuItem Header="{DynamicResource strings.LeaveLandmarkGroup}"
+                                      Command="{Binding Data.IsolateCommand, Source={StaticResource dcproxy}}"/>
+                        </ContextMenu>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Converter={cvt:GetType}}" Value="{x:Type model:LandmarkGroup}">
+                        <Setter Property="AllowDrop" Value="True"/>
+                        <Setter Property="CanBeParent" Value="True"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Converter={cvt:GetType}}" Value="{x:Type model:Landmark}">
+                        <Setter Property="CanBeChild" Value="True"/>
+                        <Setter Property="JoinCommand" Value="{Binding Data.JoinCommand, Source={StaticResource dcproxy}}"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </uc:TreeViewEx.ItemContainerStyle>
+        <uc:TreeViewEx.Resources>
+            <HierarchicalDataTemplate DataType="{x:Type model:LandmarkGroup}" ItemsSource="{Binding Landmarks}">
+                <StackPanel Orientation="Horizontal" >
+                    <Image Height="{Binding DesiredSize.Height, ElementName=textName}" 
+                           Source="{Binding Type, ConverterParameter=Image, Converter={cvt:GetAppResource}}"
+                           SnapsToDevicePixels="True" Margin="1"/>
+                    <TextBlock x:Name="textName" Margin="8,0,0,0" Text="{Binding Name}"/>
+                </StackPanel>
+            </HierarchicalDataTemplate>
+            <DataTemplate DataType="{x:Type model:Landmark}">
+                <StackPanel Orientation="Horizontal">
+                    <Image Height="{Binding DesiredSize.Height, ElementName=textName}" 
+                           SnapsToDevicePixels="True" Margin="1">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Setter Property="Source" Value="{StaticResource CheckedImage}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Outline.Length}" Value="1">
+                                        <Setter Property="Source" Value="{StaticResource UncheckedImage}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Image.Style>
+                    </Image>
+                    <TextBlock x:Name="textName" Text="{Binding Name}" Margin="8,0,0,0"/>
+                </StackPanel>
+            </DataTemplate>
+        </uc:TreeViewEx.Resources>
+        <uc:TreeViewEx.ContextMenu>
+            <ContextMenu StaysOpen="true" Focusable="False">
+                <MenuItem Header="{DynamicResource strings.SortLandmarks}" Focusable="False"
+                          Command="{Binding SortLandmarksCommand}"/>
+                <MenuItem Header="{DynamicResource strings.BatchRenameLandmarks}" Focusable="False"
+                          Command="{Binding BatchLandmarkNameCommand}"/>
+            </ContextMenu>
+        </uc:TreeViewEx.ContextMenu>
+    </uc:TreeViewEx>
+
+    <Border Grid.Column="0" Grid.Row="2" Margin="10" BorderThickness="1"
+            HorizontalAlignment="Left" VerticalAlignment="Bottom"
+            BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+            Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+        <StackPanel Orientation="Vertical" Margin="10">
+            <CheckBox Margin="5" Style="{StaticResource VisibilityCheckBoxStyle}"
+                      IsChecked="{Binding ReachableVisible}"
+                      Content="{DynamicResource strings.Reachable}"/>
+            <CheckBox Margin="5" Style="{StaticResource VisibilityCheckBoxStyle}"
+                      IsChecked="{Binding LandmarkVisible}"
+                      Content="{DynamicResource strings.Landmark}"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Margin="2" Text="└" Foreground="DarkGray"/>
+                <CheckBox Margin="2" Style="{StaticResource VisibilityCheckBoxStyle}"
+                          IsChecked="{Binding IconVisible}"
+                          Content="{DynamicResource strings.Icon}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Margin="2" Text="└" Foreground="DarkGray"/>
+                <CheckBox Margin="2" Style="{StaticResource VisibilityCheckBoxStyle}"
+                          IsChecked="{Binding OutlineVisible}"
+                          Content="{DynamicResource strings.Outline}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Margin="2" Text="└" Foreground="DarkGray"/>
+                <CheckBox Margin="2" Style="{StaticResource VisibilityCheckBoxStyle}"
+                          IsChecked="{Binding DirectionVisible}"
+                          Content="{DynamicResource strings.Entry/ExitDirection}"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Grid>

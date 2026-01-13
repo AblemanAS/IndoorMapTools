@@ -1,0 +1,76 @@
+﻿<Grid x:Class="IndoorMapTools.View.PadCropForm"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls"
+      xmlns:vm="clr-namespace:IndoorMapTools.ViewModel"
+      xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
+      xmlns:local="clr-namespace:IndoorMapTools.View.UserControls"
+      mc:Ignorable="d" Margin="5" d:DesignHeight="600" d:DesignWidth="570"
+      d:DataContext="{d:DesignInstance Type=vm:FloorListItemVM}"
+      d:Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}">
+    <Grid.RowDefinitions>
+        <RowDefinition Height="80"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="80"/>
+        <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="80"/>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="80"/>
+    </Grid.ColumnDefinitions>
+
+    <Viewbox Grid.Row="1" Grid.Column="1" 
+             MinHeight="250" MinWidth="400" MaxHeight="500" MaxWidth="800"
+          HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Canvas Background="White" ClipToBounds="True"
+                Width="{Binding NewWidth}" Height="{Binding NewHeight}">
+            <Image Source="{Binding Model.MapImage}" 
+                   Canvas.Left="{Binding LeftPad}" Canvas.Top="{Binding TopPad}"/>
+        </Canvas>
+    </Viewbox>
+
+    <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="1"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center" 
+                   Text="{DynamicResource strings.TopPad}"/>
+        <uc:EditableText HorizontalAlignment="Center" Validator="Int"
+                         Value="{Binding TopPad}" Postfix=" px"/>
+    </StackPanel>
+    <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="1"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center" 
+                   Text="{DynamicResource strings.BottomPad}"/>
+        <uc:EditableText HorizontalAlignment="Center" Validator="Int"
+                         Value="{Binding BottomPad}" Postfix=" px"/>
+    </StackPanel>
+    <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="0"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center" 
+                   Text="{DynamicResource strings.LeftPad}"/>
+        <uc:EditableText HorizontalAlignment="Center" Validator="Int"
+                         Value="{Binding LeftPad}" Postfix=" px"/>
+    </StackPanel>
+    <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="2"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center" 
+                   Text="{DynamicResource strings.RightPad}"/>
+        <uc:EditableText HorizontalAlignment="Center" Validator="Int"
+                         Value="{Binding RightPad}" Postfix=" px"/>
+    </StackPanel>
+
+    <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.ColumnSpan="3"
+                HorizontalAlignment="Left" VerticalAlignment="Top">
+        <TextBlock Text="{DynamicResource strings.ImageDimension}" Margin="10,0,0,0"/>
+        <TextBlock Text=" (px) : "/>
+        <TextBlock Text="{Binding Model.MapImage.PixelWidth}"/>
+        <TextBlock Text="×"/>
+        <TextBlock Text="{Binding Model.MapImage.PixelHeight}"/>
+        <TextBlock Text=" → "/>
+        <TextBlock Text="{Binding NewWidth}"/>
+        <TextBlock Text="×"/>
+        <TextBlock Text="{Binding NewHeight}"/>
+    </StackPanel>
+</Grid>
