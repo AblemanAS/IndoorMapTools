@@ -71,4 +71,3 @@ If you use this software in academic work, please cite the corresponding paper.
 - Selected flag querying attached property in Selector-based ItemControls for better XAML readability
 - Visualizing feature for isolated areas
 - Separating MouseToolEventArgs as DTO
-- FGAView performance enhancement, separate into an independent library
