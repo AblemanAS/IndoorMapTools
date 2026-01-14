@@ -152,16 +152,5 @@ namespace IndoorMapTools.ViewModel
             => bgSvc.Run(() => Model?.Building.CreateFloor(ImageAlgorithms.BitmapImageFromFile(filePath), Gvm.GlobalMapFocus));
 
         [RelayCommand] private void BatchFloorName() => EntityNamer.BatchFloorName(Model.Building.Floors);
-
-
-
-        // 테스트
-        [ObservableProperty] private AnalysisReport result;
-        [RelayCommand] private void Analyze()
-        {
-            bgSvc.Run(() => Result = new AnalysisReport(Model.Building, Model.ReachableResolution,
-                Model.ConservativeCellValidation, Model.DirectedReachableCluster, bgSvc.ReportProgress),
-                strSvc["strings.ReachableClusterAnalysisStatusDesc"]);
-        }
     }
 }

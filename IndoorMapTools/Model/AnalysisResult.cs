@@ -6,15 +6,16 @@ namespace IndoorMapTools.Model
 {
     public partial class AnalysisResult : ObservableObject
     {
-        public List<Area> Areas { get; }
-        public List<Landmark> Landmarks { get; }
-        public Dictionary<Floor, List<Area>> FloorToAreas { get; }
-        public Dictionary<Landmark, GraphNode> LandmarkToNode { get; }
-        public List<GraphNode> ReachableClusters { get; }
+        public IReadOnlyList<Area> Areas { get; }
+        public IReadOnlyList<Landmark> Landmarks { get; }
+        public IReadOnlyDictionary<Floor, List<Area>> FloorToAreas { get; }
+        public IReadOnlyDictionary<Landmark, GraphNode> LandmarkToNode { get; }
+        public IReadOnlyList<GraphNode> ReachableClusters { get; }
         public int[] GroupOrder { get; }
 
-        public AnalysisResult(List<Area> areas, List<Landmark> landmarks, Dictionary<Floor, List<Area>> floorToAreas, 
-            Dictionary<Landmark, GraphNode> landmarkToNode, List<GraphNode> reachableClusters, int[] groupOrder = null)
+        public AnalysisResult(IReadOnlyList<Area> areas, IReadOnlyList<Landmark> landmarks, 
+            IReadOnlyDictionary<Floor, List<Area>> floorToAreas, IReadOnlyDictionary<Landmark, GraphNode> landmarkToNode, 
+            IReadOnlyList<GraphNode> reachableClusters, int[] groupOrder = null)
         {
             Areas = areas;
             Landmarks = landmarks;
