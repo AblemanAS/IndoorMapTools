@@ -15,6 +15,7 @@ limitations under the License.
 ***********************************************************************/
 
 using IndoorMapTools.Services.Infrastructure.INI;
+using IndoorMapTools.Services.Infrastructure.SRID;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -38,6 +39,8 @@ namespace IndoorMapTools
         private const string INI_KEY_TILE_SOURCE_URL = "tile_src_url";
 
         private const string RESOURCE_TILE_SOURCE_URL = "TileSourceURL";
+
+        private const string SRID_PATH = "srid";
 
         private readonly Tuple<string, string>[] CURSOR_DEFS =
         {
@@ -117,7 +120,6 @@ namespace IndoorMapTools
                 using var st = GetResourceStream(new Uri(uri)).Stream;
                 Resources[name] = new Cursor(st, true);
             }
-
 
             // 종속성 주입
             var services = new ServiceCollection(); 

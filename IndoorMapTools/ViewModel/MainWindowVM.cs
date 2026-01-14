@@ -66,7 +66,7 @@ namespace IndoorMapTools.ViewModel
             bgSvc.PropertyChanged += (sender, e) => 
             { if(!string.IsNullOrEmpty(e.PropertyName)) OnPropertyChanged(e.PropertyName); };
 
-            bgSvc.Run(() => GeoLocationModule.Initialize(), "Init PROJ Net");
+            bgSvc.Run(() => GeoLocationModule.Initialize(), "Init GeoLocation Module");
 
             Ivm.PropertyChanged += (sender, e) => // IVM의 모델 변경 감시 -> 자신의 층선택을 동기화
             {

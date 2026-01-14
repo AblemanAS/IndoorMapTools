@@ -57,13 +57,14 @@ namespace IndoorMapTools.Services.Presentation
             // 후속 작업 배정
             RunWorkerCompleted += (sender, e) =>
             {
+                stopwatch.Stop();
+                Debug.WriteLine($"Background Task [{TaskName}] Time Lapse : {stopwatch.ElapsedMilliseconds}ms");
+
                 OnPropertyChanged(nameof(IsBusy));
                 ProgressIndeterminated = false;
                 ProgressPercentage = 0;
                 TaskName = "";
 
-                stopwatch.Stop();
-                Debug.WriteLine("Background task time lapse : " + stopwatch.ElapsedMilliseconds + "ms");
             };
         }
 

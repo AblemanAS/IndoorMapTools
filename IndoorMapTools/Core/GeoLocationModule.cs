@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ***********************************************************************/
 
-using ProjNet.CoordinateSystems;
-using ProjNet.CoordinateSystems.Transformations;
-using ProjNet.SRID;
+using DotSpatial.Projections;
+using DotSpatial.Projections.Transforms;
+using IndoorMapTools.Services.Infrastructure.SRID;
 using System;
 using System.Windows;
 
@@ -26,29 +26,21 @@ namespace IndoorMapTools.Core
     {
         private static bool initialized = false;
         private static int epsg = 0;
-        private static string name, wkt;
-        private static CoordinateSystem globalSystem, localSystem;
-        private static ICoordinateTransformation toLocal;
-        private static ICoordinateTransformation toGlobal;
+        private static ProjectionInfo globalSystem, localSystem;
+        private static (string Name, string WKT)[] srids;
+        private static readonly double[] z = { 0 };
 
         public static void Initialize()
         {
             if(initialized) return;
             initialized = true;
-            globalSystem = SRIDReader.GetCSbyID(4326);
+            
+            srids = SRIDReader.ReadSRIDs("srid");
+            globalSystem = ProjectionInfo.FromEsriString(srids[4326].WKT);
         }
 
-        public static string ToName(int epsg)
-        {
-            if(GeoLocationModule.epsg != epsg) ReloadLocalSystem(epsg);
-            return name;
-        }
-
-        public static string ToWKT(int epsg)
-        {
-            if(GeoLocationModule.epsg != epsg) ReloadLocalSystem(epsg);
-            return wkt;
-        }
+        public static string ToName(int epsg) => srids[epsg].Name;
+        public static string ToWKT(int epsg) => BeautifyWKT(srids[epsg].WKT);
 
         /// <summary>
         /// EPSG 코드에 해당하는 지역 미터 좌표계를 다시 로드합니다.
@@ -56,21 +48,9 @@ namespace IndoorMapTools.Core
         /// <param name="epsg">지역 미터 좌표계의 EPSG 코드</param>
         private static void ReloadLocalSystem(int epsg)
         {
-            localSystem = SRIDReader.GetCSbyID(epsg);
+            if(epsg < 0 || epsg >= srids.Length) return;
+            localSystem = ProjectionInfo.FromEsriString(srids[epsg].WKT);
             GeoLocationModule.epsg = epsg;
-
-            if(localSystem == null)
-            {
-                name = wkt = "";
-                return;
-            }
-
-            var ctFactory = new CoordinateTransformationFactory();
-            toLocal = ctFactory.CreateFromCoordinateSystems(globalSystem, localSystem);
-            toGlobal = ctFactory.CreateFromCoordinateSystems(localSystem, globalSystem);
-
-            name = localSystem.Name;
-            wkt = BeautifyWKT(localSystem.WKT);
         }
 
         /// <summary>
@@ -120,21 +100,24 @@ namespace IndoorMapTools.Core
             return sb.ToString();
         }
 
+
         public static Point ProjectToLocalSystem(Point lonlat, int epsg)
         {
             if(GeoLocationModule.epsg != epsg) ReloadLocalSystem(epsg);
-
-            (double x, double y) = toLocal.MathTransform.Transform(lonlat.X, lonlat.Y);
-            return new Point(x, y);
+            double[] xy = new double[] { lonlat.Y, lonlat.X };
+            Reproject.ReprojectPoints(xy, z, globalSystem, localSystem, 0, 1);
+            return new Point(xy[0], xy[1]);
         }
+
 
         public static Point ProjectToGlobalSystem(Point meter, int epsg)
         {
             if(GeoLocationModule.epsg != epsg) ReloadLocalSystem(epsg);
-
-            (double x, double y) = toGlobal.MathTransform.Transform(meter.X, meter.Y);
-            return new Point(x, y);
+            double[] xy = new double[] { meter.X, meter.Y };
+            Reproject.ReprojectPoints(xy, z, localSystem, globalSystem, 0, 1);
+            return new Point(xy[1], xy[0]);
         }
+
 
         /*
         private static int GetCRS(double lon, double lat)
