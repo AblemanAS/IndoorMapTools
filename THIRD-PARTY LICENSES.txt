@@ -4,9 +4,14 @@ THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
 
 This project incorporates components from the projects listed below.
 
-1. CommunityToolkit.Mvvm / Microsoft.Extensions.DependencyInjection
+1. CommunityToolkit.Mvvm
    - License: MIT License
    - Project: https://github.com/CommunityToolkit/dotnet
+   - Copyright (c) .NET Foundation and Contributors
+
+2. Microsoft.Extensions.DependencyInjection
+   - License: MIT License
+   - Project: https://github.com/dotnet/runtime
    - Copyright (c) .NET Foundation and Contributors
 
 3. protobuf-net
