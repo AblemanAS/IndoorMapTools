@@ -16,8 +16,8 @@ limitations under the License.
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndoorMapTools.Algorithm.FGASolver;
 using IndoorMapTools.Algorithm;
+using IndoorMapTools.Algorithm.FGASolver;
 using IndoorMapTools.Model;
 using IndoorMapTools.Services.Application;
 using IndoorMapTools.Services.Domain;
@@ -53,6 +53,7 @@ namespace IndoorMapTools.ViewModel
         [ObservableProperty] private IReadOnlyDictionary<GraphNode, IReadOnlyList<FGAEdgeData>> graphEdges;
         [ObservableProperty] private Point mapViewFocus;
         [ObservableProperty] private string selectedItemSummary;
+        public Dictionary<Floor, double[]> AreaPivots { get; } = new();
 
         [NotifyCanExecuteChangedFor(nameof(AnalyzeReachabilityCommand))]
         [ObservableProperty] private bool areLandmarkOutlinesComplete;
@@ -80,7 +81,7 @@ namespace IndoorMapTools.ViewModel
             }
             finally { guardSelectPropagation = false; }
 
-            SelectedItemSummary = value.ToString();
+            SelectedItemSummary = value?.ToString();
             Floor newFloor = value?.ParentFloor;
             if(SelectedFloor != newFloor) SelectedFloor = newFloor;
             if(value != null) MapViewFocus = CoordTransformAlgorithms.CalculatePolygonCenter(value.Outline);
@@ -170,10 +171,33 @@ namespace IndoorMapTools.ViewModel
             bgSvc.Run(() =>
             {
                 Result = null;
-                var result = AnalysisService.AnalyzeReachability(Model.Building, fgaSolver,
-                    Model.ReachableResolution, Model.ConservativeCellValidation, Model.DirectedReachableCluster, bgSvc.ReportProgress);
+                var result = AnalysisService.AnalyzeReachability(Model.Building, fgaSolver, Model.ReachableResolution, 
+                    Model.ConservativeCellValidation, Model.DirectedReachableCluster, bgSvc.ReportProgress);
                 IntraGroupEdges = BuildIntraGroupEdges(result, Model.Building);
                 GraphEdges = BuildGraphEdges(result.ReachableClusters);
+
+                AreaPivots.Clear();
+
+                for(int i = 0; i < Model.Building.Floors.Count; i++)
+                {
+                    var floor = Model.Building.Floors[i];
+                    var curFloorAreas = result.FloorToAreas[floor];
+                    if(curFloorAreas.Count == 0)
+                    {
+                        AreaPivots[floor] = new double[] { 0.0, 0.0, 0.0, 0.0 };
+                        continue;
+                    }
+
+                    int imageWidth = floor.MapImage.PixelWidth;
+                    int imageHeight = floor.MapImage.PixelHeight;
+                    var transformer = CoordTransformAlgorithms.CalculateTransformer(
+                        imageWidth, imageHeight, floor.MapImageRotation, 1.0);
+                    double newHeight = curFloorAreas[0].Reachable.PixelHeight * floor.MapImagePPM * Model.ReachableResolution;
+                    var pivot = new Point(0, imageHeight);
+                    Point moved = transformer.Transform(pivot);
+                    AreaPivots[floor] = new double[] { moved.X, newHeight - moved.Y, -moved.X, moved.Y };
+                }
+
                 Result = result;
             }, strSvc["strings.ReachableClusterAnalysisStatusDesc"]);
         }

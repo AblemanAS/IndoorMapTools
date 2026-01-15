@@ -29,7 +29,13 @@ namespace IndoorMapTools.View.UserControls
         protected override bool IsItemItsOwnContainerOverride(object item) => item is SelectorItem;
         protected override DependencyObject GetContainerForItemOverride() => new SelectorItem();
 
-        public SelectorControl() => IsTabStop = false;
+        public SelectorControl()
+        {
+            ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(typeof(Grid)));
+            //HorizontalAlignment = HorizontalAlignment.Left;
+            //VerticalAlignment = VerticalAlignment.Top;
+            IsTabStop = false;
+        }
 
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {

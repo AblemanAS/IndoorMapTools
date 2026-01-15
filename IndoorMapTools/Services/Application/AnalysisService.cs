@@ -49,6 +49,9 @@ namespace IndoorMapTools.Services.Application
             List<Area> areas = new();
             foreach(var kvp in floorToAreas) areas.AddRange(kvp.Value);
 
+            // OGM 비트맵 메모리 해제
+            foreach(var kvp in ogmSegments) foreach(var bmp in kvp.Value) bmp.Dispose();
+
             /********************** 2) Landmark - Reachable Area Coupling **********************/
             // 각 층별 Transform Matrix 캐시
             Dictionary<Floor, Matrix> transformers = new();

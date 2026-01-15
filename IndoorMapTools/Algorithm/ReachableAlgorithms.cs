@@ -22,6 +22,7 @@ using System.Drawing.Imaging;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Ink;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Bitmap = System.Drawing.Bitmap;
@@ -854,7 +855,8 @@ namespace IndoorMapTools.Algorithm
                 bitmapData = scaledBitmap.LockBits(new System.Drawing.Rectangle(0, 0, newWidth, newHeight),
                     ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
 
-                byte[] pixels = new byte[bitmapData.Stride * newHeight];
+                int bitmapStride = bitmapData.Stride;
+                byte[] pixels = new byte[bitmapStride * newHeight];
                 int lastProgress = 40;
 
                 if(conservative) // 보수적 메카니즘
@@ -871,7 +873,7 @@ namespace IndoorMapTools.Algorithm
                                 int targetYPos = (int)((y + 0.5) * scale);
                                 if(targetYPos >= newHeight) continue;
                                 int targetXPos = (int)((x + 0.5) * scale);
-                                pixels[targetYPos * bitmapData.Stride + targetXPos / 8] &= (byte)~(0x80 >> (targetXPos % 8));
+                                pixels[targetYPos * bitmapStride + targetXPos / 8] &= (byte)~(0x80 >> (targetXPos % 8));
                             }
                         }
 
@@ -892,7 +894,7 @@ namespace IndoorMapTools.Algorithm
                                 int targetYPos = (int)((y + 0.5) * scale);
                                 if(targetYPos >= newHeight) continue;
                                 int targetXPos = (int)((x + 0.5) * scale);
-                                pixels[targetYPos * bitmapData.Stride + targetXPos / 8] |= (byte)(0x80 >> (targetXPos % 8));
+                                pixels[targetYPos * bitmapStride + targetXPos / 8] |= (byte)(0x80 >> (targetXPos % 8));
                             }
                         }
 
@@ -909,13 +911,11 @@ namespace IndoorMapTools.Algorithm
                 Console.WriteLine($"OGM flag : {timer.ElapsedMilliseconds}");
 
                 // 랜드마크 중점 OGM 반영
-                // 원본 이미지 기준 Reachable 상단 손실폭 계산
                 var transformer = CoordTransformAlgorithms.CalculateTransformer(originalBitmap.Width, originalBitmap.Height, rotation, scale);
                 foreach(var polygon in includedPolygons)
                 {
                     // 최종 scaledBitmap에 해당하는 cell의 값을 true로 할당해 주기 위해,
                     // pixels 배열에 해당하는 위치의 비트를 1로 설정
-                    // scaledBitmap 생성 시의 상단 손실폭을 고려하여 y좌표를 보정
                     Point calculatedCenter = CoordTransformAlgorithms.CalculatePolygonCenter(polygon); // Center
                     Point transformedLoc = transformer.Transform(calculatedCenter);      // Location
 
