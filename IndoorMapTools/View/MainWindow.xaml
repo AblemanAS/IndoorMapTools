@@ -60,7 +60,7 @@ limitations under the License.
 
             <Button Grid.Column="0" IsTabStop="False" Style="{StaticResource SystemButtonStyle}"
                     ToolTip="{DynamicResource strings.NewProject}"
-                    Visibility="{Binding Model, Converter={cvt:NullityToVisibility}}">
+                    Visibility="{Binding Model, Converter={cvt:NonNullToVisibility}}">
                 <Image Source="/Resources/new.png" Opacity="0.9"/>
                 <Button.Command>
                     <dc:MessageBoxCommand Title="{DynamicResource strings.NewProject}"
@@ -77,7 +77,7 @@ limitations under the License.
 
             <Button Grid.Column="0" IsTabStop="False" Style="{StaticResource SystemButtonStyle}"
                     ToolTip="{DynamicResource strings.NewProject}"
-                    Visibility="{Binding Model, Converter={cvt:NonNullityToVisibility}}"
+                    Visibility="{Binding Model, Converter={cvt:NullToVisibility}}"
                     Command="{Binding NewProjectCommand}">
                 <Image Source="/Resources/new.png" Opacity="0.9"/>
             </Button>

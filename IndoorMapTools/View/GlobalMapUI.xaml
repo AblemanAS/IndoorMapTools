@@ -42,7 +42,7 @@ limitations under the License.
     </Grid.ColumnDefinitions>
 
     <osm:OSMControl x:Name="mapControl" Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Margin="2"
-                    Visibility="{Binding Model, Converter={cvt:NullityToVisibility}, FallbackValue=Hidden}"
+                    Visibility="{Binding Model, Converter={cvt:NonNullToVisibility}, FallbackValue=Hidden}"
                     Center="{Binding GlobalMapFocus}" ZoomLevel="19"
                     GrabCursor="{x:Static mv:Map.GrabCursor}" UngrabCursor="{x:Static mv:Map.UngrabCursor}"
                     AltTileSourceURL ="{DynamicResource TileSourceURL}"
@@ -220,7 +220,7 @@ limitations under the License.
                         Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}"
                         ToolTip="{DynamicResource strings.RemoveFloorHeightOverrideToolTipText}"
                         ToolTipService.InitialShowDelay="0"
-                        Visibility="{Binding Height, Converter={cvt:NullityToVisibility}}"
+                        Visibility="{Binding Height, Converter={cvt:NonNullToVisibility}}"
                         HorizontalAlignment="Left" IsTabStop="False">
                     <Image Source="pack://application:,,,/Resources/treshcan.png"
                            Opacity="0.6" SnapsToDevicePixels="True"/>

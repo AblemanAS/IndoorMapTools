@@ -16,7 +16,7 @@ limitations under the License.
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndoorMapTools.Core;
+using IndoorMapTools.Algorithm;
 using IndoorMapTools.Model;
 using IndoorMapTools.Services.Application;
 using IndoorMapTools.Services.Domain;
@@ -42,6 +42,7 @@ namespace IndoorMapTools.ViewModel
         [ObservableProperty] private int newHeight;
         [ObservableProperty] private BitmapImage replacementImage;
 
+        private Project ParentProject => Model.ParentBuilding.ParentProject;
 
         public FloorListItemVM(FloorMapEditService fmeSvc, IMessageService msgSvc, IResourceStringService strSvc)
         {
@@ -76,7 +77,7 @@ namespace IndoorMapTools.ViewModel
         }
 
         [RelayCommand] private void ReorderFloor(int destIndex) => Model.ParentBuilding.MoveFloor(Model, destIndex);
-        [RelayCommand] private void ReplicateFloor() => EntityOrganizer.ReplicateFloor(Model, ReplicationCount);
+        [RelayCommand] private void ReplicateFloor() => EntityOrganizer.ReplicateFloor(Model, ReplicationCount, ParentProject.Namespace);
         [RelayCommand] private void PadCropMapImage() => fmeSvc.PadCropMapImage(Model, LeftPad, RightPad, TopPad, BottomPad);
 
         [RelayCommand] private void LoadReplacementImage(string[] filePaths)

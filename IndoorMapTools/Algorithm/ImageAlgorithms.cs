@@ -26,7 +26,7 @@ using Drawing2D = System.Drawing.Drawing2D;
 using Graphics = System.Drawing.Graphics;
 using PixelFormat = System.Drawing.Imaging.PixelFormat;
 
-namespace IndoorMapTools.Core
+namespace IndoorMapTools.Algorithm
 {
     public static class ImageAlgorithms
     {

@@ -42,16 +42,16 @@ limitations under the License.
     </Grid.ColumnDefinitions>
 
     <!--#region 맵뷰 -->
-    <mv:Map x:Name="mapView" Grid.RowSpan="3" IsEnabled="{Binding Model, Converter={cvt:IsNotNull}}"
-            MapImageSource="{Binding Model.MapImage}" Center="{Binding IndoorMapFocus}">
+    <mv:Map x:Name="mapView" Grid.RowSpan="3" IsEnabled="{Binding MapViewModel, Converter={cvt:IsNotNull}}"
+            MapImageSource="{Binding MapViewModel.MapImage}" Center="{Binding IndoorMapFocus}">
         <mv:Map.Resources>
             <uc:BindingProxy x:Key="toolproxy" Data="{Binding ElementName=polygonTool}"/>
         </mv:Map.Resources>
         <mv:Map.MapOverlays>
-            <Image Source="{Binding Model.Reachable}" 
+            <Image Source="{Binding MapViewModel.Reachable}" 
                Visibility="{Binding ReachableVisible, Converter={cvt:BoolToVisibility}}"/>
         </mv:Map.MapOverlays>
-        <uc:SelectorControl x:Name="lmelemSelector" ItemsSource="{Binding Model.Landmarks}" SelectedItem="{Binding SelectedMapViewItem}"
+        <uc:SelectorControl x:Name="lmelemSelector" ItemsSource="{Binding MapViewModel.Landmarks}" SelectedItem="{Binding SelectedMapViewItem}"
                             IsHitTestVisible="{Binding ActiveTool, ElementName=mapView, Converter={cvt:IsNull}}" Cursor="None">
             <uc:SelectorControl.ItemContainerStyle>
                 <Style TargetType="uc:SelectorItem">
@@ -280,8 +280,7 @@ limitations under the License.
 
     <uc:TreeViewEx x:Name="landmarkView" Grid.Row="2" Grid.Column="1" Margin="3"
                    SelectedItem="{Binding SelectedLandmarkViewItem, Mode=TwoWay}"
-                   ItemsSource="{Binding DataContext.Model.Building.LandmarkGroups, 
-                                RelativeSource={RelativeSource AncestorType=TabControl}}"
+                   ItemsSource="{Binding TreeViewModel.LandmarkGroups}"
                    ChildSelector="{Binding ChildSelector}"
                    ScrollViewer.HorizontalScrollBarVisibility="Disabled">
         <uc:TreeViewEx.ItemContainerStyle>

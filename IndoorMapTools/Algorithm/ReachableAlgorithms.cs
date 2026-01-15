@@ -26,7 +26,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Bitmap = System.Drawing.Bitmap;
 
-namespace IndoorMapTools.Core
+namespace IndoorMapTools.Algorithm
 {
     public class ReachableAlgorithms
     {
@@ -910,13 +910,13 @@ namespace IndoorMapTools.Core
 
                 // 랜드마크 중점 OGM 반영
                 // 원본 이미지 기준 Reachable 상단 손실폭 계산
-                var transformer = MathAlgorithms.CalculateTransformer(originalBitmap.Width, originalBitmap.Height, rotation, scale);
+                var transformer = CoordTransformAlgorithms.CalculateTransformer(originalBitmap.Width, originalBitmap.Height, rotation, scale);
                 foreach(var polygon in includedPolygons)
                 {
                     // 최종 scaledBitmap에 해당하는 cell의 값을 true로 할당해 주기 위해,
                     // pixels 배열에 해당하는 위치의 비트를 1로 설정
                     // scaledBitmap 생성 시의 상단 손실폭을 고려하여 y좌표를 보정
-                    Point calculatedCenter = MathAlgorithms.CalculatePolygonCenter(polygon); // Center
+                    Point calculatedCenter = CoordTransformAlgorithms.CalculatePolygonCenter(polygon); // Center
                     Point transformedLoc = transformer.Transform(calculatedCenter);      // Location
 
                     int targetX = (int)transformedLoc.X;

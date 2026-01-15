@@ -30,5 +30,54 @@ namespace IndoorMapTools.Services.Domain
             for(int i = 0; i < floors.Count; i++)
                 floors[i].Name = "Floor" + (i + 1);
         }
+
+
+        public static void BatchLandmarkName(IReadOnlyList<LandmarkGroup> landmarkGroups)
+        {
+            // 임시 이름 할당
+            string tempPrefix = System.Guid.NewGuid().ToString();
+            int tempPostfix = 0;
+            foreach(var group in landmarkGroups)
+                foreach(var lm in group.Landmarks)
+                    lm.Name = tempPrefix + tempPostfix++;
+
+            var nameDict = new Dictionary<string, int>();
+            foreach(var group in landmarkGroups)
+                foreach(var lm in group.Landmarks)
+                {
+                    string curName = group.Name + "-" + lm.ParentFloor.Name;
+                    if(!nameDict.ContainsKey(curName))
+                    {
+                        nameDict[curName] = 0;
+                        lm.Name = curName;
+                    }
+                    else lm.Name = curName + ++nameDict[curName];
+                }
+
+        }
+
+
+        public static string GetNumberedFloorName(Dictionary<string, int> namespaceMap) 
+            => GetNumberedName(namespaceMap, nameof(Floor));
+
+        public static string GetNumberedLandmarkName(Dictionary<string, int> namespaceMap, LandmarkType type)
+            => GetNumberedName(namespaceMap, type.ToString());
+
+        public static string GetNumberedLandmarkGroupName(Dictionary<string, int> namespaceMap, LandmarkType type)
+            => GetNumberedName(namespaceMap, type.ToString() + "Group");
+
+        public static string GetNumberedFloor<T>(Dictionary<string, int> namespaceMap)
+            => GetNumberedName(namespaceMap, nameof(T));
+
+        public static string GetNumberedName(Dictionary<string, int> namespaceMap, string prefixName)
+        {
+            if(!namespaceMap.ContainsKey(prefixName))
+            {
+                namespaceMap[prefixName] = 1;
+                return prefixName + 1;
+            }
+
+            return prefixName + ++namespaceMap[prefixName];
+        }
     }
 }

@@ -16,13 +16,14 @@ limitations under the License.
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndoorMapTools.Core;
+using IndoorMapTools.Algorithm;
 using IndoorMapTools.Model;
 using IndoorMapTools.Services.Application;
 using IndoorMapTools.Services.Domain;
 using IndoorMapTools.Services.Infrastructure.IMPJ;
 using IndoorMapTools.Services.Presentation;
 using System;
+using System.Data.SqlTypes;
 using System.IO;
 
 namespace IndoorMapTools.ViewModel
@@ -66,12 +67,10 @@ namespace IndoorMapTools.ViewModel
             bgSvc.PropertyChanged += (sender, e) => 
             { if(!string.IsNullOrEmpty(e.PropertyName)) OnPropertyChanged(e.PropertyName); };
 
-            bgSvc.Run(() => GeoLocationModule.Initialize(), "Init GeoLocation Module");
-
             Ivm.PropertyChanged += (sender, e) => // IVM의 모델 변경 감시 -> 자신의 층선택을 동기화
             {
-                if(e.PropertyName == nameof(Ivm.Model) && SelectedFloor != Ivm.Model)
-                    SelectedFloor = Ivm.Model;
+                if(e.PropertyName == nameof(Ivm.MapViewModel) && SelectedFloor != Ivm.MapViewModel)
+                    SelectedFloor = Ivm.MapViewModel;
             };
 
             Gvm.FloorStates.PropertyChanged += (_, e) =>
@@ -96,7 +95,8 @@ namespace IndoorMapTools.ViewModel
         {
             // 기존 모델 상태 구조 해제, 속성 초기화
             Gvm.Model = null;
-            Ivm.Model = null;
+            Ivm.TreeViewModel = null;
+            Ivm.MapViewModel = null;
             Evm.Model = null;
             Fvm.Model = null;
             Avm.Model = null;
@@ -107,6 +107,7 @@ namespace IndoorMapTools.ViewModel
 
             // 새로운 모델 상태 구조 구축
             Gvm.Model = newModel.Building;
+            Ivm.TreeViewModel = newModel.Building;
             Evm.Model = newModel;
             Avm.Model = newModel;
         }
@@ -119,7 +120,7 @@ namespace IndoorMapTools.ViewModel
             try
             {
                 if(Gvm.SelectedFloor != newSelection) Gvm.SelectedFloor = newSelection;
-                if(Ivm.Model != newSelection) Ivm.Model = newSelection;
+                if(Ivm.MapViewModel != newSelection) Ivm.MapViewModel = newSelection;
                 if(Fvm.Model != newSelection) Fvm.Model = newSelection;
             }
             finally { guardFloorSync = false; }
@@ -165,7 +166,8 @@ namespace IndoorMapTools.ViewModel
 
         // 층 리스트 핸들러
         [RelayCommand] private void CreateFloor(string filePath)
-            => bgSvc.Run(() => Model?.Building.CreateFloor(ImageAlgorithms.BitmapImageFromFile(filePath), Gvm.GlobalMapFocus));
+            => bgSvc.Run(() => Model?.Building.CreateFloor(EntityNamer.GetNumberedFloorName(Model.Namespace), 
+                ImageAlgorithms.BitmapImageFromFile(filePath), Gvm.GlobalMapFocus));
 
         [RelayCommand] private void BatchFloorName() => EntityNamer.BatchFloorName(Model.Building.Floors);
     }

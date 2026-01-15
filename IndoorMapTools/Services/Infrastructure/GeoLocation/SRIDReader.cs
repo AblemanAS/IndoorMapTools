@@ -19,13 +19,11 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 
-namespace IndoorMapTools.Services.Infrastructure.SRID
+namespace IndoorMapTools.Services.Infrastructure.GeoLocation
 {
     internal class SRIDReader
     {
-        private const int MAX_EPSG = 65535;
-
-        public static (string Name, string WKT)[] ReadSRIDs(string filePath)
+        public static (string Name, string WKT)[] Load(string filePath, int maxepsg)
         {
             using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read,
                 1024 * 1024, options: FileOptions.SequentialScan); // 1MB buffer
@@ -33,19 +31,17 @@ namespace IndoorMapTools.Services.Infrastructure.SRID
             using var es = archive.Entries[0].Open();
             using var sr = new StreamReader(es, Encoding.UTF8, true, 1024 * 64, false); // 64KB buffer
 
-            var result = new (string Name, string WKT)[MAX_EPSG];
+            var result = new (string Name, string WKT)[maxepsg + 1];
+            char[] sep = {'|'};
             string line;
             while((line = sr.ReadLine()) is not null)
             {
                 if(line.Length == 0) continue;
-                string[] splitted = line.Split('|');
-                if(int.Parse(splitted[0]) >= MAX_EPSG)
-                {
-                    continue;
-                }
-                result[int.Parse(splitted[0])] = (splitted[1], splitted[2]);
+                string[] splitted = line.Split(sep, 3);
+                int epsg = int.Parse(splitted[0]);
+                if(epsg >= maxepsg) continue;
+                result[epsg] = (splitted[1], splitted[2]);
             }
-
             return result;
         }
     }

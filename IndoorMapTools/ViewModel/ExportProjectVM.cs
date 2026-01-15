@@ -16,10 +16,10 @@ limitations under the License.
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndoorMapTools.Core;
 using IndoorMapTools.Model;
 using IndoorMapTools.Services.Application;
 using IndoorMapTools.Services.Domain;
+using IndoorMapTools.Services.Infrastructure.GeoLocation;
 using IndoorMapTools.Services.Infrastructure.IMPJ;
 using IndoorMapTools.Services.Presentation;
 using System;
@@ -31,13 +31,16 @@ namespace IndoorMapTools.ViewModel
     {
         private readonly BackgroundService backgroundWorker;
         private readonly IMPJExportService impjExportSvc;
-        private readonly IResourceStringService stringSvc;
+        private readonly IResourceStringService strSvc;
+        private readonly GeoLocationService glSvc;
 
-        public ExportProjectVM(BackgroundService backgroundWorker, IResourceStringService stringSvc, IMPJExportService impjExportSvc)
+        public ExportProjectVM(BackgroundService backgroundWorker, 
+            IResourceStringService strSvc, IMPJExportService impjExSvc, GeoLocationService glSvc)
         {
             this.backgroundWorker = backgroundWorker;
-            this.stringSvc = stringSvc;
-            this.impjExportSvc = impjExportSvc;
+            this.strSvc = strSvc;
+            this.impjExportSvc = impjExSvc;
+            this.glSvc = glSvc;
         }
 
         [ObservableProperty] private Project model;
@@ -53,8 +56,8 @@ namespace IndoorMapTools.ViewModel
         {
             void onCRSChanged(object sender, PropertyChangedEventArgs e)
             {
-                CRSName = GeoLocationModule.ToName(Model.CRS);
-                CRSWKT = GeoLocationModule.ToWKT(Model.CRS);
+                CRSName = glSvc.ToName(Model.CRS);
+                CRSWKT = glSvc.ToWKT(Model.CRS);
                 bool crsValid = CRSName != null && CRSName.Length > 0;
                 if(CRSValid != crsValid)
                 {
@@ -79,6 +82,6 @@ namespace IndoorMapTools.ViewModel
 
         [RelayCommand(CanExecute = nameof(IsLayoutValid))] private void ExportProject(string filePath)
             => backgroundWorker.Run(() => impjExportSvc.Export(Model, filePath, backgroundWorker.ReportProgress), 
-                stringSvc["strings.ExportProjectStatusDesc"]);
+                strSvc["strings.ExportProjectStatusDesc"]);
     }
 }

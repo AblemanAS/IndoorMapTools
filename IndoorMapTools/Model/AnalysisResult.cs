@@ -14,13 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ***********************************************************************/
 
-using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
 
 namespace IndoorMapTools.Model
 {
-    public partial class AnalysisResult : ObservableObject
+    public class AnalysisResult
     {
         public IReadOnlyList<Area> Areas { get; }
         public IReadOnlyList<Landmark> Landmarks { get; }
