@@ -16,15 +16,25 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Windows;
 
-namespace IndoorMapTools.Core
+namespace IndoorMapTools.Algorithm
 {
     /// <summary>
-    /// 수학 관련 기능을 제공하는 모듈입니다.
+    /// 범용 좌표 변환 관련 기능을 제공하는 모듈입니다.
     /// </summary>
-    public static class MathAlgorithms
+    public static class CoordTransformAlgorithms
     {
-        public static System.Windows.Point CalculatePolygonCenter(IEnumerable<System.Windows.Point> points)
+        public static Point PixelCoordToMeterCoord(
+            Point pixelCoord, int mapImagePixelHeight, double mapImagePPM)
+        {
+            if(mapImagePixelHeight < 1 || mapImagePPM > 1e+8 || mapImagePPM < 1e-6) 
+                return new Point(Double.NaN, Double.NaN);
+            return new Point(pixelCoord.X / mapImagePPM, (mapImagePixelHeight - pixelCoord.Y) / mapImagePPM);
+        }
+
+
+        public static Point CalculatePolygonCenter(IEnumerable<Point> points)
         {
             // null 이면 기본값 반환
             if(points == null) return default;
@@ -67,13 +77,13 @@ namespace IndoorMapTools.Core
             {
                 cx /= (6 * area);
                 cy /= (6 * area);
-                return new System.Windows.Point(cx, cy);
+                return new Point(cx, cy);
             }
 
-            var calculatedCenter = new System.Windows.Vector(0, 0);
-            foreach(var curPoint in points) calculatedCenter += (System.Windows.Vector)curPoint;
+            var calculatedCenter = new Vector(0, 0);
+            foreach(var curPoint in points) calculatedCenter += (Vector)curPoint;
             calculatedCenter /= pointsLength;
-            return (System.Windows.Point)calculatedCenter;
+            return (Point)calculatedCenter;
         }
 
 
@@ -87,7 +97,8 @@ namespace IndoorMapTools.Core
         /// <param name="rotation">회전 각도 (시계방향, degree)</param>
         /// <param name="scale">스케일 비율</param>
         /// <returns>계산된 변환 행렬</returns>
-        public static System.Windows.Media.Matrix CalculateTransformer(int imageWidth, int imageHeight, double rotation, double scale)
+        public static System.Windows.Media.Matrix CalculateTransformer(
+            int imageWidth, int imageHeight, double rotation, double scale)
         {
             var transformer = new System.Windows.Media.Matrix();
             double angle = rotation * Math.PI / 180.0;
@@ -100,6 +111,52 @@ namespace IndoorMapTools.Core
             transformer.ScaleAt(1.0, -1.0, 0.0, newHeight * 0.5);
             transformer.ScaleAt(scale, scale, 0.0, 0.0);
             return transformer;
+        }
+
+
+
+        private const double EarthRadius = 6378137.0; // WGS-84 기준 지구 반경 (meters)
+        private const double TO_RAD_COEF = Math.PI / 180.0;
+        private const double TO_DEG_COEF = 180.0 / Math.PI;
+
+        public static Point TranslateWGSPoint(Point originLonLat, double xTranslationMeter, double yTranslationMeter)
+        {
+            double latRad = originLonLat.Y * TO_RAD_COEF;
+            double lonRad = originLonLat.X * TO_RAD_COEF;
+
+            double distance = Math.Sqrt(xTranslationMeter * xTranslationMeter + yTranslationMeter * yTranslationMeter);
+            double bearing = Math.Atan2(xTranslationMeter, yTranslationMeter);
+
+            double newLatRad = Math.Asin(Math.Sin(latRad) * Math.Cos(distance / EarthRadius) +
+                                         Math.Cos(latRad) * Math.Sin(distance / EarthRadius) * Math.Cos(bearing));
+            double newLonRad = lonRad + Math.Atan2(Math.Sin(bearing) * Math.Sin(distance / EarthRadius) * Math.Cos(latRad),
+                                                   Math.Cos(distance / EarthRadius) - Math.Sin(latRad) * Math.Sin(newLatRad));
+
+            return new Point(newLonRad * TO_DEG_COEF, newLatRad * TO_DEG_COEF);
+        }
+
+
+        public static Vector GetTranslationWGS(Point originLonLat, Point destinationLonLat)
+        {
+            double lat1Rad = originLonLat.Y * TO_RAD_COEF;
+            double lat2Rad = destinationLonLat.Y * TO_RAD_COEF;
+
+            double deltaLat = lat2Rad - lat1Rad;
+            double deltaLon = (destinationLonLat.X - originLonLat.X) * TO_RAD_COEF;
+
+            double a = Math.Sin(deltaLat / 2) * Math.Sin(deltaLat / 2) +
+                       Math.Cos(lat1Rad) * Math.Cos(lat2Rad) *
+                       Math.Sin(deltaLon / 2) * Math.Sin(deltaLon / 2);
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+            double distance = EarthRadius * c;
+
+            double y = Math.Sin(deltaLon) * Math.Cos(lat2Rad);
+            double x = Math.Cos(lat1Rad) * Math.Sin(lat2Rad) -
+                       Math.Sin(lat1Rad) * Math.Cos(lat2Rad) * Math.Cos(deltaLon);
+            double bearing = Math.Atan2(y, x);
+
+            return new Vector(distance * Math.Sin(bearing), distance * Math.Cos(bearing));
         }
     }
 }

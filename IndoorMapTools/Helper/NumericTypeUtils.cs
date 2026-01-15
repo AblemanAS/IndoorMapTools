@@ -28,12 +28,9 @@ namespace IndoorMapTools.Helper
         /// </summary>
         /// <param name="o">인식할 객체</param>
         /// <returns>변환된 double 값 또는 변환 실패 시 null</returns>
-        public static object AsDouble(this object o)
+        public static object AsDouble(object o)
         {
-            try
-            {
-                return (double)Convert.ChangeType(o, TypeCode.Double);
-            }
+            try  { return (double)Convert.ChangeType(o, TypeCode.Double); }
             catch
             {
                 if(o is string str && double.TryParse(str, out double d)) return d;
@@ -41,30 +38,30 @@ namespace IndoorMapTools.Helper
             }
         }
 
-        /// <summary>
-        /// 객체가 숫자 타입인지 확인합니다. (TypeCode Byte, SByte, UInt16, UInt32, UInt64, Int16, Int32, Int64, Decimal, Double, Single)
-        /// </summary>
-        /// <param name="o">확인할 객체</param>
-        /// <returns>숫자 타입이면 true, 아니면 false</returns>
-        public static bool IsNumericType(this object o)
-        {
-            switch(Type.GetTypeCode(o.GetType()))
-            {
-                case TypeCode.Byte:
-                case TypeCode.SByte:
-                case TypeCode.UInt16:
-                case TypeCode.UInt32:
-                case TypeCode.UInt64:
-                case TypeCode.Int16:
-                case TypeCode.Int32:
-                case TypeCode.Int64:
-                case TypeCode.Decimal:
-                case TypeCode.Double:
-                case TypeCode.Single:
-                    return true;
-                default:
-                    return false;
-            }
-        }
+        ///// <summary>
+        ///// 객체가 숫자 타입인지 확인합니다. (TypeCode Byte, SByte, UInt16, UInt32, UInt64, Int16, Int32, Int64, Decimal, Double, Single)
+        ///// </summary>
+        ///// <param name="o">확인할 객체</param>
+        ///// <returns>숫자 타입이면 true, 아니면 false</returns>
+        //public static bool IsNumericType(this object o) 20260115 비활성화
+        //{
+        //    switch(Type.GetTypeCode(o.GetType()))
+        //    {
+        //        case TypeCode.Byte:
+        //        case TypeCode.SByte:
+        //        case TypeCode.UInt16:
+        //        case TypeCode.UInt32:
+        //        case TypeCode.UInt64:
+        //        case TypeCode.Int16:
+        //        case TypeCode.Int32:
+        //        case TypeCode.Int64:
+        //        case TypeCode.Decimal:
+        //        case TypeCode.Double:
+        //        case TypeCode.Single:
+        //            return true;
+        //        default:
+        //            return false;
+        //    }
+        //}
     }
 }

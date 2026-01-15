@@ -16,7 +16,7 @@ limitations under the License.
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndoorMapTools.Core;
+using IndoorMapTools.Algorithm;
 using System;
 using System.Collections.ObjectModel;
 using System.Windows.Media.Imaging;
@@ -49,12 +49,10 @@ namespace IndoorMapTools.Model
         }
 
 
-        internal Floor(Building building, BitmapImage mapImage, double leftLongitude, double bottomLatitude)
+        internal Floor(string entityName, Building building, BitmapImage mapImage, double leftLongitude, double bottomLatitude)
         {
+            name = entityName;
             ParentBuilding = building;
-
-            // 필드 초기화
-            name = building.ParentProject.GetNumberedName(nameof(Floor));
             this.mapImage = mapImage;
             this.leftLongitude = leftLongitude;
             this.bottomLatitude = bottomLatitude;

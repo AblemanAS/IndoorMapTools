@@ -24,7 +24,7 @@ namespace IndoorMapTools.Model
     public partial class Project : ObservableObject
     {
         // 서비스
-        public Dictionary<string, int> Namespace { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, int> Namespace { get; } = new();
 
         // 에디터 영역
         [ObservableProperty] private Building building;
@@ -39,16 +39,5 @@ namespace IndoorMapTools.Model
         [ObservableProperty] private bool directedReachableCluster = true;
 
         internal Project() => Building = new Building(this);
-
-        public string GetNumberedName(string prefixName)
-        {
-            if(!Namespace.ContainsKey(prefixName))
-            {
-                Namespace[prefixName] = 1;
-                return prefixName + 1;
-            }
-
-            return prefixName + ++Namespace[prefixName];
-        }
     }
 }

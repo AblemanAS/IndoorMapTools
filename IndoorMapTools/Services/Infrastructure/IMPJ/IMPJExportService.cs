@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ***********************************************************************/
 
-using IndoorMapTools.Core;
+using IndoorMapTools.Algorithm;
 using IndoorMapTools.Helper;
 using IndoorMapTools.Model;
+using IndoorMapTools.Services.Infrastructure.GeoLocation;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -34,7 +35,11 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
 {
     public class IMPJExportService
     {
-        private readonly ConcurrentDictionary<Floor, Matrix> transformerCache = new ConcurrentDictionary<Floor, Matrix>();
+        private readonly GeoLocationService glSvc;
+
+        public IMPJExportService(GeoLocationService glSvc) => this.glSvc = glSvc;
+
+        private readonly ConcurrentDictionary<Floor, Matrix> transformerCache = new();
 
         public void Export(Project context, string filePath, Action<int> progressCb = null)
         {
@@ -48,7 +53,7 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
             // 각 층별 Transform Matrix 캐시
             foreach(var floor in context.Building.Floors)
                 floor.Reachable.Dispatcher.Invoke(() =>
-                    transformerCache[floor] = MathAlgorithms.CalculateTransformer(floor.Reachable.PixelWidth,
+                    transformerCache[floor] = CoordTransformAlgorithms.CalculateTransformer(floor.Reachable.PixelWidth,
                     floor.Reachable.PixelHeight, floor.MapImageRotation, 1 / floor.MapImagePPM));
             progBox.Report(100 * ++currentProgress / maximumProgress);
 
@@ -57,13 +62,13 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
                 Directory.CreateDirectory(tempDirectory);
                 if(File.Exists(filePath)) File.Delete(filePath); // 이미 Save File 존재할 경우 삭제
 
-                Task.Run(() => // Building 데이터
+                var buildingTask = Task.Run(() => // Building 데이터
                 {
                     File.WriteAllText(Path.Combine(tempDirectory, IMPJDefinitions.META_ATTR_FILE_NAME), SerializeBuildingAttr(context.Building, context.CRS));
                     progBox.Report(100 * ++currentProgress / maximumProgress);
                 });
 
-                Task.Run(() => // Landmarks 데이터
+                var landmarksTask = Task.Run(() => // Landmarks 데이터
                 {
                     File.WriteAllText(Path.Combine(tempDirectory, IMPJDefinitions.LANDMARKS_ATTR_FILE_NAME), SerializeLandmarkGroupsAttr(context.Building.LandmarkGroups));
                     progBox.Report(100 * ++currentProgress / maximumProgress);
@@ -95,6 +100,8 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
                     progBox.Report(20);
                 });
 
+                Task.WaitAll(buildingTask, landmarksTask);
+
                 ZipFile.CreateFromDirectory(tempDirectory, filePath);
                 progBox.Report(100 * ++currentProgress / maximumProgress);
             }
@@ -109,7 +116,7 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
 
         private string SerializeBuildingAttr(Building building, int crs)
         {
-            JsonBuilder serializer = new JsonBuilder();
+            var serializer = new JsonBuilder();
 
             serializer.StartObject();
             {
@@ -117,7 +124,7 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
                 serializer.WritePropertyPair(IMPJDefinitions.PROP_BUILDING_ADDRESS, building.Address);
                 serializer.WritePropertyPair(IMPJDefinitions.PROP_PROJECT_CRS, crs);
 
-                Point calculatedCenter = new Point(0, 0);
+                var calculatedCenter = new Point(0, 0);
                 foreach(Point point in building.Outline)
                     calculatedCenter += (Vector)point;
                 calculatedCenter.X /= building.Outline.Length;
@@ -127,7 +134,7 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
 
                 var convertedList = new List<Point>();
                 foreach(Point lonlat in building.Outline)
-                    convertedList.Add(GeoLocationModule.ProjectToLocalSystem(lonlat, crs));
+                    convertedList.Add(glSvc.ProjectToLocalSystem(lonlat, crs));
                 serializer.WritePropertyPair(IMPJDefinitions.PROP_BUILDING_OUTLINE, 
                     convertedList, IMPJDefinitions.EXPORT_METER_PRECISION);
             }
@@ -139,8 +146,8 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
 
         private string SerializeLandmarkGroupsAttr(IEnumerable<LandmarkGroup> groups)
         {
-            JsonBuilder serializer = new JsonBuilder();
-
+            var serializer = new JsonBuilder();
+            
             serializer.StartList();
             foreach(LandmarkGroup group in groups)
             {
@@ -156,7 +163,7 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
 
                         serializer.StartObject();
                         {
-                            Point calculatedCenter = MathAlgorithms.CalculatePolygonCenter(lm.Outline); // Center
+                            Point calculatedCenter = CoordTransformAlgorithms.CalculatePolygonCenter(lm.Outline); // Center
 
                             // 필드 계산
                             Point transformedLocation = transformer.Transform(calculatedCenter); // Location
@@ -185,7 +192,7 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
 
         private string SerializeFloorAttr(Floor floor, double reachableResolution, int crs)
         {
-            JsonBuilder serializer = new JsonBuilder();
+            var serializer = new JsonBuilder();
 
             serializer.StartObject();
             {
@@ -201,12 +208,12 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
                 double realWidth = imageWidth / floor.MapImagePPM;
                 double realHeight = imageHeight / floor.MapImagePPM;
 
-                Point projectedLoc = GeoLocationModule.ProjectToLocalSystem(new Point(floor.LeftLongitude, floor.BottomLatitude), crs);
+                Point projectedLoc = glSvc.ProjectToLocalSystem(new Point(floor.LeftLongitude, floor.BottomLatitude), crs);
 
                 double cosT = Math.Cos(angle);
                 double sinT = Math.Sin(angle);
 
-                var corners = new Point[] { new Point(0, 0), new Point(realWidth, 0), new Point(0, realHeight), new Point(realWidth, realHeight) };
+                var corners = new Point[] { new(0, 0), new(realWidth, 0), new(0, realHeight), new(realWidth, realHeight) };
 
                 double minX = double.PositiveInfinity;
                 double minY = double.PositiveInfinity;

@@ -16,7 +16,7 @@ limitations under the License.
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndoorMapTools.Core;
+using IndoorMapTools.Algorithm;
 using IndoorMapTools.Model;
 using IndoorMapTools.Services.Presentation;
 using System;

@@ -14,9 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ***********************************************************************/
 
-using IndoorMapTools.Core;
+using IndoorMapTools.Algorithm;
 using IndoorMapTools.Helper;
 using IndoorMapTools.Model;
+using IndoorMapTools.Services.Domain;
+using IndoorMapTools.Services.Infrastructure.GeoLocation;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -32,10 +34,14 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
 {
     public class IMPJImportService
     {
+        private readonly GeoLocationService glSvc;
+
+        public IMPJImportService(GeoLocationService glSvc) => this.glSvc = glSvc;
+
         public Project Import(string filePath, Action<int> progressCb = null)
         {
-            Project resultProject = new Project();
-
+            var resultProject = new Project();
+            
             string tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             var progBox = new IntegerProgressBox((p) => progressCb?.Invoke(p));
 
@@ -46,7 +52,9 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
                 ZipFile.ExtractToDirectory(filePath, tempDirectory);
 
                 // Building Attributes 역직렬화
-                resultProject.CRS = DeserializeBuildingAttr(resultProject.Building, File.ReadAllText(Path.Combine(tempDirectory, IMPJDefinitions.META_ATTR_FILE_NAME)));
+                string buildingAttrText = File.ReadAllText(Path.Combine(tempDirectory, IMPJDefinitions.META_ATTR_FILE_NAME));
+                DeserializeBuildingAttr(resultProject.Building, out int epsg, buildingAttrText);
+                resultProject.CRS = epsg;
                 progBox.Report(10);
 
                 // Floors
@@ -58,17 +66,19 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
                 Parallel.ForEach(tempDirInfo.EnumerateDirectories(), floorDir =>
                 {
                     // Map Image 로 Floor 생성
-                    Floor curFloor = new Floor(resultProject.Building, 
-                        ImageAlgorithms.BitmapImageFromFile(Path.Combine(floorDir.FullName, IMPJDefinitions.FLOOR_IMAGE_FILE_NAME)), 0.0, 0.0);
+                    var curFloor = new Floor("", resultProject.Building, // 임시 이름 -> 나중에 정렬 후 부여
+                        ImageAlgorithms.BitmapImageFromFile(Path.Combine(floorDir.FullName, 
+                        IMPJDefinitions.FLOOR_IMAGE_FILE_NAME)), 0.0, 0.0);
                     resultProject.Building.AddFloor(curFloor);
 
                     // Floor Attributes 역직렬화
-                    floorLevelDict[curFloor] = DeserializeFloorAttr(curFloor, 
-                        File.ReadAllText(Path.Combine(floorDir.FullName, IMPJDefinitions.FLOOR_ATTR_FILE_NAME)), resultProject.CRS);
+                    string floorAttrText = File.ReadAllText(Path.Combine(floorDir.FullName, IMPJDefinitions.FLOOR_ATTR_FILE_NAME));
+                        floorLevelDict[curFloor] = DeserializeFloorAttr(curFloor, floorAttrText, resultProject.CRS);
 
                     // Reachable 언팩
-                    Bitmap rawBitmap = new Bitmap(Path.Combine(floorDir.FullName, IMPJDefinitions.FLOOR_OGM_FILE_NAME));
-                    curFloor.Reachable = ReachableAlgorithms.BuildReachablefromOGM(rawBitmap, curFloor.MapImage.PixelWidth, curFloor.MapImage.PixelHeight);
+                    var rawBitmap = new Bitmap(Path.Combine(floorDir.FullName, IMPJDefinitions.FLOOR_OGM_FILE_NAME));
+                    curFloor.Reachable = ReachableAlgorithms.BuildReachablefromOGM(rawBitmap, 
+                        curFloor.MapImage.PixelWidth, curFloor.MapImage.PixelHeight);
 
                     progBox.Report(10 + 90 * ++currentProgress / maximumProgress);
                 });
@@ -77,7 +87,8 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
                 resultProject.Building.SortFloors(fl => floorLevelDict[fl]);
 
                 // Landmarks Attributes 역직렬화
-                DeserializeLandmarkGroupsAttr(resultProject.Building, File.ReadAllText(Path.Combine(tempDirectory, IMPJDefinitions.LANDMARKS_ATTR_FILE_NAME)));
+                string landmarkAttrText = File.ReadAllText(Path.Combine(tempDirectory, IMPJDefinitions.LANDMARKS_ATTR_FILE_NAME));
+                DeserializeLandmarkGroupsAttr(resultProject.Building, landmarkAttrText, resultProject.Namespace);
                 progBox.Report(100);
 
                 // NameSpace 입력
@@ -101,40 +112,41 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
         }
 
 
-        // return : epsg
-        private int DeserializeBuildingAttr(Building building, string jsonText)
+        private void DeserializeBuildingAttr(Building building, out int epsg, string jsonText)
         {
             Dictionary<string, object> jsonDict = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(jsonText);
             building.Name = (string)jsonDict[IMPJDefinitions.PROP_BUILDING_NAME];
             building.Address = (string)jsonDict[IMPJDefinitions.PROP_BUILDING_ADDRESS];
 
-            int crs;
             // IMPJ 호환성!!! #######################
-            try { crs = Convert.ToInt32(jsonDict[IMPJDefinitions.PROP_PROJECT_CRS]); } 
-            catch { crs = IMPJDefinitions.IMPORT_DEFAULT_EPSG; }
+            try { epsg = Convert.ToInt32(jsonDict[IMPJDefinitions.PROP_PROJECT_CRS]); } 
+            catch { epsg = IMPJDefinitions.IMPORT_DEFAULT_EPSG; }
 
             var rawListOutline = (ArrayList)jsonDict[IMPJDefinitions.PROP_BUILDING_OUTLINE];
             building.Outline = new Point[rawListOutline.Count];
+
             for(int i = 0; i < rawListOutline.Count; i++)
             {
                 var rawNode = (ArrayList)rawListOutline[i];
-                var localNode = new Point(Convert.ToDouble(rawNode[0]), Convert.ToDouble(rawNode[1]));
-                building.Outline[i] = GeoLocationModule.ProjectToGlobalSystem(localNode, crs);
+                building.Outline[i] = new Point(Convert.ToDouble(rawNode[0]), Convert.ToDouble(rawNode[1]));
             }
 
-            return crs;
+            building.Outline = glSvc.ProjectToGlobalSystem(building.Outline, epsg);
         }
 
 
-        private void DeserializeLandmarkGroupsAttr(Building building, string jsonText)
+        private void DeserializeLandmarkGroupsAttr(Building building, string jsonText, Dictionary<string, int> namespaceMap)
         {
             foreach(Dictionary<string, object> landmarkGroup in new JavaScriptSerializer().Deserialize<ArrayList>(jsonText))
             {
-                var curGroupType = (LandmarkType)IMPJDefinitions.GROUP_TYPE_STRING.IndexOf((string)landmarkGroup[IMPJDefinitions.PROP_GROUP_TYPE]);
-                LandmarkGroup curGroup = new LandmarkGroup(building, curGroupType);
+                string curGroupTypeJsonStr = (string)landmarkGroup[IMPJDefinitions.PROP_GROUP_TYPE];
+                var curGroupType = (LandmarkType)IMPJDefinitions.GROUP_TYPE_STRING.IndexOf(curGroupTypeJsonStr);
+                string curLandmarkGroupName = EntityNamer.GetNumberedLandmarkGroupName(namespaceMap, curGroupType);
+                var curGroup = new LandmarkGroup(curLandmarkGroupName, building, curGroupType);
                 building.AddLandmarkGroup(curGroup);
 
-                foreach(Dictionary<string, object> curLandmarkJsonDict in (ArrayList)landmarkGroup[IMPJDefinitions.PROP_GROUP_EXITS])
+                var landmarksJsonList = (ArrayList)landmarkGroup[IMPJDefinitions.PROP_GROUP_EXITS];
+                foreach(Dictionary<string, object> curLandmarkJsonDict in landmarksJsonList)
                 {
                     string curLandmarkFloorName = (string)curLandmarkJsonDict[IMPJDefinitions.PROP_LANDMARK_PARENTFLOOR];
                     foreach(var curFloor in building.Floors)
@@ -149,7 +161,8 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
                             var curLandmarkLocY = mapImageHeight - Convert.ToDouble(curLandmarkJsonDict[IMPJDefinitions.PROP_LANDMARK_Y]) * ppm;
 
                             // 랜드마크 생성 및 포함
-                            var curLandmark = new Landmark(curGroup, curFloor, new Point(curLandmarkLocX, curLandmarkLocY));
+                            var curLandmark = new Landmark(EntityNamer.GetNumberedLandmarkName(namespaceMap, curGroupType), 
+                                curGroup, curFloor, new Point(curLandmarkLocX, curLandmarkLocY));
                             curGroup.AddLandmark(curLandmark);
                             curFloor.AddLandmark(curLandmark);
 
@@ -187,7 +200,7 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
             floor.Height = Convert.ToSingle(jsonDict[IMPJDefinitions.PROP_FLOOR_HEIGHT]);
             var rawOffset = (ArrayList)jsonDict[IMPJDefinitions.PROP_FLOOR_OFFSET];
             var localOffset = new Point(Convert.ToDouble(rawOffset[0]), Convert.ToDouble(rawOffset[1]));
-            var globalOffset = GeoLocationModule.ProjectToGlobalSystem(localOffset, crs);
+            var globalOffset = glSvc.ProjectToGlobalSystem(localOffset, crs);
             floor.LeftLongitude = globalOffset.X;
             floor.BottomLatitude = globalOffset.Y;
             var curFloorImageJsonDict = (Dictionary<string, object>)jsonDict[IMPJDefinitions.PROP_FLOOR_IMAGE];

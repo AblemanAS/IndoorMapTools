@@ -16,7 +16,8 @@ limitations under the License.
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndoorMapTools.Core;
+using IndoorMapTools.Algorithm.FGASolver;
+using IndoorMapTools.Algorithm;
 using IndoorMapTools.Model;
 using IndoorMapTools.Services.Application;
 using IndoorMapTools.Services.Domain;
@@ -82,7 +83,7 @@ namespace IndoorMapTools.ViewModel
             SelectedItemSummary = value.ToString();
             Floor newFloor = value?.ParentFloor;
             if(SelectedFloor != newFloor) SelectedFloor = newFloor;
-            if(value != null) MapViewFocus = MathAlgorithms.CalculatePolygonCenter(value.Outline);
+            if(value != null) MapViewFocus = CoordTransformAlgorithms.CalculatePolygonCenter(value.Outline);
         }
 
 

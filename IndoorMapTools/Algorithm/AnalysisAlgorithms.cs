@@ -28,7 +28,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Bitmap = System.Drawing.Bitmap;
 
-namespace IndoorMapTools.Core
+namespace IndoorMapTools.Algorithm
 {
     public class AnalysisAlgorithms
     {
@@ -264,7 +264,7 @@ namespace IndoorMapTools.Core
                 for(int landmarkIndex = 0; landmarkIndex < curFloor.Landmarks.Count; landmarkIndex++)
                 {
                     Landmark curLandmark = curFloor.Landmarks[landmarkIndex];
-                    Point calculatedCenter = MathAlgorithms.CalculatePolygonCenter(curLandmark.Outline); // Center
+                    Point calculatedCenter = CoordTransformAlgorithms.CalculatePolygonCenter(curLandmark.Outline); // Center
                     Point transformedLoc = transformer.Transform(calculatedCenter); // Location
                     sourceRect.X = (int)(transformedLoc.X / reachableResolution);
                     sourceRect.Y = (int)(reachableHeight - transformedLoc.Y / reachableResolution);

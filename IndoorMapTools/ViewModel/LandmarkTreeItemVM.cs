@@ -26,8 +26,10 @@ namespace IndoorMapTools.ViewModel
     {
         [ObservableProperty] private Landmark model;
 
+        private Project ParentProject => Model.ParentGroup.ParentBuilding.ParentProject;
+
         [RelayCommand] public void Join(LandmarkGroup group) => Model.ParentGroup.ParentBuilding.MoveLandmarkToGroup(Model, group);
-        [RelayCommand] private void CopyToFloors() => EntityOrganizer.CopyLandmarkToEveryFloors(Model);
-        [RelayCommand] private void Isolate() => EntityOrganizer.IsolateLandmark(Model);
+        [RelayCommand] private void CopyToFloors() => EntityOrganizer.CopyLandmarkToEveryFloors(Model, ParentProject.Namespace);
+        [RelayCommand] private void Isolate() => EntityOrganizer.IsolateLandmark(Model, ParentProject.Namespace);
     }
 }

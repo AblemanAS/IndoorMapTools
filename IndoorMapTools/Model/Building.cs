@@ -17,7 +17,6 @@ limitations under the License.
 using CommunityToolkit.Mvvm.ComponentModel;
 using IndoorMapTools.Helper;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -37,9 +36,9 @@ namespace IndoorMapTools.Model
 
         public Building(Project parentProject) => ParentProject = parentProject;
 
-        public Floor CreateFloor(BitmapImage mapImage, Point lonlat)
+        public Floor CreateFloor(string entityName, BitmapImage mapImage, Point lonlat)
         {
-            var floor = new Floor(this, mapImage, lonlat.X, lonlat.Y);
+            var floor = new Floor(entityName, this, mapImage, lonlat.X, lonlat.Y);
             Floors.Add(floor);
             return floor;
         }
@@ -49,16 +48,16 @@ namespace IndoorMapTools.Model
         public void MoveFloor(Floor floor, int destIndex) => Floors.Move(Floors.IndexOf(floor), destIndex);
         public void RemoveFloor(Floor child) => Floors.Remove(child);
 
-        public LandmarkGroup CreateLandmarkGroup(LandmarkType type)
+        public LandmarkGroup CreateLandmarkGroup(string entityName, LandmarkType type)
         {
-            var group = new LandmarkGroup(this, type);
+            var group = new LandmarkGroup(entityName, this, type);
             LandmarkGroups.Add(group);
             return group;
         }
 
-        public Landmark CreateLandmark(LandmarkGroup group, Floor floor, Point position)
+        public Landmark CreateLandmark(string entityName, LandmarkGroup group, Floor floor, Point position)
         {
-            var newLandmark = new Landmark(group, floor, position);
+            var newLandmark = new Landmark(entityName, group, floor, position);
             group.AddLandmark(newLandmark);
             floor.AddLandmark(newLandmark);
             return newLandmark;
@@ -82,29 +81,6 @@ namespace IndoorMapTools.Model
         }
 
         public void RemoveLandmarkGroup(LandmarkGroup child) => LandmarkGroups.Remove(child);
-
-        public void BatchLandmarkName()
-        {
-            // 임시 이름 할당
-            string tempPrefix = System.Guid.NewGuid().ToString();
-            int tempPostfix = 0;
-            foreach(var group in LandmarkGroups)
-                foreach(var lm in group.Landmarks)
-                    lm.Name = tempPrefix + tempPostfix++;
-
-            var nameDict = new Dictionary<string, int>();
-            foreach(var group in LandmarkGroups)
-                foreach(var lm in group.Landmarks)
-                {
-                    string curName = group.Name + "-" + lm.ParentFloor.Name;
-                    if(!nameDict.ContainsKey(curName))
-                    {
-                        nameDict[curName] = 0;
-                        lm.Name = curName;
-                    }
-                    else lm.Name = curName + ++nameDict[curName];
-                }
-        }
 
         public override string ToString() => Name;
         private Building() {}

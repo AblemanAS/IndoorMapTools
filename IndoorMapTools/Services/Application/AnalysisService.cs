@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ***********************************************************************/
 
-using IndoorMapTools.Core;
+using IndoorMapTools.Algorithm.FGASolver;
+using IndoorMapTools.Algorithm;
 using IndoorMapTools.Helper;
 using IndoorMapTools.Model;
 using System;
@@ -52,7 +53,7 @@ namespace IndoorMapTools.Services.Application
             // 각 층별 Transform Matrix 캐시
             Dictionary<Floor, Matrix> transformers = new();
             foreach(var floor in building.Floors)
-                floor.Reachable.Dispatcher.Invoke(() => transformers[floor] = MathAlgorithms.CalculateTransformer(
+                floor.Reachable.Dispatcher.Invoke(() => transformers[floor] = CoordTransformAlgorithms.CalculateTransformer(
                     floor.Reachable.PixelWidth, floor.Reachable.PixelHeight, floor.MapImageRotation, 1 / floor.MapImagePPM));
             progBox?.Report(70); // 진행률 65~70%
 

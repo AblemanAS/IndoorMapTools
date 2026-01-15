@@ -36,12 +36,12 @@ namespace IndoorMapTools.Model
             ParentGroup.RemoveLandmark(this);   // Group에서 나감
         }
 
-        public Landmark(LandmarkGroup group, Floor floor, Point location)
+        internal Landmark(string entityName, LandmarkGroup group, Floor floor, Point location)
         {
-            outline = new Point[] { location };
-            ParentFloor = floor;
+            name = entityName;
             ParentGroup = group;
-            name = floor.ParentBuilding.ParentProject.GetNumberedName(group.Type.ToString());
+            ParentFloor = floor;
+            outline = new Point[] { location };
         }
 
         private Landmark() { }

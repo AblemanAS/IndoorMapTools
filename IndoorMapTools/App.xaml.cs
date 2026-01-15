@@ -15,7 +15,6 @@ limitations under the License.
 ***********************************************************************/
 
 using IndoorMapTools.Services.Infrastructure.INI;
-using IndoorMapTools.Services.Infrastructure.SRID;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -39,8 +38,6 @@ namespace IndoorMapTools
         private const string INI_KEY_TILE_SOURCE_URL = "tile_src_url";
 
         private const string RESOURCE_TILE_SOURCE_URL = "TileSourceURL";
-
-        private const string SRID_PATH = "srid";
 
         private readonly Tuple<string, string>[] CURSOR_DEFS =
         {
@@ -81,7 +78,7 @@ namespace IndoorMapTools
             //AppDomain.CurrentDomain.TypeResolve += CurrentDomain_TypeResolve;
 
             // Read INI
-            string tilesSource = new INIReader(INI_PATH).ReadValue(INI_APP_OPEN_STREET_MAP, INI_KEY_TILE_SOURCE_URL);
+            string tilesSource = new INIService(INI_PATH).ReadValue(INI_APP_OPEN_STREET_MAP, INI_KEY_TILE_SOURCE_URL);
             if(tilesSource != null) Resources[RESOURCE_TILE_SOURCE_URL] = tilesSource;
 
             
@@ -127,6 +124,7 @@ namespace IndoorMapTools
             services.AddSingleton<Services.Application.IMessageService, Services.Presentation.MessageBoxService>();
             services.AddSingleton<Services.Application.IProjectPersistenceService, Services.Infrastructure.ProtoBuf.ProtoBufService>();
             services.AddSingleton<Services.Application.IResourceStringService, Services.Presentation.ResourceStringService>();
+            services.AddSingleton<Services.Infrastructure.GeoLocation.GeoLocationService>();
             services.AddSingleton<Services.Infrastructure.IMPJ.IMPJImportService>();
             services.AddSingleton<Services.Infrastructure.IMPJ.IMPJExportService>();
             services.AddSingleton<Services.Presentation.BackgroundService>();

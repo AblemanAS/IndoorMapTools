@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ***********************************************************************/
 
-using IndoorMapTools.Core;
+using IndoorMapTools.Algorithm;
 using IndoorMapTools.Model;
 using IndoorMapTools.Services.Domain;
 using System;
@@ -37,7 +37,7 @@ namespace IndoorMapTools.Services.Application
             if((leftPad == 0) && (topPad == 0) && (rightPad == 0) && (bottomPad == 0)) return;
 
             // 좌표 보정
-            EntityOrganizer.AdjustCoordOnMapPadCrop(targetFloor, leftPad, topPad, rightPad, bottomPad);
+            EntityCoordAligner.AdjustCoordOnMapPadCrop(targetFloor, leftPad, topPad, rightPad, bottomPad);
 
             // 대체 이미지 없을 경우 맵 이미지 패딩/크롭 처리
             targetFloor.MapImage = ImageAlgorithms.GetPadCropImage(targetFloor.MapImage, leftPad, topPad, rightPad, bottomPad);

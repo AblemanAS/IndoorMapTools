@@ -31,11 +31,11 @@ namespace IndoorMapTools.Model
         public LandmarkType Type { get; }
         public ObservableCollection<Landmark> Landmarks { get; } = new();
 
-        internal LandmarkGroup(Building building, LandmarkType type)
+        internal LandmarkGroup(string entityName, Building building, LandmarkType type)
         {
+            Name = entityName;
             ParentBuilding = building;
-            Type = type; // 필드 초기화
-            Name = building.ParentProject.GetNumberedName(Type.ToString() + "Group"); // 이름 수정
+            Type = type;
             Landmarks.CollectionChanged += (s, e) =>
                 OnPropertyChanged(new PropertyChangedEventArgs(nameof(Landmarks)));
         }

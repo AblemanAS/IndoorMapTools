@@ -21,13 +21,13 @@ using System.Text;
 
 namespace IndoorMapTools.Services.Infrastructure.INI
 {
-    public class INIReader
+    public class INIService
     {
         private const int BUFFER_SIZE = 65535;
 
         private readonly string path;
 
-        public INIReader(string path) => this.path = Path.Combine(AppContext.BaseDirectory, path);
+        public INIService(string path) => this.path = Path.Combine(AppContext.BaseDirectory, path);
 
         public string ReadValue(string appName, string keyName)
         {

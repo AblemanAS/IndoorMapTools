@@ -16,10 +16,12 @@ limitations under the License.
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndoorMapTools.Core;
+using IndoorMapTools.Algorithm;
 using IndoorMapTools.Model;
 using IndoorMapTools.MVVMExtensions.ComponentModel;
 using IndoorMapTools.Services.Application;
+using IndoorMapTools.Services.Domain;
+using IndoorMapTools.Services.Infrastructure.GeoLocation;
 using IndoorMapTools.Services.Presentation;
 using System;
 using System.Windows;
@@ -55,19 +57,19 @@ namespace IndoorMapTools.ViewModel
             if(newModel == null) return;
 
             // 모델 값에 따른 초기화
-            GlobalMapFocus = (newModel.Outline.Length > 0) ? MathAlgorithms.CalculatePolygonCenter(newModel.Outline)
+            GlobalMapFocus = (newModel.Outline.Length > 0) ? CoordTransformAlgorithms.CalculatePolygonCenter(newModel.Outline)
                 : new Point(double.Parse(stringSvc["strings.DEFAULT_LONGITUDE"]), double.Parse(stringSvc["strings.DEFAULT_LATITUDE"]));
         }
 
         [RelayCommand] private void CreateFloor(string filePath)
-            => backgroundWorker.Run(() => Model.CreateFloor(ImageAlgorithms.BitmapImageFromFile(filePath), GlobalMapFocus));
-
+            => backgroundWorker.Run(() => Model.CreateFloor(EntityNamer.GetNumberedFloorName(Model.ParentProject.Namespace),
+                ImageAlgorithms.BitmapImageFromFile(filePath), GlobalMapFocus));
 
         [RelayCommand] private void LocateFloor(Point destination)
         {
             double xMeter = -SelectedFloor.MapImage.PixelWidth / SelectedFloor.MapImagePPM * 0.5;
             double yMeter = -SelectedFloor.MapImage.PixelHeight / SelectedFloor.MapImagePPM * 0.5;
-            Point leftBottomPoint = GeoLocationModule.TranslateWGSPoint(destination, xMeter, yMeter);
+            Point leftBottomPoint = CoordTransformAlgorithms.TranslateWGSPoint(destination, xMeter, yMeter);
             SelectedFloor.LeftLongitude = leftBottomPoint.X;
             SelectedFloor.BottomLatitude = leftBottomPoint.Y;
         }

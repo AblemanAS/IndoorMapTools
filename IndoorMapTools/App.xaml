@@ -15,7 +15,7 @@
             </ResourceDictionary.MergedDictionaries>
         
             <!-- 앱 버전 정보 Generation.MajorRevision.MinorRevision.BugFix -->
-            <sys:String x:Key="AppVersion">0.7.t.4</sys:String>
+            <sys:String x:Key="AppVersion">0.7.t.5</sys:String>
 
             <!-- App.xaml.cs 에서 로드되는 DynamicResources -->
             <x:Null x:Key="StairCursor"/>
