@@ -14,9 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ***********************************************************************/
 
+using IndoorMapTools.Model;
+using Microsoft.Maps.MapControl.WPF.Overlays;
 using System;
 using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Media.Imaging;
 
 namespace IndoorMapTools.Algorithm
 {
@@ -114,7 +117,6 @@ namespace IndoorMapTools.Algorithm
         }
 
 
-
         private const double EarthRadius = 6378137.0; // WGS-84 기준 지구 반경 (meters)
         private const double TO_RAD_COEF = Math.PI / 180.0;
         private const double TO_DEG_COEF = 180.0 / Math.PI;
@@ -158,5 +160,68 @@ namespace IndoorMapTools.Algorithm
 
             return new Vector(distance * Math.Sin(bearing), distance * Math.Cos(bearing));
         }
+
+
+        //public static void CheckCache()
+        //{
+        //    double ogmResolution = 1.0;
+        //    Floor floor = null;
+
+
+        //    double cellSize = 1.0 / floor.MapImagePPM / ogmResolution;
+
+        //    int width = floor.MapImage.PixelWidth;
+        //    int height = floor.MapImage.PixelHeight;
+
+        //    var matrix = new System.Windows.Media.Matrix();
+        //    matrix.Rotate(floor.MapImageRotation);
+
+        //    Point[] corners = new[]
+        //    {
+        //        matrix.Transform(new Point(0, 0)),
+        //        matrix.Transform(new Point(width, 0)),
+        //        matrix.Transform(new Point(width, height)),
+        //        matrix.Transform(new Point(0, height)),
+        //    };
+
+        //    double minX = double.MaxValue;
+        //    double minY = double.MaxValue;
+        //    double maxX = double.MinValue;
+        //    double maxY = double.MinValue;
+
+        //    foreach(var corner in corners)
+        //    {
+        //        if(corner.X < minX) minX = corner.X;
+        //        if(corner.Y < minY) minY = corner.Y;
+        //        if(corner.X > maxX) maxX = corner.X;
+        //        if(corner.Y > maxY) maxY = corner.Y;
+        //    }
+
+        //    double rotatedWidth = maxX - minX;
+        //    double rotatedHeight = maxY - minY;
+
+        //    var pivot = new Point(0, height);
+        //    CalculateTransformer(width, height, floor.MapImageRotation, 1.0);
+        //    Point rotatedPivot = matrix.Transform(pivot);
+
+        //    // 회전 후 중심의 위치 (크롭 전 기준)
+        //    double cx = rotatedPivot.X - minX;
+        //    double cy = rotatedPivot.Y - minY;
+
+        //    // 크롭된 양 계산
+        //    double croppedRight = rotatedWidth - Math.Floor(rotatedWidth / cellSize) * cellSize;
+        //    double croppedTop = rotatedHeight - Math.Floor(rotatedHeight / cellSize) * cellSize;
+
+        //    // 중심을 보정한 위치로 이동
+        //    double tx = -cx;
+        //    double ty = -(cy - croppedTop); // 여기서 croppedTop을 보정해야 맞음
+
+        //    double pixelToDip = originalActualHeight / h;
+
+        //    var group = new TransformGroup();
+        //    group.Children.Add(new RotateTransform(-rotation, 0, originalActualHeight));
+        //    group.Children.Add(new TranslateTransform(tx * pixelToDip, ty * pixelToDip + originalActualHeight));
+        //    transform = group;
+        //}
     }
 }

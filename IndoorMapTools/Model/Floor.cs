@@ -33,7 +33,7 @@ namespace IndoorMapTools.Model
         [ObservableProperty] private float? height = null;
         [ObservableProperty] private BitmapImage mapImage;
         [ObservableProperty] private double mapImagePPM = 10.0;
-        [ObservableProperty] private double mapImageRotation; // 시계방향 회전 Degree
+        [ObservableProperty] private double mapImageRotation; // 반시계방향 회전 Degree
         [ObservableProperty] private WriteableBitmap reachable;
 
         public ObservableCollection<Landmark> Landmarks { get; } = new();

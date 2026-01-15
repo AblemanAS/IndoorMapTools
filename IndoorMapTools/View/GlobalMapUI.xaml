@@ -24,7 +24,7 @@ limitations under the License.
       xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
       xmlns:model="clr-namespace:IndoorMapTools.Model"
       xmlns:viewModel="clr-namespace:IndoorMapTools.ViewModel"
-      xmlns:excm="clr-namespace:IndoorMapTools.MVVMExtensions.ComponentModel"
+      xmlns:exm="clr-namespace:IndoorMapTools.MVVMExtensions.Markup"
       xmlns:wpfmap="clr-namespace:Microsoft.Maps.MapControl.WPF;assembly=Microsoft.Maps.MapControl.WPF"
       x:Class="IndoorMapTools.View.GlobalMapUI"
       mc:Ignorable="d" d:DesignHeight="630" d:DesignWidth="1200"
@@ -56,7 +56,7 @@ limitations under the License.
                            WestLongitude="{Binding LeftLongitude}" SouthLatitude="{Binding BottomLatitude}"
                            PixelPerMeter="{Binding MapImagePPM}" Rotation="{Binding MapImageRotation}"
                            Opacity="{Binding DataContext.MapImageOpacity, ElementName=mapControl}"
-                           Tag="{excm:StateBinding Key={Binding}, Map={Binding DataContext.FloorStates, ElementName=mapControl}}"
+                           Tag="{exm:DictGetValue Key={Binding}, Map={Binding DataContext.FloorStates, ElementName=mapControl}}"
                            IsHitTestVisible="False">
                         <osm:TransformableMapImage.Style>
                             <Style TargetType="osm:TransformableMapImage">
