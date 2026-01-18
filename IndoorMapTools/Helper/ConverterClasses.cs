@@ -19,7 +19,6 @@ using IndoorMapTools.Algorithm;
 using IndoorMapTools.Model;
 using MapView.System.Windows.Controls;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -200,6 +199,12 @@ namespace IndoorMapTools.Helper
     class GetAppResource : OneWayConverterParam
     {
         public override object Convert(object value, object parameter)
-            => (parameter is string postfix) ? Application.Current.Resources[value + postfix] : null;
+            => (value.ToString() is string name) ? Application.Current.Resources[name + ((parameter as string) ?? null)] : null;
+    }
+
+    class GetAppResourceOnTrue : OneWayConverterParam
+    {
+        public override object Convert(object value, object parameter)
+            => ((value is bool tf) && tf && (parameter.ToString() is string name)) ? Application.Current.Resources[name] : null;
     }
 }

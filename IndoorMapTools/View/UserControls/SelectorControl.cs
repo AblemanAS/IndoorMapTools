@@ -32,8 +32,6 @@ namespace IndoorMapTools.View.UserControls
         public SelectorControl()
         {
             ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(typeof(Grid)));
-            //HorizontalAlignment = HorizontalAlignment.Left;
-            //VerticalAlignment = VerticalAlignment.Top;
             IsTabStop = false;
         }
 
@@ -48,6 +46,49 @@ namespace IndoorMapTools.View.UserControls
 
     public class SelectorItem : ContentControl
     {
+        [Bindable(true)]
+        public bool IsSelected
+        {
+            get => (bool)GetValue(IsSelectedProperty);
+            set => SetValue(IsSelectedProperty, value);
+        }
+        public static readonly DependencyProperty IsSelectedProperty =
+            DependencyProperty.Register(nameof(IsSelected), typeof(bool), typeof(SelectorItem),
+                new FrameworkPropertyMetadata(OnIsSelectedChangedFromItemContainer) { BindsTwoWayByDefault = true });
+
+        private static void OnIsSelectedChangedFromItemContainer(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if(d is not SelectorItem instance || e.NewValue is not bool value) return;
+            if(instance.isInSelectionSync) return;
+            bool isSelectedPrev = Selector.GetIsSelected(instance);
+            if(isSelectedPrev != value)
+            {
+                instance.isInSelectionSync = true;
+                try { Selector.SetIsSelected(instance, value); }
+                finally { instance.isInSelectionSync = false; }
+            }
+        }
+
+        private bool isInSelectionSync = false;
+
+        static SelectorItem()
+        {
+            Selector.IsSelectedProperty.OverrideMetadata(typeof(SelectorItem),
+                new FrameworkPropertyMetadata(OnIsSelectedChangedFromSelector));
+        }
+
+        private static void OnIsSelectedChangedFromSelector(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if(d is not SelectorItem instance || e.NewValue is not bool value) return;
+            if(instance.isInSelectionSync) return;
+            if(instance.IsSelected != value)
+            {
+                instance.isInSelectionSync = true;
+                try { instance.IsSelected = value; }
+                finally { instance.isInSelectionSync = false; }
+            }
+        }
+
         [Bindable(true)]
         public ICommand DeleteCommand
         {

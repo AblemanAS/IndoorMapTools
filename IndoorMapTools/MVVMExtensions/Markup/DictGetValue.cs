@@ -36,16 +36,12 @@ namespace IndoorMapTools.MVVMExtensions.Markup
         {
             public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
             {
-                if(values.Length < 2) return Binding.DoNothing;
-                var key = values[0]; var map = values[1];
-                if(key == null || map == null) return Binding.DoNothing;
-
+                if(values.Length < 2 || values[0] is not object key || values[1] is not object map) return null;
                 var indexer = map.GetType().GetProperty("Item");
-                if(indexer == null) return Binding.DoNothing;
-                var p = indexer.GetIndexParameters();
-                if(p.Length != 1) return Binding.DoNothing;
-                if(key == null || !p[0].ParameterType.IsInstanceOfType(key))
-                    return Binding.DoNothing;
+                if(indexer == null) return null;
+                var param = indexer.GetIndexParameters();
+                if(param.Length != 1) return null;
+                if(!param[0].ParameterType.IsInstanceOfType(key)) return null;
                 return indexer.GetValue(map, new[] { key });
             }
 

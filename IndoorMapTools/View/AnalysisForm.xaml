@@ -61,24 +61,9 @@ limitations under the License.
                             <DataTemplate DataType="{x:Type model:Area}">
                                 <fvs:FGAArea GroupIds="{Binding Landmarks, Converter={cvt:GetGroupIds}}"
                                              FloorId="{Binding FloorId}" AreaId="{Binding AreaId}"
-                                             Foreground="Lavender" Opacity="0.5" Cursor="Hand">
-                                    <fvs:FGAArea.Style>
-                                        <Style TargetType="fvs:FGAArea">
-                                            <Setter Property="Effect" Value="{x:Null}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Value="True">
-                                                    <DataTrigger.Binding>
-                                                        <MultiBinding Converter="{cvt:ObjectEqualsMulti}" Mode="OneWay">
-                                                            <Binding />
-                                                            <Binding Path="SelectedItem" ElementName="fgaAreaSelctor"/>
-                                                        </MultiBinding>
-                                                    </DataTrigger.Binding>
-                                                    <Setter Property="Effect" Value="{StaticResource TransparentBlueEffect}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </fvs:FGAArea.Style>
-                                </fvs:FGAArea>
+                                             Foreground="Lavender" Opacity="0.5" Cursor="Hand"
+                                             Effect="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type fga:FGAItem}},
+                                                Converter={cvt:GetAppResourceOnTrue}, ConverterParameter=TransparentBlueEffect}"/>
                             </DataTemplate>
                         </fga:FGAItemsControl.ItemTemplate>
                     </fga:FGAItemsControl>
@@ -88,24 +73,9 @@ limitations under the License.
                         <fga:FGAItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type model:Landmark}">
                                 <Image Height="48" Width="48" Source="{Binding ParentGroup.Type, 
-                                    ConverterParameter=SpriteSource, Converter={cvt:GetAppResource}}">
-                                    <Image.Style>
-                                        <Style TargetType="Image">
-                                            <Setter Property="Effect" Value="{x:Null}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Value="True">
-                                                    <DataTrigger.Binding>
-                                                        <MultiBinding Converter="{cvt:ObjectEqualsMulti}" Mode="OneWay">
-                                                            <Binding />
-                                                            <Binding Path="SelectedItem" ElementName="fgaLandmarkSelector"/>
-                                                        </MultiBinding>
-                                                    </DataTrigger.Binding>
-                                                    <Setter Property="Effect" Value="{StaticResource TransparentBlueEffect}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
+                                        ConverterParameter=SpriteSource, Converter={cvt:GetAppResource}}"
+                                       Effect="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type fga:FGAItem}},
+                                        Converter={cvt:GetAppResourceOnTrue}, ConverterParameter=TransparentBlueEffect}"/>
                             </DataTemplate>
                         </fga:FGAItemsControl.ItemTemplate>
                         <fga:FGAItemsControl.ItemContainerStyle>
@@ -269,31 +239,15 @@ limitations under the License.
                         </uc:SelectorControl.RenderTransform>
                         <uc:SelectorControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type model:Area}">
-                                <uc:Indexed1HitTestImage x:Name="areaImage" Source="{Binding Reachable}">
-                                    <uc:Indexed1HitTestImage.Style>
-                                        <Style TargetType="uc:Indexed1HitTestImage">
-                                            <Setter Property="Effect" Value="{x:Null}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Value="True">
-                                                    <DataTrigger.Binding>
-                                                        <MultiBinding Converter="{cvt:ObjectEqualsMulti}" Mode="OneWay">
-                                                            <Binding />
-                                                            <Binding Path="SelectedItem" ElementName="mapViewAreaSelector"/>
-                                                        </MultiBinding>
-                                                    </DataTrigger.Binding>
-                                                    <Setter Property="Effect" Value="{StaticResource TransparentBlueEffect}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </uc:Indexed1HitTestImage.Style>
-                                </uc:Indexed1HitTestImage>
+                                <uc:Indexed1HitTestImage Source="{Binding Reachable}"
+                                    Effect="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type uc:SelectorItem}},
+                                        Converter={cvt:GetAppResourceOnTrue}, ConverterParameter=TransparentBlueEffect}"/>
                             </DataTemplate>
                         </uc:SelectorControl.ItemTemplate>
                     </uc:SelectorControl>
                 </mv:Map.MapOverlays>
 
-                <uc:SelectorControl x:Name="mapViewLandmarkSelector"
-                                    ItemsSource="{Binding SelectedFloor.Landmarks}"
+                <uc:SelectorControl ItemsSource="{Binding SelectedFloor.Landmarks}"
                                     SelectedItem="{Binding SelectedMapViewLandmarkItem}">
                     <uc:SelectorControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type model:Landmark}">
@@ -301,24 +255,9 @@ limitations under the License.
                                                 Converter={cvt:GetAppResource}}" ArrowDirection="{Binding Direction}" 
                                                 Location="{Binding Outline, Converter={cvt:PolygonCenter}}"
                                                 CoordinateScale="{Binding ImageScaleFactor, ElementName=mapView}"
-                                                IsPolygonVisible="False">
-                                <uc:LandmarkElement.Style>
-                                    <Style TargetType="uc:LandmarkElement">
-                                        <Setter Property="IsHighlighted" Value="False"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Value="True">
-                                                <DataTrigger.Binding>
-                                                    <MultiBinding Converter="{cvt:ObjectEqualsMulti}" Mode="OneWay">
-                                                        <Binding />
-                                                        <Binding Path="SelectedItem" ElementName="mapViewLandmarkSelector"/>
-                                                    </MultiBinding>
-                                                </DataTrigger.Binding>
-                                                <Setter Property="IsHighlighted" Value="True"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </uc:LandmarkElement.Style>
-                            </uc:LandmarkElement>
+                                                IsPolygonVisible="False"
+                                                IsHighlighted="{Binding IsSelected, RelativeSource={RelativeSource
+                                                                AncestorType={x:Type uc:SelectorItem}}}"/>
                         </DataTemplate>
                     </uc:SelectorControl.ItemTemplate>
                 </uc:SelectorControl>
