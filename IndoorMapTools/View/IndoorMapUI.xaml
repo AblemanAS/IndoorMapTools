@@ -51,7 +51,7 @@ limitations under the License.
             <Image Source="{Binding MapViewModel.Reachable}" 
                Visibility="{Binding ReachableVisible, Converter={cvt:BoolToVisibility}}"/>
         </mv:Map.MapOverlays>
-        <uc:SelectorControl x:Name="lmelemSelector" ItemsSource="{Binding MapViewModel.Landmarks}" SelectedItem="{Binding SelectedMapViewItem}"
+        <uc:SelectorControl ItemsSource="{Binding MapViewModel.Landmarks}" SelectedItem="{Binding SelectedMapViewItem}"
                             IsHitTestVisible="{Binding ActiveTool, ElementName=mapView, Converter={cvt:IsNull}}" Cursor="None">
             <uc:SelectorControl.ItemContainerStyle>
                 <Style TargetType="uc:SelectorItem">
@@ -73,13 +73,8 @@ limitations under the License.
                                 <Setter Property="IsHighlighted" Value="False"/>
                                 <Setter Property="PolygonPoints" Value="{Binding Outline}"/>
                                 <Style.Triggers>
-                                    <DataTrigger Value="True">
-                                        <DataTrigger.Binding>
-                                            <MultiBinding Converter="{cvt:ObjectEqualsMulti}" Mode="OneWay">
-                                                <Binding />
-                                                <Binding Path="SelectedItem" ElementName="lmelemSelector"/>
-                                            </MultiBinding>
-                                        </DataTrigger.Binding>
+                                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource 
+                                        AncestorType={x:Type uc:SelectorItem}}}" Value="True">
                                         <Setter Property="IsHighlighted" Value="True"/>
                                         <Setter Property="PolygonPoints" Value="{Binding Data.PolygonVisual, Source={StaticResource toolproxy}}"/>
                                     </DataTrigger>
@@ -251,7 +246,7 @@ limitations under the License.
                         Value="{Binding Direction, Converter={cvt:Multiplier}, ConverterParameter=-1, Mode=TwoWay}" 
                         TickFrequency="15" IsSnapToTickEnabled="True" Minimum="-180" Maximum="180" HorizontalAlignment="Stretch"/>
                     <uc:EditableText Grid.Column="3" Postfix="°" Validator="Int"
-                                 Value="{Binding Value, ElementName=sliderDir, Mode=TwoWay, StringFormat=\{0:F0\}}"/>
+                                     Value="{Binding Value, ElementName=sliderDir, Mode=TwoWay, StringFormat=\{0:F0\}}"/>
                 </Grid>
                 <uc:ToolButton MinHeight="30" Margin="2, 5, 2, 2"
                                ActivationTarget="{Binding ActiveTool, ElementName=mapView}"

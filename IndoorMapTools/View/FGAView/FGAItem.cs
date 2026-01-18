@@ -33,5 +33,50 @@ namespace IndoorMapTools.View.FGAView
                 selector.SelectedItem = DataContext;
             Focus();
         }
+
+
+        [Bindable(true)]
+        public bool IsSelected
+        {
+            get => (bool)GetValue(IsSelectedProperty);
+            set => SetValue(IsSelectedProperty, value);
+        }
+        public static readonly DependencyProperty IsSelectedProperty =
+            DependencyProperty.Register(nameof(IsSelected), typeof(bool), typeof(FGAItem),
+                new FrameworkPropertyMetadata(OnIsSelectedChangedFromItemContainer) { BindsTwoWayByDefault = true });
+
+        private static void OnIsSelectedChangedFromItemContainer(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if(d is not FGAItem instance || e.NewValue is not bool value) return;
+            if(instance.isInSelectionSync) return;
+            bool isSelectedPrev = Selector.GetIsSelected(instance);
+            if(isSelectedPrev != value)
+            {
+                instance.isInSelectionSync = true;
+                try { Selector.SetIsSelected(instance, value); }
+                finally { instance.isInSelectionSync = false; }
+            }
+        }
+
+        private bool isInSelectionSync = false;
+
+        static FGAItem()
+        {
+            Selector.IsSelectedProperty.OverrideMetadata(typeof(FGAItem),
+                new FrameworkPropertyMetadata(OnIsSelectedChangedFromSelector));
+        }
+
+        private static void OnIsSelectedChangedFromSelector(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if(d is not FGAItem instance || e.NewValue is not bool value) return;
+            if(instance.isInSelectionSync) return;
+            if(instance.IsSelected != value)
+            {
+                instance.isInSelectionSync = true;
+                try { instance.IsSelected = value; }
+                finally { instance.isInSelectionSync = false; }
+            }
+        }
+
     }
 }

@@ -60,6 +60,7 @@ namespace IndoorMapTools.ViewModel
 
         private bool guardSelectPropagation = false;
 
+
         public AnalysisFormVM(BackgroundService bgSvc, IResourceStringService strSvc)
         {
             this.bgSvc = bgSvc;
@@ -102,7 +103,7 @@ namespace IndoorMapTools.ViewModel
             }
             finally { guardSelectPropagation = false; }
 
-            SelectedItemSummary = value.ToString();
+            SelectedItemSummary = value?.ToString();
             Floor newFloor = (value != null) ? Model.Building.Floors[value.FloorId] : null;
             if(SelectedFloor != newFloor) SelectedFloor = newFloor;
         }
@@ -122,7 +123,7 @@ namespace IndoorMapTools.ViewModel
             }
             finally { guardSelectPropagation = false; }
 
-            SelectedItemSummary = value.ToString();
+            SelectedItemSummary = value?.ToString();
             Floor newFloor = value?.ParentFloor;
             if(SelectedFloor != newFloor) SelectedFloor = newFloor;
         }
@@ -170,7 +171,7 @@ namespace IndoorMapTools.ViewModel
         {
             bgSvc.Run(() =>
             {
-                Result = null;
+                ClearAnalysisResult();
                 var result = AnalysisService.AnalyzeReachability(Model.Building, fgaSolver, Model.ReachableResolution, 
                     Model.ConservativeCellValidation, Model.DirectedReachableCluster, bgSvc.ReportProgress);
                 IntraGroupEdges = BuildIntraGroupEdges(result, Model.Building);
@@ -261,8 +262,13 @@ namespace IndoorMapTools.ViewModel
             Result = null;
             SelectedFGAViewLandmarkItem = null;
             SelectedMapViewLandmarkItem = null;
+            SelectedFGAViewAreaItem = null;
+            SelectedMapViewAreaItem = null;
             SelectedFloor = null;
             SelectedCluster = null;
+            IntraGroupEdges = null;
+            GraphEdges = null;
+            SelectedItemSummary = null;
         }
     }
 }
