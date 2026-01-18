@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Markup;
 
@@ -39,9 +40,9 @@ namespace IndoorMapTools.MVVMExtensions.Markup
         {
             public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
             {
-                if(values.Length < 2) return null;
-                if(values[0] is not int index || values[1] is not Array source) return null;
-                if(index >= source.Length) return null;
+                if(values.Length < 2) return DependencyProperty.UnsetValue;
+                if(values[0] is not int index || values[1] is not Array source) return DependencyProperty.UnsetValue;
+                if(index >= source.Length) return DependencyProperty.UnsetValue;
                 return source.GetValue(index);
             }
 

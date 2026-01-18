@@ -34,5 +34,7 @@ namespace IndoorMapTools.Model
             AreaId = areaId;
             Landmarks = new();
         }
+
+        public override string ToString() => $"{nameof(Area)} {FloorId}-{AreaId}";
     }
 }

@@ -127,8 +127,8 @@ namespace IndoorMapTools.Algorithm.FGASolver
                 }
             }
             // 마지막에 시작점 복귀 추가
-            if(tour.Count > 0)
-                tour.Add(tour[0]);
+            //if(tour.Count > 0)
+            //    tour.Add(tour[0]); -> 순환 비활성했음
             return tour;
         }
 
@@ -272,9 +272,10 @@ namespace IndoorMapTools.Algorithm.FGASolver
             int maxCostIndex = 0;
             for(int groupIndex = 1; groupIndex < order.Length; groupIndex++)
             {
-                if(costMatrix[order[0], order[order.Length - 1]] > maxCost)
+                uint curCost = costMatrix[order[groupIndex], order[groupIndex - 1]];
+                if(curCost > maxCost)
                 {
-                    maxCost = costMatrix[order[groupIndex], order[groupIndex - 1]];
+                    maxCost = curCost;
                     maxCostIndex = groupIndex;
                 }
             }
@@ -314,8 +315,11 @@ namespace IndoorMapTools.Algorithm.FGASolver
                 totalCost += testMatrix[answer[i]-1, answer[i-1]-1];
             }
             Console.WriteLine($"\nTotal Cost = {totalCost}");*/
+            // 각 GroupId가 어느 새로운 GroupId를 가져야 하는지로 변환
+            int[] groupReassignArray = new int[groupCount];
+            for(int i = 0; i < groupCount; i++) groupReassignArray[groupOrder[i]] = i;
 
-            return groupOrder;
+            return groupReassignArray;
         }
     }
 }

@@ -60,11 +60,18 @@ limitations under the License.
                                          SelectedItem="{Binding SelectedFGAViewAreaItem}">
                         <fga:FGAItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type model:Area}">
-                                <fvs:FGAArea GroupIds="{Binding Landmarks, Converter={cvt:GetGroupIds}}"
+                                <fvs:FGAArea 
                                              FloorId="{Binding FloorId}" AreaId="{Binding AreaId}"
                                              Foreground="Lavender" Opacity="0.5" Cursor="Hand"
                                              Effect="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type fga:FGAItem}},
-                                                Converter={cvt:GetAppResourceOnTrue}, ConverterParameter=TransparentBlueEffect}"/>
+                                                Converter={cvt:GetAppResourceOnTrue}, ConverterParameter=TransparentBlueEffect}">
+                                    <fvs:FGAArea.GroupIds>
+                                        <MultiBinding Converter="{cvt:GetGroupIdsReorder}">
+                                            <Binding Path="Landmarks"/>
+                                            <Binding Path="DataContext.Result.GroupOrder" ElementName="fgaAreaSelctor"/>
+                                        </MultiBinding>
+                                    </fvs:FGAArea.GroupIds>
+                                </fvs:FGAArea>
                             </DataTemplate>
                         </fga:FGAItemsControl.ItemTemplate>
                     </fga:FGAItemsControl>
@@ -84,7 +91,8 @@ limitations under the License.
                                 <Setter Property="Tag" Value="{exm:DictGetValue Key={Binding}, 
                                     Map={Binding DataContext.Result.LandmarkToNode, ElementName=fgaLandmarkSelector}}"/>
                                 <Setter Property="fga:FGAPanel.Floor" Value="{Binding Tag.Floor, RelativeSource={RelativeSource self}}" />
-                                <Setter Property="fga:FGAPanel.Group" Value="{Binding Tag.Group, RelativeSource={RelativeSource self}}"/>
+                                <Setter Property="fga:FGAPanel.Group" Value="{exm:ArrayGetValue Index={Binding Tag.Group, RelativeSource={RelativeSource self}},
+                                                                                Source={Binding DataContext.Result.GroupOrder, ElementName=fgaLandmarkSelector}}"/>
                                 <Setter Property="fga:FGAPanel.Area" Value="{Binding Tag.Area, RelativeSource={RelativeSource self}}"/>
                                 <Setter Property="Cursor" Value="Hand"/>
                             </Style>
@@ -94,8 +102,12 @@ limitations under the License.
                     <ItemsControl x:Name="fgaEdgeControl" ItemsSource="{Binding IntraGroupEdges}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type viewModel:FGAEdgeData}">
-                                <fvs:FGAEdge Floor1="{Binding From.F}" Group1="{Binding From.G}" Area1="{Binding From.A}"
-                                             Floor2="{Binding To.F}" Group2="{Binding To.G}" Area2="{Binding To.A}"
+                                <fvs:FGAEdge Floor1="{Binding From.F}" Floor2="{Binding To.F}"
+                                             Group1="{exm:ArrayGetValue Index={Binding From.G}, 
+                                    Source={Binding DataContext.Result.GroupOrder, ElementName=fgaEdgeControl}}"
+                                             Group2="{exm:ArrayGetValue Index={Binding To.G}, 
+                                    Source={Binding DataContext.Result.GroupOrder, ElementName=fgaEdgeControl}}"
+                                             Area1="{Binding From.A}" Area2="{Binding To.A}"
                                              Deduct1="24" Deduct2="24"/>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -125,8 +137,10 @@ limitations under the License.
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type viewModel:FGAEdgeData}">
                                             <fvs:FGAEdge StrokeThickness="4" HeadSize="8" Stroke="Red" TailType="Circle"
-                                                         Floor1="{Binding From.F}" Group1="{Binding From.G}" Area1="{Binding From.A}"
-                                                         Floor2="{Binding To.F}" Group2="{Binding To.G}" Area2="{Binding To.A}">
+                                                         Floor1="{Binding From.F}" Group1="{exm:ArrayGetValue Index={Binding From.G}, 
+                                    Source={Binding DataContext.Result.GroupOrder, ElementName=fgaGraphControl}}" Area1="{Binding From.A}"
+                                                         Floor2="{Binding To.F}" Group2="{exm:ArrayGetValue Index={Binding To.G}, 
+                                    Source={Binding DataContext.Result.GroupOrder, ElementName=fgaGraphControl}}" Area2="{Binding To.A}">
                                                 <fvs:FGAEdge.Style>
                                                     <Style TargetType="fvs:FGAEdge">
                                                         <Setter Property="Deduct2" Value="0"/>
@@ -275,4 +289,3 @@ limitations under the License.
             IsHitTestVisible="{Binding IsBusy}" d:Visibility="Hidden" 
             Visibility="{Binding IsBusy, Converter={cvt:BoolToVisibility}}"/>
 </Grid>
-

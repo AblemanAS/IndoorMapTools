@@ -1,6 +1,7 @@
 ﻿using IndoorMapTools.Model;
 using System;
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Markup;
 
@@ -36,12 +37,12 @@ namespace IndoorMapTools.MVVMExtensions.Markup
         {
             public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
             {
-                if(values.Length < 2 || values[0] is not object key || values[1] is not object map) return null;
+                if(values.Length < 2 || values[0] is not object key || values[1] is not object map) return DependencyProperty.UnsetValue;
                 var indexer = map.GetType().GetProperty("Item");
-                if(indexer == null) return null;
+                if(indexer == null) return DependencyProperty.UnsetValue;
                 var param = indexer.GetIndexParameters();
-                if(param.Length != 1) return null;
-                if(!param[0].ParameterType.IsInstanceOfType(key)) return null;
+                if(param.Length != 1) return DependencyProperty.UnsetValue;
+                if(!param[0].ParameterType.IsInstanceOfType(key)) return DependencyProperty.UnsetValue;
                 return indexer.GetValue(map, new[] { key });
             }
 

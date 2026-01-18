@@ -260,14 +260,14 @@ namespace IndoorMapTools.ViewModel
         [RelayCommand] private void ClearAnalysisResult()
         {
             Result = null;
+            IntraGroupEdges = null;
+            GraphEdges = null;
             SelectedFGAViewLandmarkItem = null;
             SelectedMapViewLandmarkItem = null;
             SelectedFGAViewAreaItem = null;
             SelectedMapViewAreaItem = null;
             SelectedFloor = null;
             SelectedCluster = null;
-            IntraGroupEdges = null;
-            GraphEdges = null;
             SelectedItemSummary = null;
         }
     }

@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ***********************************************************************/
 
-using IndoorMapTools.Algorithm.FGASolver;
 using IndoorMapTools.Algorithm;
+using IndoorMapTools.Algorithm.FGASolver;
 using IndoorMapTools.Helper;
 using IndoorMapTools.Model;
 using System;
@@ -66,7 +66,7 @@ namespace IndoorMapTools.Services.Application
             progBox?.Report(75); // 진행률 70~75%
 
             /************************ 3) Reachability Graph Generation *************************/
-            // Nodes 리스트 생성 (총 landmarkToArea 필요)
+            // Nodes 생성 (총 landmarkToArea 필요) => 실질적으로 GraphNode가 생성되는 단계
             Dictionary<Landmark, GraphNode> landmarkToNode = AnalysisAlgorithms.GenerateGraphNodes(landmarkToArea);
             progBox?.Report(80); // 진행률 75~80%
 
@@ -88,7 +88,16 @@ namespace IndoorMapTools.Services.Application
             foreach(GraphNode curNode in landmarkToNode.Values)
                 fgaMatrix[curNode.Group, curNode.Floor] = curNode.Area + 1;
             int[] groupOrder = fgaSolver.Solve(fgaMatrix);
-            progBox?.Report(100); // 진행률 90~100%
+            progBox?.Report(95); // 진행률 90~95%
+
+            // Isolated Area에 대해 사용 중이지 않은 Group Id incremental 부여 (고립 Area 로직)
+            //int[] isolatedAreaGroupId = new int[building.Floors.Count];
+            //for(int i = 0; i < isolatedAreaGroupId.Length; i++)
+            //    isolatedAreaGroupId[i] = groupCount;
+            //foreach(GraphNode curNode in reachableClusters)
+            //    if(curNode.Data is Area curArea)
+            //        curNode.ReassignGroup(isolatedAreaGroupId[curArea.FloorId]++);
+            progBox?.Report(100); // 진행률 95~100%
 
             return new AnalysisResult(areas, landmarks, floorToAreas, landmarkToNode, reachableClusters, groupOrder);
         }

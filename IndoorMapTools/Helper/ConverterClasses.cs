@@ -166,6 +166,19 @@ namespace IndoorMapTools.Helper
     }
 
 
+    class GetGroupIdsReorder : OneWayMultiConverter
+    {
+        public override object Convert(object[] values)
+        {
+            if(values.Length != 2 || values[0] is not IList<Landmark> nodes ||
+                values[1] is not int[] reorderMap) return Array.Empty<int>();
+            // TODO : 고립 Area로서 추후 처리
+            if(nodes.Count == 0) Console.WriteLine("GetGroupIds: Empty landmark list received.");
+            return nodes.Select(lm => reorderMap[lm.ParentGroup.ParentBuilding.LandmarkGroups.IndexOf(lm.ParentGroup)]).ToArray();
+        }
+    }
+
+
     class MouseToolPosition : OneWayConverter<ICommand>
     { public override object Convert(ICommand com) => new RelayCommand<MouseToolEventArgs>(e => com.Execute(e.Position)); }
 

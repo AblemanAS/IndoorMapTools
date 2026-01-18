@@ -24,10 +24,11 @@ namespace IndoorMapTools.Algorithm.FGASolver
     {
         /// <summary>
         /// FGA 행렬을 받아 FGA Problem을 풀고, 
-        /// 재정렬 후 배치 기준 GroupId가 원래 배치 기준의 어느 GroupId의 Node들을 참조해야 하는지
+        /// 각 GroupId의 Node들이 어느 GroupId로 재배치되어야 하는지 배열을 반환
         /// </summary>
-        /// <param name="fgaMatrix">FGA 행렬을 명세대로 구성하여 전달 (Area 번호의 범위는 자연수로, 0이 부여된 Area는 null로 취급)</param>
-        /// <returns>연산결과 인덱스 매핑 배열</returns>
+        /// <param name="fgaMatrix">FGA 행렬을 fgaMatrix[GroupId, FloorId] 로 구성하여 전달. 
+        /// (Area 번호의 범위는 자연수로, 0이 부여된 Area는 null로 취급)</param>
+        /// <returns>연산결과 인덱스 매핑 배열 (Group count의 length)</returns>
         public int[] Solve(int[,] fgaMatrix);
     }
 }
