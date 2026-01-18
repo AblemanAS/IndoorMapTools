@@ -31,6 +31,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using MapView.System.Windows.Controls;
 using Map = Microsoft.Maps.MapControl.WPF.Map;
+using Microsoft.Maps.MapControl.WPF.Core;
 
 namespace IndoorMapTools.OpenStreetMapControl
 {
@@ -148,8 +149,6 @@ namespace IndoorMapTools.OpenStreetMapControl
         public Cursor ungrabCursor;
         public Cursor UngrabCursor { get => ungrabCursor; set { ungrabCursor = value;  Cursor = ungrabCursor; } }
 
-        //private static readonly Cursor UngrabCursor = MapView.System.Windows.Controls.Map.UngrabCursor;
-        //private static readonly Cursor GrabCursor = MapView.System.Windows.Controls.Map.GrabCursor;
         private readonly OSMTileLayer tileLayer;
         private readonly MapPolygon outlinePolygon;
 
@@ -158,7 +157,8 @@ namespace IndoorMapTools.OpenStreetMapControl
         {
             IsTabStop = false;
             AllowDrop = true;
-            Mode = new MercatorMode();
+            SetValue(ModeProperty, new MercatorMode());
+            SetValue(CredentialsProviderProperty, null);
 
             // 맵 레이어 초기화
             LayoutUpdated += RemoveOverlayTextBlock;

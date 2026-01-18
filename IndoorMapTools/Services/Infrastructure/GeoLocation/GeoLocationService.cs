@@ -18,6 +18,7 @@ using DotSpatial.Projections;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Windows;
 
 namespace IndoorMapTools.Services.Infrastructure.GeoLocation
@@ -35,7 +36,15 @@ namespace IndoorMapTools.Services.Infrastructure.GeoLocation
         public GeoLocationService()
         {
             if(globalSystem != null) return;
-            srids = SRIDReader.Load(SRID_PATH, MAX_EPSG); 
+            srids = SRIDReader.Load(SRID_PATH, MAX_EPSG);
+
+            // 이 부분에서 'System.IO.FileNotFoundException'(mscorlib.dll) 로드 예외 발생
+            // DotSpatial.Projections 초기화 시 XML Serialization 관련 dll 참조 오류이나,
+            // 본 프로젝트에서는 해당 기능을 전혀 사용하지 않으므로 무시해도 됨
+            Debug.WriteLine("=====================================================================================");
+            Debug.WriteLine("[INFO] The two FileNotFoundExceptions below are ignorable. (from mscorlib.dll)       ");
+            Debug.WriteLine("[INFO] Cause: DotSpatial.Projections XML Serializer scan   (Not used in this project)");
+            Debug.WriteLine("=====================================================================================");
             globalSystem = ProjectionInfo.FromEsriString(srids[4326].WKT);
         }
 

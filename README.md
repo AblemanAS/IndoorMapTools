@@ -70,4 +70,4 @@ If you use this software in academic work, please cite the corresponding paper.
 - Bring-into-view feature for analyzed export reachability in map view on selection
 - Visualizing feature for isolated areas
 - Separating MouseToolEventArgs as DTO
-- FGAView performance enhancement, separate into an independent library
+- FGAView performance enhancement

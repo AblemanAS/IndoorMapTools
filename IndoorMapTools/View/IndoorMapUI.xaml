@@ -243,10 +243,11 @@ limitations under the License.
                     <TextBlock Grid.Column="0" Text="{DynamicResource strings.Entry/ExitDirection}"/>
                     <TextBlock Grid.Column="1" Text=" : "/>
                     <Slider x:Name="sliderDir" Grid.Column="2" IsMoveToPointEnabled="True"
-                        Value="{Binding Direction, Converter={cvt:Multiplier}, ConverterParameter=-1, Mode=TwoWay}" 
+                        Value="{Binding Direction, Mode=TwoWay}" 
                         TickFrequency="15" IsSnapToTickEnabled="True" Minimum="-180" Maximum="180" HorizontalAlignment="Stretch"/>
                     <uc:EditableText Grid.Column="3" Postfix="°" Validator="Int"
-                                     Value="{Binding Value, ElementName=sliderDir, Mode=TwoWay, StringFormat=\{0:F0\}}"/>
+                                     Value="{Binding Direction, Mode=TwoWay, StringFormat=\{0:F0\},
+                                                Converter={cvt:Multiplier}, ConverterParameter=-1}"/>
                 </Grid>
                 <uc:ToolButton MinHeight="30" Margin="2, 5, 2, 2"
                                ActivationTarget="{Binding ActiveTool, ElementName=mapView}"

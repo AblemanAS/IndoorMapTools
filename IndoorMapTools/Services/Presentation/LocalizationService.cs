@@ -118,7 +118,7 @@ namespace IndoorMapTools.Services.Presentation
 
             // 현재 언어 설정
             CultureInfo uiculture = CultureInfo.CurrentUICulture;   // 사용자 OS 언어코드 미리 받아 놓기
-            Culture = defaultCulture;        // 안전 기본값 할당
+            Culture = defaultCulture;                               // 안전 기본값 할당
             Culture = uiculture;                                    // 사용자 OS 언어코드 할당 시도
         }
     }

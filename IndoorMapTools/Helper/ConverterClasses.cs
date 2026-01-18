@@ -102,12 +102,16 @@ namespace IndoorMapTools.Helper
     class Multiplier : MarkupConverterBase, IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-            => (NumericTypeUtils.AsDouble(value) is double dVal && 
-            NumericTypeUtils.AsDouble(parameter) is double dParam) ? dVal * dParam : 0.0;
+            => (AsDouble(value) is double dVal && AsDouble(parameter) is double dParam) ? dVal * dParam : 0.0;
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-            => (NumericTypeUtils.AsDouble(value) is double dVal && 
-            NumericTypeUtils.AsDouble(parameter) is double dParam) ? dVal / dParam : 0.0;
+            => (AsDouble(value) is double dVal && AsDouble(parameter) is double dParam) ? dVal / dParam : 0.0;
+
+        private static object AsDouble(object o)
+        {
+            try { return (double)System.Convert.ChangeType(o, TypeCode.Double); }
+            catch { return (o is string str && double.TryParse(str, out double d)) ? d : null; }
+        }
     }
 
 

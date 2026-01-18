@@ -26,30 +26,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="srid" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Content Include="config.ini">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\appicon.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="DotSpatial.Projections" Version="4.0.656" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
     <PackageReference Include="Microsoft.Maps.MapControl.WPF" Version="1.0.0.3" />
     <PackageReference Include="protobuf-net" Version="2.4.8" />
     <PackageReference Include="System.Numerics.Vectors" Version="4.6.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Page Include="App.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Update="Microsoft.VCRTForwarders.140" Version="1.1.0" />
+    <ProjectReference Include="..\EnhancedCommands\EnhancedCommands.csproj" />
+    <ProjectReference Include="..\FGAView\FGAView.csproj" />
+    <ProjectReference Include="..\MapView\MapView.csproj" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Web.Extensions" />
@@ -57,53 +43,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Resources\analysis.png" />
-    <Resource Include="Resources\building.png" />
-    <Resource Include="Resources\elevator.cur" />
-    <Resource Include="Resources\elevator_sprite.png" />
-    <Resource Include="Resources\entrance.cur" />
-    <Resource Include="Resources\entrance_sprite.png" />
-    <Resource Include="Resources\escalator.cur" />
-    <Resource Include="Resources\escalator_sprite.png" />
-    <Resource Include="Resources\failed_tile.png" />
-    <Resource Include="Resources\globe.png" />
-    <Resource Include="Resources\mark.cur" />
-    <Resource Include="Resources\mark.png" />
-    <Resource Include="Resources\stair.cur" />
-    <Resource Include="Resources\stair_sprite.png" />
-    <Resource Include="Resources\station.cur" />
-    <Resource Include="Resources\station.png" />
-    <Resource Include="Resources\checked.png" />
-    <Resource Include="Resources\elevator.png" />
-    <Resource Include="Resources\entrance.png" />
-    <Resource Include="Resources\escalator.png" />
-    <Resource Include="Resources\export.png" />
-    <Resource Include="Resources\eye.png" />
-    <Resource Include="Resources\load.png" />
-    <Resource Include="Resources\new.png" />
-    <Resource Include="Resources\save.png" />
-    <Resource Include="Resources\shape_mod.png" />
-    <Resource Include="Resources\stair.png" />
-    <Resource Include="Resources\station_sprite.png" />
-    <Content Include="strings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="srid">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <ProjectReference Include="..\EnhancedCommands\EnhancedCommands.csproj" />
-    <ProjectReference Include="..\FGAView\FGAView.csproj" />
-    <ProjectReference Include="..\MapView\MapView.csproj" />
-    <Resource Include="Resources\search.png" />
-    <Resource Include="Resources\strings_default.json" />
-    <Resource Include="Resources\treshcan.png" />
-    <Resource Include="Resources\unchecked.png" />
-    <Resource Include="Resources\unmark.cur" />
-    <Resource Include="Resources\unmark.png" />
+    <Page Include="App.xaml" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.VCRTForwarders.140" Version="1.1.0" />
+    <Content Include="config.ini"> <CopyToOutputDirectory>Always</CopyToOutputDirectory> </Content>
+    <Content Include="strings.json"> <CopyToOutputDirectory>Always</CopyToOutputDirectory> </Content>
+    <Content Include="srid"> <CopyToOutputDirectory>Always</CopyToOutputDirectory> </Content>
+    <Content Include="Resources\appicon.ico" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Resource Include="Resources\*.png" />
+    <Resource Include="Resources\*.cur" />
+    <Resource Include="Resources\strings_default.json" />
   </ItemGroup>
 
 </Project>
