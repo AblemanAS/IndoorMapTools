@@ -14,11 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ***********************************************************************/
 
-namespace IndoorMapTools.Services.Presentation
+using System;
+using System.Windows.Shapes;
+using System.Windows;
+
+namespace FGAView.System.Windows.Controls.FGAVisuals
 {
-    public class ResourceStringService : Application.IResourceStringService
+    public abstract class FGAShape : Shape
     {
-        public string Get(string key) => (string)System.Windows.Application.Current.Resources[key];
-        public string this[string key] => Get(key);
+        public abstract void CacheDefiningGeometry(Func<int, int, int, Rect> mappingFunction);
+
+        private IFGALayoutMapper coordinator;
+
+        protected override Size MeasureOverride(Size constraint) => default;
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            coordinator = FGALayoutHelper.SearchLayoutMapper(this);
+            if(coordinator != null) CacheDefiningGeometry(coordinator.GetItemLayoutRect);
+            return base.ArrangeOverride(finalSize);
+        }
     }
 }

@@ -38,20 +38,18 @@ namespace IndoorMapTools.View.UserControls
         protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
         {
             base.OnPropertyChanged(e);
-
-            if(e.Property == SourceProperty)
+            if(e.Property != SourceProperty) return;
+            
+            if(!(Source is BitmapSource source && source.Format == PixelFormats.Indexed1))
             {
-                if(!(Source is BitmapSource source && source.Format == PixelFormats.Indexed1))
-                {
-                    pixelDataCache = null;
-                    return;
-                }
-
-                // Indexed1의 경우, 1픽셀이 1비트이므로 한 행의 바이트 수는 (PixelWidth + 7) / 8
-                stride = (source.PixelWidth + 7) / 8;
-                pixelDataCache = new byte[stride * source.PixelHeight];
-                source.CopyPixels(pixelDataCache, stride, 0);
+                pixelDataCache = null;
+                return;
             }
+
+            // Indexed1의 경우, 1픽셀이 1비트이므로 한 행의 바이트 수는 (PixelWidth + 7) / 8
+            stride = (source.PixelWidth + 7) / 8;
+            pixelDataCache = new byte[stride * source.PixelHeight];
+            source.CopyPixels(pixelDataCache, stride, 0);
         }
 
         protected override HitTestResult HitTestCore(PointHitTestParameters hitTestParameters)

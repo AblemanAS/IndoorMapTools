@@ -20,7 +20,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
-namespace IndoorMapTools.View.FGAView
+namespace FGAView.System.Windows.Controls
 {
     public class FGAItem : ContentControl
     {
@@ -47,7 +47,7 @@ namespace IndoorMapTools.View.FGAView
 
         private static void OnIsSelectedChangedFromItemContainer(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if(d is not FGAItem instance || e.NewValue is not bool value) return;
+            if(!(d is FGAItem instance && e.NewValue is bool value)) return;
             if(instance.isInSelectionSync) return;
             bool isSelectedPrev = Selector.GetIsSelected(instance);
             if(isSelectedPrev != value)
@@ -68,7 +68,7 @@ namespace IndoorMapTools.View.FGAView
 
         private static void OnIsSelectedChangedFromSelector(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if(d is not FGAItem instance || e.NewValue is not bool value) return;
+            if(!(d is FGAItem instance && e.NewValue is bool value)) return;
             if(instance.isInSelectionSync) return;
             if(instance.IsSelected != value)
             {

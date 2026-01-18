@@ -111,7 +111,8 @@ limitations under the License.
                     IsEnabled="{Binding Model, Converter={cvt:IsNotNull}}">
                 <Button.Command>
                     <dc:TemplatedDialogCommand Title="{DynamicResource strings.AnalyzeReachability}"
-                                               DialogContext="{Binding}">
+                                               DialogContext="{Binding}"
+                                               OnClosedCommand="{Binding Avm.ClearAnalysisResultCommand}">
                         <DataTemplate DataType="{x:Type viewModel:MainWindowVM}">
                             <view:AnalysisForm/>
                         </DataTemplate>
@@ -325,10 +326,8 @@ limitations under the License.
                     <Image Source="pack://application:,,,/Resources/globe.png" 
                            Height="24" Margin="0,-4,0,-4"/>
                     <ComboBox Height="24" Margin="5,-4,10,-4" VerticalContentAlignment="Center"
-                              DataContext="{x:Static Application.Current}"
-                              d:DataContext="{d:DesignInstance Type=imt:App}"
                               ItemsSource="{Binding AvailableCultures}"
-                              SelectedItem="{Binding Culture}"
+                              SelectedItem="{Binding CurrentCulture}"
                               DisplayMemberPath="NativeName"/>
                     <TextBlock Text="ver " VerticalAlignment="Center"/>
                     <TextBlock Text="{StaticResource AppVersion}" VerticalAlignment="Center"/>

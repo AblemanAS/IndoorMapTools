@@ -30,7 +30,7 @@ namespace IndoorMapTools.ViewModel
     public partial class ExportProjectVM : ObservableObject
     {
         private readonly BackgroundService backgroundWorker;
-        private readonly IMPJExportService impjExportSvc;
+        private readonly IMPJExportService impjExSvc;
         private readonly IResourceStringService strSvc;
         private readonly GeoLocationService glSvc;
 
@@ -39,7 +39,7 @@ namespace IndoorMapTools.ViewModel
         {
             this.backgroundWorker = backgroundWorker;
             this.strSvc = strSvc;
-            this.impjExportSvc = impjExSvc;
+            this.impjExSvc = impjExSvc;
             this.glSvc = glSvc;
         }
 
@@ -81,7 +81,7 @@ namespace IndoorMapTools.ViewModel
         }
 
         [RelayCommand(CanExecute = nameof(IsLayoutValid))] private void ExportProject(string filePath)
-            => backgroundWorker.Run(() => impjExportSvc.Export(Model, filePath, backgroundWorker.ReportProgress), 
-                strSvc["strings.ExportProjectStatusDesc"]);
+            => backgroundWorker.Run(() => impjExSvc.Export(Model, filePath, backgroundWorker.ReportProgress), 
+                strSvc["ExportProjectStatusDesc"]);
     }
 }

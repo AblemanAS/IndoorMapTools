@@ -22,10 +22,10 @@ using System.Windows.Controls;
 using System.Windows.Markup;
 using System.Windows.Media;
 
-namespace IndoorMapTools.View.FGAView
+namespace FGAView.System.Windows.Controls
 {
     [ContentProperty(nameof(Children))]
-    public class FGAMatrix : Canvas, IFGALayoutMapper
+    public class FGAView : Canvas, IFGALayoutMapper
     {
         // 컨트롤 공용 속성
         public Size CellSize { get; set; } = new Size(64, 64); // Cell Size (픽셀 단위) - 기본값 64px
@@ -38,7 +38,7 @@ namespace IndoorMapTools.View.FGAView
         private int maxColumn = 0;
         private bool isLayoutMapValid;
 
-        public FGAMatrix()
+        public FGAView()
         {
             reservationTable = new Dictionary<WeakReference<UIElement>, IEnumerable<(int Floor, int Group, int Area)>>();
             floorAreaToRow = new Dictionary<(int Floor, int Area), int>();

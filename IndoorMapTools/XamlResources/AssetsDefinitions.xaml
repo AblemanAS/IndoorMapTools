@@ -1,5 +1,7 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- StaticResources -->
     <BitmapImage x:Key="BuildingImage" UriSource="pack://application:,,,/Resources/building.png"/>
     <BitmapImage x:Key="CheckedImage" UriSource="pack://application:,,,/Resources/checked.png"/>
     <BitmapImage x:Key="UncheckedImage" UriSource="pack://application:,,,/Resources/unchecked.png"/>
@@ -16,4 +18,13 @@
     <BitmapImage x:Key="ShapeModImage" UriSource="pack://application:,,,/Resources/shape_mod.png"/>
     <BitmapImage x:Key="EyeImage" UriSource="pack://application:,,,/Resources/eye.png"/>
     <BitmapImage x:Key="FailedTile" UriSource="pack://application:,,,/Resources/failed_tile.png"/>
+
+    <!-- App.xaml.cs 에서 로드되는 DynamicResources -->
+    <x:Null x:Key="StairCursor"/>
+    <x:Null x:Key="ElevatorCursor"/>
+    <x:Null x:Key="EscalatorCursor"/>
+    <x:Null x:Key="EntranceCursor"/>
+    <x:Null x:Key="StationCursor"/>
+    <x:Null x:Key="MarkCursor"/>
+    <x:Null x:Key="UnmarkCursor"/>
 </ResourceDictionary>

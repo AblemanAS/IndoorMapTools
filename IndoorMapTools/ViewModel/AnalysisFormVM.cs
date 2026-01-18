@@ -200,7 +200,7 @@ namespace IndoorMapTools.ViewModel
                 }
 
                 Result = result;
-            }, strSvc["strings.ReachableClusterAnalysisStatusDesc"]);
+            }, strSvc["ReachableClusterAnalysisStatusDesc"]);
         }
 
 

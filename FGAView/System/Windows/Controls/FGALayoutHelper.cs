@@ -18,7 +18,7 @@ using System;
 using System.Windows;
 using System.Windows.Media;
 
-namespace IndoorMapTools.View.FGAView
+namespace FGAView.System.Windows.Controls
 {
     public static class FGALayoutHelper
     {

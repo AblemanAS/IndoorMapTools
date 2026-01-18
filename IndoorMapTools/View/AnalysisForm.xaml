@@ -22,8 +22,8 @@ limitations under the License.
       xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
       xmlns:model="clr-namespace:IndoorMapTools.Model"
       xmlns:exm="clr-namespace:IndoorMapTools.MVVMExtensions.Markup"
-      xmlns:fga="clr-namespace:IndoorMapTools.View.FGAView"
-      xmlns:fvs="clr-namespace:IndoorMapTools.View.FGAView.FGAVisuals"
+      xmlns:fga="clr-namespace:FGAView.System.Windows.Controls;assembly=FGAView"
+      xmlns:fvs="clr-namespace:FGAView.System.Windows.Controls.FGAVisuals;assembly=FGAView"
       xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls"
       xmlns:viewModel="clr-namespace:IndoorMapTools.ViewModel"
       xmlns:mv="clr-namespace:MapView.System.Windows.Controls;assembly=MapView"
@@ -51,9 +51,10 @@ limitations under the License.
 
         <Border x:Name="fgaBlock" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,5"
                 BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
-                BorderThickness="1" Background="White">
+                BorderThickness="1" Background="White"
+                IsEnabled="{Binding Avm.Result, Converter={cvt:IsNotNull}}">
             <uc:PanZoomViewer VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                <fga:FGAMatrix x:Name="fgaMatrix" DataContext="{Binding Avm}">
+                <fga:FGAView x:Name="fgaMatrix" DataContext="{Binding Avm}">
 
                     <fga:FGAItemsControl x:Name="fgaAreaSelctor" ItemsSource="{Binding Result.Areas}"
                                          SelectedItem="{Binding SelectedFGAViewAreaItem}">
@@ -146,7 +147,7 @@ limitations under the License.
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                </fga:FGAMatrix>
+                </fga:FGAView>
             </uc:PanZoomViewer>
         </Border>
 
@@ -221,9 +222,10 @@ limitations under the License.
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <mv:Map x:Name="mapView" Center="{Binding MapViewFocus}"
-                    MapImageSource="{Binding SelectedFloor.MapImage}">
-                <mv:Map.MapOverlays>
+            <mv:MapView x:Name="mapView" Center="{Binding MapViewFocus}"
+                    MapImageSource="{Binding SelectedFloor.MapImage}"
+                    IsEnabled="{Binding Result, Converter={cvt:IsNotNull}}">
+                <mv:MapView.MapOverlays>
                     <uc:SelectorControl x:Name="mapViewAreaSelector" SelectedItem="{Binding SelectedMapViewAreaItem}"
                                         ItemsSource="{exm:DictGetValue Key={Binding SelectedFloor}, Map={Binding Result.FloorToAreas}}"
                                         Tag="{exm:DictGetValue Key={Binding SelectedFloor}, Map={Binding AreaPivots}}"
@@ -245,7 +247,7 @@ limitations under the License.
                             </DataTemplate>
                         </uc:SelectorControl.ItemTemplate>
                     </uc:SelectorControl>
-                </mv:Map.MapOverlays>
+                </mv:MapView.MapOverlays>
 
                 <uc:SelectorControl ItemsSource="{Binding SelectedFloor.Landmarks}"
                                     SelectedItem="{Binding SelectedMapViewLandmarkItem}">
@@ -261,7 +263,7 @@ limitations under the License.
                         </DataTemplate>
                     </uc:SelectorControl.ItemTemplate>
                 </uc:SelectorControl>
-            </mv:Map>
+            </mv:MapView>
 
             <StatusBar Grid.Row="1">
                 <StatusBarItem Margin="5,0,5,0" Content="{Binding SelectedItemSummary}"/>

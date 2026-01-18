@@ -23,7 +23,8 @@ using IndoorMapTools.Services.Domain;
 using IndoorMapTools.Services.Infrastructure.IMPJ;
 using IndoorMapTools.Services.Presentation;
 using System;
-using System.Data.SqlTypes;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 
 namespace IndoorMapTools.ViewModel
@@ -32,7 +33,7 @@ namespace IndoorMapTools.ViewModel
     {
         // 서비스
         private readonly BackgroundService bgSvc;
-        private readonly IResourceStringService strSvc;
+        private readonly LocalizationService strSvc;
         private readonly IProjectPersistenceService projectIOSvc;
         private readonly IMPJImportService impjImportSvc;
 
@@ -52,10 +53,13 @@ namespace IndoorMapTools.ViewModel
         public bool ProgressIndeterminated => bgSvc.ProgressIndeterminated;
         public bool IsBusy => bgSvc.IsBusy;
 
+        public IReadOnlyList<CultureInfo> AvailableCultures => strSvc.AvailableCultures;
+        public CultureInfo CurrentCulture { get => strSvc.Culture; set => strSvc.Culture = value; }
+
         private bool guardFloorSync = false;
 
         public MainWindowVM(GlobalMapVM gvm, IndoorMapVM ivm, ExportProjectVM evm, FloorListItemVM fvm, AnalysisFormVM avm,
-                            BackgroundService bgSvc, IResourceStringService strSvc, 
+                            BackgroundService bgSvc, LocalizationService strSvc, 
                             IProjectPersistenceService projectIOSvc, IMPJImportService impjImportSvc)
         {
             Gvm = gvm; Ivm = ivm; Evm = evm; Fvm = fvm; Avm = avm;
@@ -65,6 +69,9 @@ namespace IndoorMapTools.ViewModel
             this.impjImportSvc = impjImportSvc;
 
             bgSvc.PropertyChanged += (sender, e) => 
+            { if(!string.IsNullOrEmpty(e.PropertyName)) OnPropertyChanged(e.PropertyName); };
+
+            strSvc.PropertyChanged += (sender, e) =>
             { if(!string.IsNullOrEmpty(e.PropertyName)) OnPropertyChanged(e.PropertyName); };
 
             Ivm.PropertyChanged += (sender, e) => // IVM의 모델 변경 감시 -> 자신의 층선택을 동기화
@@ -152,11 +159,11 @@ namespace IndoorMapTools.ViewModel
             };
 
             if(loadBehavior == null) return;
-            bgSvc.Run(loadBehavior, strSvc["strings.LoadProjectStatusDesc"]);
+            bgSvc.Run(loadBehavior, strSvc["LoadProjectStatusDesc"]);
         }
 
         [RelayCommand] private void SaveProject(string filePath)
-            => bgSvc.Run(() => projectIOSvc.SaveProject(Model, filePath), strSvc["strings.SaveProjectStatusDesc"]);
+            => bgSvc.Run(() => projectIOSvc.SaveProject(Model, filePath), strSvc["SaveProjectStatusDesc"]);
 
         [RelayCommand] private void SaveAndNewProject(string filePath)
         {

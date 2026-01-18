@@ -26,12 +26,12 @@ using System.Windows.Media.Imaging;
 namespace MapView.System.Windows.Controls
 {
     [ContentProperty(nameof(MapElements))]
-    public class Map : Panel
+    public class MapView : Panel
     {
         private const string GRAB_CURSOR_PATH = "pack://application:,,,/MapView;component/Resources/grab.cur";
         private const string UNGRAB_CURSOR_PATH = "pack://application:,,,/MapView;component/Resources/ungrab.cur";
 
-        static Map()
+        static MapView()
         {
             GrabCursor = new Cursor(Application.GetResourceStream(new Uri(GRAB_CURSOR_PATH)).Stream, true);
             UngrabCursor = new Cursor(Application.GetResourceStream(new Uri(UNGRAB_CURSOR_PATH)).Stream, true);
@@ -45,11 +45,11 @@ namespace MapView.System.Windows.Controls
             set => SetValue(CenterProperty, value);
         }
         public static readonly DependencyProperty CenterProperty = DependencyProperty.Register(nameof(Center), 
-            typeof(Point), typeof(Map), new FrameworkPropertyMetadata(OnCenterChanged) { AffectsArrange = true });
+            typeof(Point), typeof(MapView), new FrameworkPropertyMetadata(OnCenterChanged) { AffectsArrange = true });
 
         private static void OnCenterChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if(!(d is Map instance)) return;
+            if(!(d is MapView instance)) return;
             instance.isViewPortValid = false;
         }
 
@@ -61,21 +61,21 @@ namespace MapView.System.Windows.Controls
             set => SetValue(ZoomProperty, value);
         }
         public static readonly DependencyProperty ZoomProperty =
-            DependencyProperty.Register(nameof(Zoom), typeof(int), typeof(Map),
+            DependencyProperty.Register(nameof(Zoom), typeof(int), typeof(MapView),
                 new FrameworkPropertyMetadata(OnZoomChanged));
 
         private static void OnZoomChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-            => (d as Map).SetValue(ImageScaleFactorPropertyKey, Math.Pow(1.1, (int)e.NewValue));
+            => (d as MapView).SetValue(ImageScaleFactorPropertyKey, Math.Pow(1.1, (int)e.NewValue));
 
         /// <summary> Zoom에 따라, 실제로 렌더링 스케일에 영향을 주는 읽기전용 DP </summary>
         public double ImageScaleFactor => (double)GetValue(ImageScaleFactorPropertyKey.DependencyProperty);
         public static readonly DependencyPropertyKey ImageScaleFactorPropertyKey =
-            DependencyProperty.RegisterReadOnly(nameof(ImageScaleFactor), typeof(double), typeof(Map), 
+            DependencyProperty.RegisterReadOnly(nameof(ImageScaleFactor), typeof(double), typeof(MapView), 
                 new FrameworkPropertyMetadata(1.0, OnImageScaleFactorChanged) { AffectsArrange = true });
 
         private static void OnImageScaleFactorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if(!(d is Map instance && e.NewValue is double value)) return;
+            if(!(d is MapView instance && e.NewValue is double value)) return;
             instance.overlayScaleTransform.ScaleX = value;
             instance.overlayScaleTransform.ScaleY = value;
             instance.isFocusableValid = false;
@@ -90,12 +90,12 @@ namespace MapView.System.Windows.Controls
             set => SetValue(ActiveToolProperty, value);
         }
         public static readonly DependencyProperty ActiveToolProperty =
-            DependencyProperty.Register(nameof(ActiveTool), typeof(MouseTool), typeof(Map),
+            DependencyProperty.Register(nameof(ActiveTool), typeof(MouseTool), typeof(MapView),
                 new FrameworkPropertyMetadata(OnActiveToolChanged) { BindsTwoWayByDefault = true });
 
         private static void OnActiveToolChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if(!(d is Map instance)) return;
+            if(!(d is MapView instance)) return;
             instance.Cursor = (e.NewValue is MouseTool newTool) ? newTool.DefaultCursor : UngrabCursor;
         }
 
@@ -107,11 +107,11 @@ namespace MapView.System.Windows.Controls
             set => SetValue(MapImageSourceProperty, value);
         }
         public static readonly DependencyProperty MapImageSourceProperty = DependencyProperty.Register(nameof(MapImageSource),
-            typeof(BitmapSource), typeof(Map), new FrameworkPropertyMetadata(OnMapImageSourceChanged));
+            typeof(BitmapSource), typeof(MapView), new FrameworkPropertyMetadata(OnMapImageSourceChanged));
 
         private static void OnMapImageSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if(!(d is Map instance)) return;
+            if(!(d is MapView instance)) return;
 
             //instance.overlayCanvas.SetBackgroundSource(newSource);
             if(e.NewValue is BitmapSource newSource)
@@ -143,7 +143,7 @@ namespace MapView.System.Windows.Controls
         private bool isFocusableValid, isViewPortValid;
         private bool subscribingInput;
 
-        public Map()
+        public MapView()
         {
             Background = Brushes.White;
             ClipToBounds = true;

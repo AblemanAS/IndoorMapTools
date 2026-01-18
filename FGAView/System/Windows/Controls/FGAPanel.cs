@@ -19,7 +19,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace IndoorMapTools.View.FGAView
+namespace FGAView.System.Windows.Controls
 {
     public class FGAPanel : Panel
     {

@@ -4,8 +4,7 @@
              xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <Application.Resources>
         <ResourceDictionary >
-            <ResourceDictionary.MergedDictionaries >
-                <!--<ResourceDictionary Source="XamlResources/SliderToggleButton.xaml"/>-->
+            <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="XamlResources/SystemButton.xaml"/>
                 <ResourceDictionary Source="XamlResources/ColumnSplitter.xaml"/>
                 <ResourceDictionary Source="XamlResources/BetterLookGroupBox.xaml"/>
@@ -15,20 +14,11 @@
             </ResourceDictionary.MergedDictionaries>
         
             <!-- 앱 버전 정보 Generation.MajorRevision.MinorRevision.BugFix -->
-            <sys:String x:Key="AppVersion">0.7.t.7</sys:String>
-
-            <!-- App.xaml.cs 에서 로드되는 DynamicResources -->
-            <x:Null x:Key="StairCursor"/>
-            <x:Null x:Key="ElevatorCursor"/>
-            <x:Null x:Key="EscalatorCursor"/>
-            <x:Null x:Key="EntranceCursor"/>
-            <x:Null x:Key="StationCursor"/>
-            <x:Null x:Key="MarkCursor"/>
-            <x:Null x:Key="UnmarkCursor"/>
-            <sys:String x:Key="TileSourceURL">https://tile.openstreetmap.org/{z}/{x}/{y}.png</sys:String>
+            <sys:String x:Key="AppVersion">0.7.t.8</sys:String>
 
             <!-- 기본값 -->
             <Point x:Key="DefaultLonlat" X="127.36554" Y="36.37417"/>
+            <sys:String x:Key="TileSourceURL">https://tile.openstreetmap.org/{z}/{x}/{y}.png</sys:String>
             
             <!-- Map View용 컬러브러시, 이펙트 -->
             <SolidColorBrush x:Key="TransparentWhite" Color="White" Opacity="0.5"/>

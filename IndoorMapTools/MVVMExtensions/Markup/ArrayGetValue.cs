@@ -39,9 +39,9 @@ namespace IndoorMapTools.MVVMExtensions.Markup
         {
             public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
             {
-                if(values.Length < 2) return Binding.DoNothing;
-                if(values[0] is not int index || values[1] is not Array source) return Binding.DoNothing;
-                if(index >= source.Length) return Binding.DoNothing;
+                if(values.Length < 2) return null;
+                if(values[0] is not int index || values[1] is not Array source) return null;
+                if(index >= source.Length) return null;
                 return source.GetValue(index);
             }
 

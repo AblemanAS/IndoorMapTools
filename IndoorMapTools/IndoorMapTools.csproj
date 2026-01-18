@@ -92,6 +92,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <ProjectReference Include="..\EnhancedCommands\EnhancedCommands.csproj" />
+    <ProjectReference Include="..\FGAView\FGAView.csproj" />
     <ProjectReference Include="..\MapView\MapView.csproj" />
     <Resource Include="Resources\search.png" />
     <Resource Include="Resources\strings_default.json" />

@@ -23,7 +23,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace IndoorMapTools.View.FGAView.FGAVisuals
+namespace FGAView.System.Windows.Controls.FGAVisuals
 {
     public class FGAArea : UserControl
     {
@@ -106,7 +106,7 @@ namespace IndoorMapTools.View.FGAView.FGAVisuals
 
         private static void OnFGAChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if(d is not FGAArea instance) return;
+            if(!(d is FGAArea instance)) return;
             instance.isSegmentsValid = false;
             instance.InvalidateMeasure();
         }

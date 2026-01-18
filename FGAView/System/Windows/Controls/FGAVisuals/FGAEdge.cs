@@ -20,7 +20,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace IndoorMapTools.View.FGAView.FGAVisuals
+namespace FGAView.System.Windows.Controls.FGAVisuals
 {
     public class FGAEdge : FGAShape
     {

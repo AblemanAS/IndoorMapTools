@@ -42,15 +42,15 @@ limitations under the License.
     </Grid.ColumnDefinitions>
 
     <!--#region 맵뷰 -->
-    <mv:Map x:Name="mapView" Grid.RowSpan="3" IsEnabled="{Binding MapViewModel, Converter={cvt:IsNotNull}}"
+    <mv:MapView x:Name="mapView" Grid.RowSpan="3" IsEnabled="{Binding MapViewModel, Converter={cvt:IsNotNull}}"
             MapImageSource="{Binding MapViewModel.MapImage}" Center="{Binding IndoorMapFocus}">
-        <mv:Map.Resources>
+        <mv:MapView.Resources>
             <uc:BindingProxy x:Key="toolproxy" Data="{Binding ElementName=polygonTool}"/>
-        </mv:Map.Resources>
-        <mv:Map.MapOverlays>
+        </mv:MapView.Resources>
+        <mv:MapView.MapOverlays>
             <Image Source="{Binding MapViewModel.Reachable}" 
                Visibility="{Binding ReachableVisible, Converter={cvt:BoolToVisibility}}"/>
-        </mv:Map.MapOverlays>
+        </mv:MapView.MapOverlays>
         <uc:SelectorControl ItemsSource="{Binding MapViewModel.Landmarks}" SelectedItem="{Binding SelectedMapViewItem}"
                             IsHitTestVisible="{Binding ActiveTool, ElementName=mapView, Converter={cvt:IsNull}}" Cursor="None">
             <uc:SelectorControl.ItemContainerStyle>
@@ -95,7 +95,7 @@ limitations under the License.
             </uc:SelectorControl.ItemTemplate>
         </uc:SelectorControl>
 
-        <mv:Map.KeyActivationTools>
+        <mv:MapView.KeyActivationTools>
             <mv:MouseTool ActivationKey="LeftCtrl" DefaultCursor="{DynamicResource MarkCursor}"
                           OnMouseLeftDrag="{Binding MarkCommand, Converter={cvt:MouseToolPosition}}"/>
             <mv:MouseTool ActivationKey="LeftAlt" DefaultCursor="{DynamicResource UnmarkCursor}"
@@ -114,8 +114,8 @@ limitations under the License.
                           OnMouseLeftDown="{Binding LocateEntranceCommand, Converter={cvt:MouseToolPosition}}"/>
             <mv:MouseTool ActivationKey="T" ToolName="Station" DefaultCursor="{DynamicResource StationCursor}"
                           OnMouseLeftDown="{Binding LocateStationCommand, Converter={cvt:MouseToolPosition}}"/>
-        </mv:Map.KeyActivationTools>
-    </mv:Map>
+        </mv:MapView.KeyActivationTools>
+    </mv:MapView>
     <!--#endregion 맵뷰 -->
 
     <GroupBox Header="{DynamicResource strings.LocateLandmark}" 

@@ -14,15 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ***********************************************************************/
 
-using System;
-using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 
-namespace IndoorMapTools.View.FGAView
+namespace FGAView.System.Windows.Controls
 {
-    public interface IFGALayoutMapper
+    [StyleTypedProperty(Property = "ItemContainerStyle", StyleTargetType = typeof(FGAItem))]
+    public class FGAItemsControl : Selector
     {
-        public void UpdateReservation(UIElement item, IEnumerable<(int Floor, int Group, int Area)> identifiers);
-        public Rect GetItemLayoutRect(int floor, int group, int area);
+        protected override bool IsItemItsOwnContainerOverride(object item) => item is FGAItem;
+        protected override DependencyObject GetContainerForItemOverride() => new FGAItem();
+
+        public FGAItemsControl()
+        {
+            ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(typeof(FGAPanel)));
+            IsTabStop = false;
+        }
     }
 }

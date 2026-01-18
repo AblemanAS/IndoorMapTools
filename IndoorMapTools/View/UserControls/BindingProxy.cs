@@ -32,5 +32,4 @@ namespace IndoorMapTools.View.UserControls
         public static readonly DependencyProperty DataProperty =
             DependencyProperty.Register(nameof(Data), typeof(object), typeof(BindingProxy), new UIPropertyMetadata(null));
     }
-
 }

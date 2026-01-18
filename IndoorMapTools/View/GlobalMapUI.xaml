@@ -44,7 +44,7 @@ limitations under the License.
     <osm:OSMControl x:Name="mapControl" Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Margin="2"
                     Visibility="{Binding Model, Converter={cvt:NonNullToVisibility}, FallbackValue=Hidden}"
                     Center="{Binding GlobalMapFocus}" ZoomLevel="19"
-                    GrabCursor="{x:Static mv:Map.GrabCursor}" UngrabCursor="{x:Static mv:Map.UngrabCursor}"
+                    GrabCursor="{x:Static mv:MapView.GrabCursor}" UngrabCursor="{x:Static mv:MapView.UngrabCursor}"
                     AltTileSourceURL ="{DynamicResource TileSourceURL}"
                     OnFileDropCommand="{Binding CreateFloorCommand}" 
                     BuildingOutline="{Binding PolygonVisual, ElementName=polygonTool}">
@@ -85,7 +85,7 @@ limitations under the License.
                 <ContentPresenter.ContentTemplate>
                     <DataTemplate DataType="{x:Type model:Floor}">
                         <osm:TransformableMapImage Source="{Binding MapImage}" 
-                            GrabCursor="{x:Static mv:Map.GrabCursor}" UngrabCursor="{x:Static mv:Map.UngrabCursor}"
+                            GrabCursor="{x:Static mv:MapView.GrabCursor}" UngrabCursor="{x:Static mv:MapView.UngrabCursor}"
                             WestLongitude="{Binding LeftLongitude}" SouthLatitude="{Binding BottomLatitude}"
                             PixelPerMeter="{Binding MapImagePPM}" Rotation="{Binding MapImageRotation}"
                             Opacity="{Binding DataContext.MapImageOpacity, ElementName=mapControl}"/>

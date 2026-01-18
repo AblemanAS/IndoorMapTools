@@ -87,8 +87,8 @@ namespace IndoorMapTools.ViewModel
             if(loadedImage == null) return;
 
             if(Model.MapImage.PixelHeight != loadedImage.PixelHeight || Model.MapImage.PixelWidth != loadedImage.PixelWidth)
-                msgSvc.ShowError(strSvc["strings.ReplaceMapImageSizeUnmatchErrorMessage"] + 
-                    "\n" + strSvc["strings.ImageDimension"] + " (px) : " + 
+                msgSvc.ShowError(strSvc["ReplaceMapImageSizeUnmatchErrorMessage"] + 
+                    "\n" + strSvc["ImageDimension"] + " (px) : " + 
                     $"{Model.MapImage.PixelWidth}×{Model.MapImage.PixelHeight} " +
                     $"→ {loadedImage.PixelWidth}×{loadedImage.PixelHeight}");
             else  ReplacementImage = loadedImage;
