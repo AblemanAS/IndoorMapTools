@@ -14,7 +14,7 @@
             </ResourceDictionary.MergedDictionaries>
         
             <!-- 앱 버전 정보 Generation.MajorRevision.MinorRevision.BugFix -->
-            <sys:String x:Key="AppVersion">0.7.t.10</sys:String>
+            <sys:String x:Key="AppVersion">0.7.t.11</sys:String>
 
             <!-- 기본값 -->
             <Point x:Key="DefaultLonlat" X="127.36554" Y="36.37417"/>

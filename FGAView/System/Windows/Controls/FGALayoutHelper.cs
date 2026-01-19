@@ -24,8 +24,8 @@ namespace FGAView.System.Windows.Controls
     {
         public static IFGALayoutMapper SearchLayoutMapper(DependencyObject self)
         {
-            for(DependencyObject curObj = self; curObj != null; curObj = VisualTreeHelper.GetParent(curObj))
-                if(curObj is IFGALayoutMapper coordinator) return coordinator;
+            for(DependencyObject cur = self; cur != null; cur = VisualTreeHelper.GetParent(cur))
+                if(cur is IFGALayoutMapper mapper) return mapper;
             return null;
         }
     }

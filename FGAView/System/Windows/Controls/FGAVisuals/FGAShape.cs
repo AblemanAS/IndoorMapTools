@@ -24,13 +24,11 @@ namespace FGAView.System.Windows.Controls.FGAVisuals
     {
         public abstract void CacheDefiningGeometry(Func<int, int, int, Rect> mappingFunction);
 
-        private IFGALayoutMapper coordinator;
-
         protected override Size MeasureOverride(Size constraint) => default;
         protected override Size ArrangeOverride(Size finalSize)
         {
-            coordinator = FGALayoutHelper.SearchLayoutMapper(this);
-            if(coordinator != null) CacheDefiningGeometry(coordinator.GetItemLayoutRect);
+            IFGALayoutMapper mapper = FGALayoutHelper.SearchLayoutMapper(this);
+            if(mapper != null) CacheDefiningGeometry(mapper.GetItemLayoutRect);
             return base.ArrangeOverride(finalSize);
         }
     }

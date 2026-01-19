@@ -60,11 +60,8 @@ namespace FGAView.System.Windows.Controls
 
         private bool isInSelectionSync = false;
 
-        static FGAItem()
-        {
-            Selector.IsSelectedProperty.OverrideMetadata(typeof(FGAItem),
+        static FGAItem() => Selector.IsSelectedProperty.OverrideMetadata(typeof(FGAItem),
                 new FrameworkPropertyMetadata(OnIsSelectedChangedFromSelector));
-        }
 
         private static void OnIsSelectedChangedFromSelector(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {

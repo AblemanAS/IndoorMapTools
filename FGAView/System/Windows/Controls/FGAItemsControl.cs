@@ -28,7 +28,7 @@ namespace FGAView.System.Windows.Controls
 
         public FGAItemsControl()
         {
-            ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(typeof(FGAPanel)));
+            ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(typeof(FGACanvas)));
             IsTabStop = false;
         }
     }

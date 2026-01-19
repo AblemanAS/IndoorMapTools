@@ -81,7 +81,7 @@ namespace FGAView.System.Windows.Controls.FGAVisuals
             set => SetValue(FloorIdProperty, value);
         }
         public static readonly DependencyProperty FloorIdProperty = DependencyProperty.Register(nameof(FloorId), 
-            typeof(int), typeof(FGAArea), new FrameworkPropertyMetadata(OnFGAChanged));
+            typeof(int), typeof(FGAArea), new FrameworkPropertyMetadata(OnFGALayoutDataChanged));
 
         [Bindable(true)]
         public ICollection<int> GroupIds
@@ -90,7 +90,7 @@ namespace FGAView.System.Windows.Controls.FGAVisuals
             set => SetValue(GroupIdsProperty, value);
         }
         public static readonly DependencyProperty GroupIdsProperty = DependencyProperty.Register(nameof(GroupIds), 
-            typeof(ICollection<int>), typeof(FGAArea), new FrameworkPropertyMetadata(OnFGAChanged));
+            typeof(ICollection<int>), typeof(FGAArea), new FrameworkPropertyMetadata(OnFGALayoutDataChanged));
 
         [Bindable(true)]
         public int AreaId
@@ -99,24 +99,24 @@ namespace FGAView.System.Windows.Controls.FGAVisuals
             set => SetValue(AreaIdProperty, value);
         }
         public static readonly DependencyProperty AreaIdProperty = DependencyProperty.Register(nameof(AreaId), 
-            typeof(int), typeof(FGAArea), new FrameworkPropertyMetadata(OnFGAChanged));
+            typeof(int), typeof(FGAArea), new FrameworkPropertyMetadata(OnFGALayoutDataChanged));
 
         private static void OverrideForegroundProperty() => 
-            ForegroundProperty.OverrideMetadata(typeof(FGAArea), new FrameworkPropertyMetadata(OnFGAChanged));
+            ForegroundProperty.OverrideMetadata(typeof(FGAArea), new FrameworkPropertyMetadata(OnFGALayoutDataChanged));
 
-        private static void OnFGAChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnFGALayoutDataChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if(!(d is FGAArea instance)) return;
             instance.isSegmentsValid = false;
             instance.InvalidateMeasure();
         }
 
-        private readonly FGAPanel innerPanel;
+        private readonly FGACanvas innerPanel;
         private bool isSegmentsValid;
 
         public FGAArea()
         {
-            innerPanel = new FGAPanel();
+            innerPanel = new FGACanvas();
             Content = innerPanel;
             isSegmentsValid = false;
             SetCurrentValue(ForegroundProperty, Brushes.AliceBlue);
@@ -168,9 +168,9 @@ namespace FGAView.System.Windows.Controls.FGAVisuals
 
         private void LocateSegment(FrameworkElement fe, int floor, int group, int area)
         {
-            fe.SetValue(FGAPanel.FloorProperty, floor);
-            fe.SetValue(FGAPanel.GroupProperty, group);
-            fe.SetValue(FGAPanel.AreaProperty, area);
+            fe.SetValue(FGACanvas.FloorProperty, floor);
+            fe.SetValue(FGACanvas.GroupProperty, group);
+            fe.SetValue(FGACanvas.AreaProperty, area);
             innerPanel.Children.Add(fe);
         }
     }

@@ -55,7 +55,6 @@ limitations under the License.
                 IsEnabled="{Binding Avm.Result, Converter={cvt:IsNotNull}}">
             <uc:PanZoomViewer VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <fga:FGAView x:Name="fgaMatrix" DataContext="{Binding Avm}">
-
                     <fga:FGAItemsControl x:Name="fgaAreaSelctor" ItemsSource="{Binding Result.Areas}"
                                          SelectedItem="{Binding SelectedFGAViewAreaItem}">
                         <fga:FGAItemsControl.ItemTemplate>
@@ -90,10 +89,10 @@ limitations under the License.
                             <Style TargetType="{x:Type fga:FGAItem}">
                                 <Setter Property="Tag" Value="{exm:DictGetValue Key={Binding}, 
                                     Map={Binding DataContext.Result.LandmarkToNode, ElementName=fgaLandmarkSelector}}"/>
-                                <Setter Property="fga:FGAPanel.Floor" Value="{Binding Tag.Floor, RelativeSource={RelativeSource self}}" />
-                                <Setter Property="fga:FGAPanel.Group" Value="{exm:ArrayGetValue Index={Binding Tag.Group, RelativeSource={RelativeSource self}},
+                                <Setter Property="fga:FGACanvas.Floor" Value="{Binding Tag.Floor, RelativeSource={RelativeSource self}}" />
+                                <Setter Property="fga:FGACanvas.Group" Value="{exm:ArrayGetValue Index={Binding Tag.Group, RelativeSource={RelativeSource self}},
                                                                                 Source={Binding DataContext.Result.GroupOrder, ElementName=fgaLandmarkSelector}}"/>
-                                <Setter Property="fga:FGAPanel.Area" Value="{Binding Tag.Area, RelativeSource={RelativeSource self}}"/>
+                                <Setter Property="fga:FGACanvas.Area" Value="{Binding Tag.Area, RelativeSource={RelativeSource self}}"/>
                                 <Setter Property="Cursor" Value="Hand"/>
                             </Style>
                         </fga:FGAItemsControl.ItemContainerStyle>
