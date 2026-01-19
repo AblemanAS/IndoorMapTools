@@ -29,7 +29,7 @@ namespace IndoorMapTools.MVVMExtensions.ComponentModel
     /// 스스로가 <see cref="System.ComponentModel.INotifyPropertyChanged"/> 로서, 
     /// 생성되는 TState들이 <see cref="System.ComponentModel.INotifyPropertyChanged"/> 일 경우 
     /// 해당 객체들에서의 PropertyChangedEvent들을 중계함. 이 때 이 이벤트의 sender는 TState가 아닌 TModel로 발신됨. 
-    /// <para>XAML에서는 <c>stateMap[model]</c> 과 같은 인덱서 기반 접근 가능</para>
+    /// <para>XAML에서도 <c>stateMap[model]</c> 과 같은 인덱서 기반 접근 가능</para>
     /// <para>TState는 변경 알림을 위해 <see cref="System.ComponentModel.INotifyPropertyChanged"/> 구현을 강력히 권장함</para>
     /// </summary>
     /// <typeparam name="TModel">프레젠테이션 상태가 부착되는 기준 모델 타입</typeparam>
@@ -42,7 +42,7 @@ namespace IndoorMapTools.MVVMExtensions.ComponentModel
         public event PropertyChangedEventHandler PropertyChanged;
 
         public PresentationStateMap(Func<TState> factory)
-            : this(_ => (factory ?? throw new ArgumentNullException(nameof(factory)))()) { }
+            : this(_ => (factory ?? throw new ArgumentNullException(nameof(factory)))()) {}
 
         public PresentationStateMap(Func<TModel, TState> factory)
             => this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
@@ -67,51 +67,5 @@ namespace IndoorMapTools.MVVMExtensions.ComponentModel
 
 
         public TState this[TModel key] => Get(key);
-    }
-
-
-    [MarkupExtensionReturnType(typeof(object))]
-    public sealed class StateBindingExtension : MarkupExtension
-    {
-        /// <summary>Key 모델 (기본값: 현재 DataContext)</summary>
-        public BindingBase Key { get; set; } = default;
-
-        /// <summary>PresentationStateMap 바인딩 (필수)</summary>
-        public BindingBase Map { get; set; } = default!;
-
-        /// <summary>바인딩 모드 (기본 OneWay)</summary>
-        public BindingMode Mode { get; set; } = BindingMode.Default;
-        
-        public override object ProvideValue(IServiceProvider serviceProvider)
-        {
-            if(Key == null) throw new InvalidOperationException("Key binding must be provided.");
-            if(Map == null) throw new InvalidOperationException("Map binding must be provided.");
-
-            return new MultiBinding { Bindings = { Key, Map }, Mode = Mode, 
-                Converter = new GetPresentationState() }.ProvideValue(serviceProvider);
-        }
-
-
-        private sealed class GetPresentationState : IMultiValueConverter
-        {
-            public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
-            {
-                if(values.Length < 2) return Binding.DoNothing;
-                var key = values[0]; var map = values[1];
-                if(key == null || map == null) return Binding.DoNothing;
-
-                // PresentationStateMap<TModel, TState>의 인덱서(Item) 호출
-                var indexer = map.GetType().GetProperty("Item");
-                if(indexer == null) return Binding.DoNothing;
-                var p = indexer.GetIndexParameters();
-                if(p.Length != 1) return Binding.DoNothing;
-                if(key == null || !p[0].ParameterType.IsInstanceOfType(key))
-                    return Binding.DoNothing;
-                return indexer.GetValue(map, new[] { key });
-            }
-
-            public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-                => throw new NotSupportedException();
-        }
     }
 }

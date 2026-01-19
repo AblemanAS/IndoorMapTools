@@ -22,13 +22,13 @@ using System.Windows.Media;
 namespace FGAView.System.Windows.Controls
 {
     /// <summary>
-    /// 자기 자신이 FGA 레이아웃 매퍼 기능을 내장한 FGACanvas
+    /// 자기 자신이 FGA 레이아웃 매퍼 기능을 내장하여, 
+    /// IFGALayoutMapper로서 작동하는 FGACanvas
     /// </summary>
     public class FGAView : FGACanvas, IFGALayoutMapper
     {
-        // 컨트롤 공용 속성
         public Size CellSize { get; set; } = new Size(64, 64); // Cell Size (픽셀 단위) - 기본값 64px
-        public IFGALayoutMapper LayoutMapper { get; } = new FGALayoutEngine();
+        private readonly FGALayoutEngine mapper = new FGALayoutEngine();
 
 
         public FGAView()
@@ -46,17 +46,17 @@ namespace FGAView.System.Windows.Controls
             base.MeasureOverride(availableSize);
 
             // 맵에 따라 필요한 영역을 계산하여 반환
-            return (LayoutMapper as FGALayoutEngine).MeasureFGALayout(CellSize);
+            return (mapper as FGALayoutEngine).MeasureFGALayout(CellSize);
         }
 
 
         public void UpdateReservation(UIElement item, IEnumerable<(int Floor, int Group, int Area)> identifiers)
         {
-            LayoutMapper.UpdateReservation(item, identifiers);
+            mapper.UpdateReservation(item, identifiers);
             InvalidateMeasure();
         }
 
 
-        public Rect GetItemLayoutRect(int floor, int group, int area) => LayoutMapper.GetItemLayoutRect(floor, group, area);
+        public Rect GetItemLayoutRect(int floor, int group, int area) => mapper.GetItemLayoutRect(floor, group, area);
     }
 }

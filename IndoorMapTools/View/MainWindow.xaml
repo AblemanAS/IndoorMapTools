@@ -25,7 +25,7 @@ limitations under the License.
         xmlns:model="clr-namespace:IndoorMapTools.Model"
         xmlns:viewModel="clr-namespace:IndoorMapTools.ViewModel"
         xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls"
-        xmlns:excm="clr-namespace:IndoorMapTools.MVVMExtensions.ComponentModel"
+        xmlns:exm="clr-namespace:IndoorMapTools.MVVMExtensions.Markup"
         xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
         xmlns:dc="clr-namespace:EnhancedCommands.System.Windows.Input.DialogCommands;assembly=EnhancedCommands"
         Title="{DynamicResource strings.AppName}"
@@ -177,7 +177,7 @@ limitations under the License.
                 <DataTemplate DataType="{x:Type model:Floor}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
                         <CheckBox x:Name="ddsaw" VerticalAlignment="Center" Style="{StaticResource VisibilityCheckBoxStyle}"
-                                  Tag="{excm:StateBinding Key={Binding}, Map={Binding DataContext.Gvm.FloorStates, ElementName=floorList}}"
+                                  Tag="{exm:DictGetValue Key={Binding}, Map={Binding DataContext.Gvm.FloorStates, ElementName=floorList}}"
                                   IsChecked="{Binding Tag.Visible, RelativeSource={RelativeSource Self}}"/>
                         <TextBlock Text="{Binding Name}" Margin="10,0,0,0"/>
                     </StackPanel>

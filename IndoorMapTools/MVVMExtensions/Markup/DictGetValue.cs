@@ -1,5 +1,4 @@
-﻿using IndoorMapTools.Model;
-using System;
+﻿using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
@@ -7,13 +6,17 @@ using System.Windows.Markup;
 
 namespace IndoorMapTools.MVVMExtensions.Markup
 {
+    /// <summary>
+    /// Dictionary의 Map, Key에 대한 Binding을 지원하지 않는 WPF XAML 기본 사양을 보강하기 위하여, 
+    /// Map, Key에 바인딩을 할당하여 Markup Expression의 형태로 사용할 수 있는 Dictionaty 인덱싱 멀티바인딩
+    /// </summary>
     [MarkupExtensionReturnType(typeof(object))]
     public sealed class DictGetValue : MarkupExtension
     {
-        /// <summary>Key 모델 (기본값: 현재 DataContext)</summary>
+        /// <summary>Key</summary>
         public BindingBase Key { get; set; } = default;
 
-        /// <summary>PresentationStateMap 바인딩 (필수)</summary>
+        /// <summary>Dictionary Map</summary>
         public BindingBase Map { get; set; } = default!;
 
         /// <summary>바인딩 모드 (기본 OneWay)</summary>
@@ -23,13 +26,8 @@ namespace IndoorMapTools.MVVMExtensions.Markup
         {
             if(Key == null) throw new InvalidOperationException("Key binding must be provided.");
             if(Map == null) throw new InvalidOperationException("Map binding must be provided.");
-
-            return new MultiBinding
-            {
-                Bindings = { Key, Map },
-                Mode = Mode,
-                Converter = new GetValue()
-            }.ProvideValue(serviceProvider);
+            return new MultiBinding { Bindings = { Key, Map }, Mode = Mode,
+                Converter = new GetValue() }.ProvideValue(serviceProvider);
         }
 
 
