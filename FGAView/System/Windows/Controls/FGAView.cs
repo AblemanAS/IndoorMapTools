@@ -29,7 +29,8 @@ namespace FGAView.System.Windows.Controls
     {
         public Size CellSize { get; set; } = new Size(64, 64); // Cell Size (픽셀 단위) - 기본값 64px
         private readonly FGALayoutEngine mapper = new FGALayoutEngine();
-
+        private bool isMeasureValid = false;
+        private bool isUnderMeasure = false;
 
         public FGAView()
         {
@@ -40,20 +41,28 @@ namespace FGAView.System.Windows.Controls
 
         protected override Size MeasureOverride(Size availableSize)
         {
-            // 전체 하위 control들에 measure 요청
-            // 여기서 하위 FGAPanel들에 의해 UpdateReservation가 호출되어 FGA 배치 신청을 모두 받음
-            // 배치 신청에 따라 자신의 크기가 달라지기 때문에 Measure에서 처리하는 게 적합
-            base.MeasureOverride(availableSize);
-
-            // 맵에 따라 필요한 영역을 계산하여 반환
-            return (mapper as FGALayoutEngine).MeasureFGALayout(CellSize);
+            isUnderMeasure = true;
+            try
+            {
+                // 전체 하위 control들에 measure 요청
+                // 여기서 하위 FGAPanel들에 의해 UpdateReservation가 호출되어 FGA 배치 신청을 모두 받음
+                // 배치 신청에 따라 자신의 크기가 달라지기 때문에 Measure에서 처리하는 게 적합
+                base.MeasureOverride(availableSize);
+                isMeasureValid = true;
+                return mapper.MeasureFGALayout(CellSize); // 맵에 따라 필요한 영역을 계산하여 반환
+            }
+            finally { isUnderMeasure = false; }
         }
 
 
         public void UpdateReservation(UIElement item, IEnumerable<(int Floor, int Group, int Area)> identifiers)
         {
             mapper.UpdateReservation(item, identifiers);
-            InvalidateMeasure();
+            if(!isUnderMeasure && isMeasureValid) // InvalidateMeasure 다수 호출 방지
+            {
+                InvalidateMeasure();
+                isMeasureValid = false;
+            }
         }
 
 

@@ -51,13 +51,13 @@ namespace FGAView.System.Windows.Controls
         private static void OnFGALayoutDataChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if(!(d is UIElement target && VisualTreeHelper.GetParent(target) is FGACanvas instance)) return;
-            instance.reservationValid = false;
+            instance.IsReservationValid = false;
             instance.InvalidateMeasure(); // FGA값은 Layout에만 관련있으나, 예약 갱신을 위해 Measure까지 호출
         }
 
 
-        private IFGALayoutMapper mapper;
-        private bool reservationValid = false;
+        protected IFGALayoutMapper Mapper { get; set; }
+        protected bool IsReservationValid { get; set; } = false;
 
 
         protected override Size MeasureOverride(Size constraint)
@@ -67,16 +67,16 @@ namespace FGAView.System.Windows.Controls
                 internalChild?.Measure(availableSize);
 
             // 예약사항이 바뀐게 없으면 예약 요청을 수정하지 않음
-            if(reservationValid) return default;
+            if(IsReservationValid) return default;
 
             // Visual Tree를 거슬러 올라가며 매퍼 탐색
-            mapper = FGALayoutHelper.SearchLayoutMapper(this);
-            if(mapper != null)
+            Mapper = FGALayoutHelper.SearchLayoutMapper(this);
+            if(Mapper != null)
             {
                 // 매퍼를 찾을 경우 해당 매퍼에 FGA 자리 예약 요청
-                mapper.UpdateReservation(this, Children.Cast<UIElement>().Select(child =>
+                Mapper.UpdateReservation(this, Children.Cast<UIElement>().Select(child =>
                     (GetFloor(child), GetGroup(child), GetArea(child))));
-                reservationValid = true;
+                IsReservationValid = true;
             }
 
             return default;
@@ -86,7 +86,7 @@ namespace FGAView.System.Windows.Controls
         protected override Size ArrangeOverride(Size arrangeSize)
         {
             // 매퍼가 없으면 기본 캔버스식 배치
-            if(mapper == null) return base.ArrangeOverride(arrangeSize);
+            if(Mapper == null) return base.ArrangeOverride(arrangeSize);
 
             // 매퍼가 있으면 매퍼의 지시에 따라 배치
             foreach(UIElement child in InternalChildren)
@@ -97,7 +97,7 @@ namespace FGAView.System.Windows.Controls
 
                 // invalid FGA value -> Canvas식 배치
                 if(childF < 0 || childG < 0 || childA < 0) CanvasArrange(arrangeSize, child);
-                else child.Arrange(mapper.GetItemLayoutRect(GetFloor(child), GetGroup(child), GetArea(child)));
+                else child.Arrange(Mapper.GetItemLayoutRect(childF, childG, childA));
             }
 
             return arrangeSize;
@@ -132,7 +132,7 @@ namespace FGAView.System.Windows.Controls
         protected override void OnVisualChildrenChanged(DependencyObject visualAdded, DependencyObject visualRemoved)
         {
             base.OnVisualChildrenChanged(visualAdded, visualRemoved);
-            reservationValid = false;
+            IsReservationValid = false;
             InvalidateMeasure();
         }
     }

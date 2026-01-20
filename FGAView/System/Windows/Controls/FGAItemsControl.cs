@@ -20,6 +20,9 @@ using System.Windows.Controls.Primitives;
 
 namespace FGAView.System.Windows.Controls
 {
+    /// <summary>
+    /// ItemsPanel이 FGACanvas인 Selector
+    /// </summary>
     [StyleTypedProperty(Property = "ItemContainerStyle", StyleTargetType = typeof(FGAItem))]
     public class FGAItemsControl : Selector
     {

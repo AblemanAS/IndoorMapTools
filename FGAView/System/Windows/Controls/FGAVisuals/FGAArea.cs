@@ -31,7 +31,7 @@ namespace FGAView.System.Windows.Controls.FGAVisuals
 
         static FGAArea()
         {
-            OverrideForegroundProperty();
+            ForegroundProperty.OverrideMetadata(typeof(FGAArea), new FrameworkPropertyMetadata(OnForegroundChanged));
 
             leftGeometry = new PathGeometry
             {
@@ -72,6 +72,13 @@ namespace FGAView.System.Windows.Controls.FGAVisuals
             rightGeometry.Freeze();
         }
 
+        private static void OnForegroundChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if(!(d is FGAArea instance)) return;
+            foreach(var child in instance.innerPanel.Children)
+                (child as Shape).Fill = instance.Foreground;
+        }
+
         public int GridSize { get; set; } = 64;
 
         [Bindable(true)]
@@ -101,8 +108,6 @@ namespace FGAView.System.Windows.Controls.FGAVisuals
         public static readonly DependencyProperty AreaIdProperty = DependencyProperty.Register(nameof(AreaId), 
             typeof(int), typeof(FGAArea), new FrameworkPropertyMetadata(OnFGALayoutDataChanged));
 
-        private static void OverrideForegroundProperty() => 
-            ForegroundProperty.OverrideMetadata(typeof(FGAArea), new FrameworkPropertyMetadata(OnFGALayoutDataChanged));
 
         private static void OnFGALayoutDataChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -121,6 +126,7 @@ namespace FGAView.System.Windows.Controls.FGAVisuals
             isSegmentsValid = false;
             SetCurrentValue(ForegroundProperty, Brushes.AliceBlue);
         }
+
 
         protected override Size MeasureOverride(Size constraint)
         {
@@ -154,14 +160,14 @@ namespace FGAView.System.Windows.Controls.FGAVisuals
                 LocateSegment(new Path { Fill = Foreground, StrokeThickness = 0, Stretch = Stretch.Fill, Data = leftGeometry,
                     Margin = new Thickness(innerMargin, innerMargin, 0, innerMargin) }, FloorId, minGroup, AreaId);
 
-                // Right Segment 추가
-                LocateSegment(new Path { Fill = Foreground, StrokeThickness = 0, Stretch = Stretch.Fill, Data = rightGeometry,
-                    Margin = new Thickness(0, innerMargin, innerMargin, innerMargin) }, FloorId, maxGroup, AreaId);
-
                 // 중간 Segment 추가
                 for(int groupIndex = minGroup + 1; groupIndex < maxGroup; groupIndex++)
                     LocateSegment(new Rectangle { Fill = Foreground, StrokeThickness = 0, Stretch = Stretch.Fill,
                         Margin = new Thickness(-1, innerMargin, -1, innerMargin) }, FloorId, groupIndex, AreaId);
+
+                // Right Segment 추가
+                LocateSegment(new Path { Fill = Foreground, StrokeThickness = 0, Stretch = Stretch.Fill, Data = rightGeometry,
+                    Margin = new Thickness(0, innerMargin, innerMargin, innerMargin) }, FloorId, maxGroup, AreaId);
             }
         }
 
