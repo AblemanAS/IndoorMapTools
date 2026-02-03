@@ -1,5 +1,7 @@
 ﻿<!--
-Copyright 2026-present Kyuho Son
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,11 +24,11 @@ limitations under the License.
       xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
       xmlns:model="clr-namespace:IndoorMapTools.Model"
       xmlns:exm="clr-namespace:IndoorMapTools.MVVMExtensions.Markup"
-      xmlns:fga="clr-namespace:FGAView.System.Windows.Controls;assembly=FGAView"
-      xmlns:fvs="clr-namespace:FGAView.System.Windows.Controls.FGAVisuals;assembly=FGAView"
+      xmlns:fga="clr-namespace:FGAView.Controls;assembly=FGAView"
+      xmlns:fvs="clr-namespace:FGAView.Controls.FGAVisuals;assembly=FGAView"
       xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls"
       xmlns:viewModel="clr-namespace:IndoorMapTools.ViewModel"
-      xmlns:mv="clr-namespace:MapView.System.Windows.Controls;assembly=MapView"
+      xmlns:mv="clr-namespace:MapView.Controls;assembly=MapView"
       Width="1280" Height="640" Margin="5"
       mc:Ignorable="d" d:DesignHeight="640" d:DesignWidth="1024"
       Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}"
@@ -254,7 +256,7 @@ limitations under the License.
                         </uc:SelectorControl.RenderTransform>
                         <uc:SelectorControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type model:Area}">
-                                <uc:Indexed1HitTestImage Source="{Binding Reachable}"
+                                <uc:Indexed1HitTestImage Source="{Binding Reachable}" RenderOptions.BitmapScalingMode="NearestNeighbor"
                                     Effect="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type uc:SelectorItem}},
                                         Converter={cvt:GetAppResourceOnTrue}, ConverterParameter=TransparentBlueEffect}"/>
                             </DataTemplate>
@@ -279,7 +281,8 @@ limitations under the License.
             </mv:MapView>
 
             <StatusBar Grid.Row="1">
-                <StatusBarItem Margin="5,0,5,0" Content="{Binding SelectedItemSummary}"/>
+                <StatusBarItem Content=" "/>
+                <StatusBarItem Content="{Binding SelectedItemSummary}"/>
             </StatusBar>
         </Grid>
     </Border>

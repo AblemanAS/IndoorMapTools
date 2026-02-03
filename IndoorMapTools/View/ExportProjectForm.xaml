@@ -1,5 +1,7 @@
 ﻿<!--
-Copyright 2026-present Kyuho Son
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,7 +23,7 @@ limitations under the License.
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:IndoorMapTools.View"
       xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls" 
-      xmlns:dc="clr-namespace:EnhancedCommands.System.Windows.Input.DialogCommands;assembly=EnhancedCommands"
+      xmlns:dc="clr-namespace:EnhancedCommands.Input.DialogCommands;assembly=EnhancedCommands"
       xmlns:viewModel="clr-namespace:IndoorMapTools.ViewModel"
       xmlns:model="clr-namespace:IndoorMapTools.Model"
       xmlns:cvt="clr-namespace:IndoorMapTools.Helper"

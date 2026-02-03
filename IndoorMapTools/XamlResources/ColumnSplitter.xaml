@@ -20,14 +20,10 @@
                             Background="{TemplateBinding Background}">
                         <Canvas Height="50" VerticalAlignment="Center"
                                 Width="4" HorizontalAlignment="Center">
-                            <Line X1="0" Y1="0" X2="0" Y2="50"
-                                      Stroke="White" StrokeThickness="1"/>
-                            <Line X1="1" Y1="0" X2="1" Y2="50"
-                                      Stroke="#A0A0A0" StrokeThickness="1"/>
-                            <Line X1="2" Y1="0" X2="2" Y2="50"
-                                      Stroke="White" StrokeThickness="1"/>
-                            <Line X1="3" Y1="0" X2="3" Y2="50"
-                                      Stroke="#A0A0A0" StrokeThickness="1"/>
+                            <Line X1="0" Y1="0" X2="0" Y2="50" Stroke="White" StrokeThickness="1"/>
+                            <Line X1="1" Y1="0" X2="1" Y2="50" Stroke="#A0A0A0" StrokeThickness="1"/>
+                            <Line X1="2" Y1="0" X2="2" Y2="50" Stroke="White" StrokeThickness="1"/>
+                            <Line X1="3" Y1="0" X2="3" Y2="50" Stroke="#A0A0A0" StrokeThickness="1"/>
                         </Canvas>
                     </Border>
                 </ControlTemplate>

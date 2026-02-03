@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,7 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -21,7 +23,6 @@ using IndoorMapTools.Model;
 using IndoorMapTools.MVVMExtensions.ComponentModel;
 using IndoorMapTools.Services.Application;
 using IndoorMapTools.Services.Domain;
-using IndoorMapTools.Services.Infrastructure.GeoLocation;
 using IndoorMapTools.Services.Presentation;
 using System;
 using System.Windows;
@@ -31,13 +32,13 @@ namespace IndoorMapTools.ViewModel
     public partial class GlobalMapVM : ObservableObject
     {
         // 서비스
-        private readonly BackgroundService backgroundWorker;
-        private readonly IResourceStringService stringSvc;
+        private readonly BackgroundService bgSvc;
+        private readonly IResourceStringService strSvc;
 
         public GlobalMapVM(BackgroundService backgroundWorker, IResourceStringService stringSvc)
         {
-            this.backgroundWorker = backgroundWorker;
-            this.stringSvc = stringSvc;
+            this.bgSvc = backgroundWorker;
+            this.strSvc = stringSvc;
         }
 
         [ObservableProperty] private Building model;
@@ -58,11 +59,11 @@ namespace IndoorMapTools.ViewModel
 
             // 모델 값에 따른 초기화
             GlobalMapFocus = (newModel.Outline.Length > 0) ? CoordTransformAlgorithms.CalculatePolygonCenter(newModel.Outline)
-                : new Point(double.Parse(stringSvc["strings.DEFAULT_LONGITUDE"]), double.Parse(stringSvc["strings.DEFAULT_LATITUDE"]));
+                : new Point(double.Parse(strSvc["DEFAULT_LONGITUDE"]), double.Parse(strSvc["DEFAULT_LATITUDE"]));
         }
 
         [RelayCommand] private void CreateFloor(string filePath)
-            => backgroundWorker.Run(() => Model.CreateFloor(EntityNamer.GetNumberedFloorName(Model.ParentProject.Namespace),
+            => bgSvc.Run(() => Model.CreateFloor(EntityNamer.GetNumberedFloorName(Model.ParentProject.Namespace),
                 ImageAlgorithms.BitmapImageFromFile(filePath), GlobalMapFocus));
 
         [RelayCommand] private void LocateFloor(Point destination)

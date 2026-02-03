@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,12 +14,12 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using CommunityToolkit.Mvvm.Input;
 using IndoorMapTools.Algorithm;
 using IndoorMapTools.Model;
-using MapView.System.Windows.Controls;
+using MapView.Controls;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -158,16 +160,14 @@ namespace IndoorMapTools.Helper
     }
 
 
-    class GetGroupIds : OneWayConverter
-    {
-        public override object Convert(object value)
-        {
-            if(value is not IList<Landmark> nodes) return Array.Empty<int>();
-            // TODO : 고립 Area로서 추후 처리
-            if(nodes.Count == 0) Console.WriteLine("GetGroupIds: Empty landmark list received."); 
-            return nodes.Select(lm => lm.ParentGroup.ParentBuilding.LandmarkGroups.IndexOf(lm.ParentGroup)).ToArray();
-        }
-    }
+    //class GetGroupIds : OneWayConverter
+    //{
+    //    public override object Convert(object value)
+    //    {
+    //        if(value is not IList<Landmark> nodes) return Array.Empty<int>();
+    //        return nodes.Select(lm => lm.ParentGroup.ParentBuilding.LandmarkGroups.IndexOf(lm.ParentGroup)).ToArray();
+    //    }
+    //}
 
 
     class GetGroupIdsReorder : OneWayMultiConverter
@@ -176,8 +176,6 @@ namespace IndoorMapTools.Helper
         {
             if(values.Length != 2 || values[0] is not IList<Landmark> nodes ||
                 values[1] is not int[] reorderMap) return Array.Empty<int>();
-            // TODO : 고립 Area로서 추후 처리
-            if(nodes.Count == 0) Console.WriteLine("GetGroupIds: Empty landmark list received.");
             return nodes.Select(lm => reorderMap[lm.ParentGroup.ParentBuilding.LandmarkGroups.IndexOf(lm.ParentGroup)]).ToArray();
         }
     }

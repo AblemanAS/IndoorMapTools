@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,7 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using System;
 using System.Drawing.Drawing2D;
@@ -30,23 +32,17 @@ namespace IndoorMapTools.Algorithm
 {
     public static class ImageAlgorithms
     {
-        private class AllocationTerminator
-        {
-            private readonly MemoryStream stream;
-            public AllocationTerminator(MemoryStream stream) => this.stream = stream;
-            ~AllocationTerminator() => stream.Dispose();
-        }
-
         public static BitmapImage BitmapImageFromBuffer(byte[] buffer)
         {
             using var stream = new MemoryStream(buffer);
             return BitmapImageFromMemoryStream(stream);
         }
 
+
         public static BitmapImage BitmapImageFromFile(string filePath)
         {
             // 원본 Bitmap 로드 및 DPI 변경
-            using Bitmap originalBitmap = new Bitmap(filePath);
+            using var originalBitmap = new Bitmap(filePath);
             originalBitmap.SetResolution(96, 96);
 
             // BitmapImage로 변환
@@ -56,6 +52,7 @@ namespace IndoorMapTools.Algorithm
 
             return result;
         }
+
 
         public static Bitmap ToBitmap(this BitmapSource source)
         {
@@ -69,10 +66,11 @@ namespace IndoorMapTools.Algorithm
             return bitmap;
         }
 
+
         public static BitmapImage BitmapImageFromBitmap(Bitmap bitmap)
         {
             // 메모리 스트림 잡고 png 압축
-            using MemoryStream stream = new MemoryStream();
+            using var stream = new MemoryStream();
             bitmap.Save(stream, ImageFormat.Png);
             return BitmapImageFromMemoryStream(stream);
         }
@@ -109,6 +107,7 @@ namespace IndoorMapTools.Algorithm
                 g.FillPolygon(System.Drawing.Brushes.White, polygonF);
             }
         }
+
 
         public static Bitmap GetRotatedBitmap(Bitmap bitmap, double rotation, bool accurate = false)
         {
@@ -236,6 +235,7 @@ namespace IndoorMapTools.Algorithm
             dstBitmap.UnlockBits(dstData);
         }
 
+
         public static byte[] ToArray(this WriteableBitmap reachable)
         {
             reachable.Lock();
@@ -246,6 +246,7 @@ namespace IndoorMapTools.Algorithm
             return buffer;
         }
 
+
         public static void FromArray(this WriteableBitmap reachable, byte[] buffer)
         {
             reachable.Lock();
@@ -254,6 +255,7 @@ namespace IndoorMapTools.Algorithm
             reachable.AddDirtyRect(new Int32Rect(0, 0, reachable.PixelWidth, reachable.PixelHeight));
             reachable.Unlock();
         }
+
 
         public static void FromArray(this WriteableBitmap reachable, IntPtr buffer)
         {

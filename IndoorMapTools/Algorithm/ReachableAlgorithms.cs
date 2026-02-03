@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,9 +14,10 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
@@ -22,7 +25,6 @@ using System.Drawing.Imaging;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Ink;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Bitmap = System.Drawing.Bitmap;
@@ -798,7 +800,7 @@ namespace IndoorMapTools.Algorithm
 
             try
             {
-                Stopwatch timer = new Stopwatch();
+                var timer = new Stopwatch();
                 timer.Start();
 
                 // 원본 Reachable 비트맵 추출
@@ -808,7 +810,7 @@ namespace IndoorMapTools.Algorithm
                 progressCb?.Report(10);
 
                 timer.Stop();
-                Console.WriteLine($"ToBitmap : {timer.ElapsedMilliseconds}");
+                //Console.WriteLine($"ToBitmap : {timer.ElapsedMilliseconds}");
                 timer.Reset();
                 timer.Start();
 
@@ -829,7 +831,7 @@ namespace IndoorMapTools.Algorithm
                 progressCb?.Report(30);
 
                 timer.Stop();
-                Console.WriteLine($"Polygons : {timer.ElapsedMilliseconds}");
+                //Console.WriteLine($"Polygons : {timer.ElapsedMilliseconds}");
                 timer.Reset();
                 timer.Start();
 
@@ -837,7 +839,7 @@ namespace IndoorMapTools.Algorithm
                 rotateFlippedBitmap = ImageAlgorithms.GetRotatedBitmap(originalBitmap, rotation, true);
 
                 timer.Stop();
-                Console.WriteLine($"GetRotatedBitmap : {timer.ElapsedMilliseconds}");
+                //Console.WriteLine($"GetRotatedBitmap : {timer.ElapsedMilliseconds}");
                 
                 rotateFlippedBitmap.RotateFlip(System.Drawing.RotateFlipType.RotateNoneFlipY);
                 progressCb?.Report(35);
@@ -908,7 +910,7 @@ namespace IndoorMapTools.Algorithm
                 }
 
                 timer.Stop();
-                Console.WriteLine($"OGM flag : {timer.ElapsedMilliseconds}");
+                //Console.WriteLine($"OGM flag : {timer.ElapsedMilliseconds}");
 
                 // 랜드마크 중점 OGM 반영
                 var transformer = CoordTransformAlgorithms.CalculateTransformer(originalBitmap.Width, originalBitmap.Height, rotation, scale);
@@ -955,7 +957,7 @@ namespace IndoorMapTools.Algorithm
             byte[] pixelData = new byte[stride * height];
             source.CopyPixels(pixelData, stride, 0);
 
-            Bitmap bitmap = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            var bitmap = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             BitmapData bmpData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, width, height),
                 ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
@@ -1012,6 +1014,121 @@ namespace IndoorMapTools.Algorithm
             progressCb?.Invoke(100);
 
             return result;
+        }
+
+
+        public static Point GetPseudoReachableCenter(BitmapSource reachable)
+        {
+            int height = reachable.PixelHeight;
+            int wordCountInRow = reachable.PixelWidth / 64;
+            int tailBitsNum = reachable.PixelWidth & 63;
+            ulong tailBitMask = (tailBitsNum != 0) ? ulong.MaxValue << (64 - tailBitsNum) : 0;
+            if(BitConverter.IsLittleEndian) tailBitMask = BinaryPrimitives.ReverseEndianness(tailBitMask);
+
+            var buffer = new byte[(wordCountInRow + 1) * 8 * height];   // 항상 1 Word 추가로 확보
+            reachable.CopyPixels(buffer, (wordCountInRow + 1) * 8, 0);  // 1 Word 추가로 복사
+
+            ulong startWord, endWord;
+            int startWordX, endWordX, startY, endY;
+
+            unsafe
+            {
+                fixed(byte* pByte = buffer)
+                {
+                    ulong* pUlong = (ulong*)pByte;
+                    (startWordX, startY, startWord) = SearchStartWord(pUlong, wordCountInRow, height, tailBitMask);
+                    if(startWordX < 0) return default; // 끝까지 봤는데 못 찾았으면 그냥 나감
+                    (endWordX, endY, endWord) = SearchEndWord(pUlong, wordCountInRow, height, tailBitMask);
+                }
+            }
+
+            if(BitConverter.IsLittleEndian) startWord = BinaryPrimitives.ReverseEndianness(startWord);
+            int startX = startWordX * 64 + GetLeftMostIndex(startWord);
+            if(startWordX == endWordX && startY == endY) return new Point(startX + 0.5, startY + 0.5);
+
+            if(BitConverter.IsLittleEndian) endWord = BinaryPrimitives.ReverseEndianness(endWord);
+            int endX = endWordX * 64 + GetRightMostIndex(endWord);
+            return new Point((startX + endX + 1.0) / 2, (startY + endY + 1.0) / 2);
+
+
+            static unsafe (int startWordX, int startY, ulong startWord) SearchStartWord(ulong* pUlong, int wordCountInRow, int height, ulong tailBitMask)
+            {
+                int strideLong = wordCountInRow + 1;
+                ulong foundWord;
+                for(int y = 0; y < height; y++)
+                {
+                    for(int xword = 0; xword < wordCountInRow; xword++)
+                    {
+                        foundWord = pUlong[y * strideLong + xword];
+                        if(foundWord != 0) return (xword, y, foundWord);
+                    }
+
+                    if(tailBitMask != 0)
+                    {
+                        foundWord = pUlong[y * strideLong + wordCountInRow] & tailBitMask;
+                        if(foundWord != 0) return (wordCountInRow, y, foundWord);
+                    }
+                }
+
+                return (-1, -1, 0); // 못 찾았을 때
+            }
+
+
+            static unsafe (int endWordX, int endY, ulong endWord) SearchEndWord(ulong* pUlong, int wordCountInRow, int height, ulong tailBitMask)
+            {
+                int strideLong = wordCountInRow + 1;
+                ulong foundWord;
+
+
+                for(int y = height - 1; y >= 0; y--)
+                {
+                    if(tailBitMask != 0)
+                    {
+                        foundWord = pUlong[y * strideLong + wordCountInRow] & tailBitMask;
+                        if(foundWord != 0) return (wordCountInRow, y, foundWord);
+                    }
+
+                    for(int xword = wordCountInRow - 1; xword >= 0; xword--)
+                    {
+                        foundWord = pUlong[y * strideLong + xword];
+                        if(foundWord != 0) return (xword, y, foundWord);
+                    }
+                }
+
+                return (-1, -1, 0); // 못 찾았을 때
+            }
+
+            // 가장 왼쪽 1의 위치 (앞에서부터 0~63)
+            static int GetLeftMostIndex(ulong value)
+            {
+                if(value == 0) return -1; // 1이 없으면 -1
+
+                int n = 0;
+                // 64비트를 반씩 쪼개며 1이 어디 있는지 탐색
+                if((value & 0xFFFFFFFF00000000UL) == 0) { n += 32; value <<= 32; }
+                if((value & 0xFFFF000000000000UL) == 0) { n += 16; value <<= 16; }
+                if((value & 0xFF00000000000000UL) == 0) { n += 8; value <<= 8; }
+                if((value & 0xF000000000000000UL) == 0) { n += 4; value <<= 4; }
+                if((value & 0xC000000000000000UL) == 0) { n += 2; value <<= 2; }
+                if((value & 0x8000000000000000UL) == 0) { n += 1; }
+                return n;
+            }
+
+            // 가장 오른쪽 1의 위치 (앞에서부터 0~63)
+            static int GetRightMostIndex(ulong value)
+            {
+                if(value == 0) return -1;
+
+                int n = 63;
+                // 뒤에서부터 0을 찾아내며 인덱스를 줄여나감
+                if((value & 0x00000000FFFFFFFFUL) == 0) { n -= 32; value >>= 32; }
+                if((value & 0x000000000000FFFFUL) == 0) { n -= 16; value >>= 16; }
+                if((value & 0x00000000000000FFUL) == 0) { n -= 8; value >>= 8; }
+                if((value & 0x000000000000000FUL) == 0) { n -= 4; value >>= 4; }
+                if((value & 0x0000000000000003UL) == 0) { n -= 2; value >>= 2; }
+                if((value & 0x0000000000000001UL) == 0) { n -= 1; }
+                return n;
+            }
         }
     }
 }

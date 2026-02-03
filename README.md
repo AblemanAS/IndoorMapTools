@@ -67,6 +67,4 @@ If you use this software in academic work, please cite the corresponding paper.
 - Reachable area marking algorithm in Single mark (Flood Fill) performance enhancement
 - OGM segmentation algorithm performance enhancement
 - Option to limit maximum resolution on mapimages
-- Bring-into-view feature for analyzed export reachability in map view on selection
-- Visualizing feature for isolated areas
 - Separating MouseToolEventArgs as DTO

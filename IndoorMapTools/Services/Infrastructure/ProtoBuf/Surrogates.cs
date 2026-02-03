@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,7 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using IndoorMapTools.Algorithm;
 using ProtoBuf;
@@ -36,9 +38,9 @@ namespace IndoorMapTools.Services.Infrastructure.ProtoBuf
         {
             if(source == null) return null;
 
-            MapImageSurrogate surrogate = new MapImageSurrogate();
+            var surrogate = new MapImageSurrogate();
 
-            using MemoryStream stream = new MemoryStream();
+            using var stream = new MemoryStream();
             BitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(source));
             encoder.Save(stream);
@@ -66,7 +68,7 @@ namespace IndoorMapTools.Services.Infrastructure.ProtoBuf
         {
             if(source == null) return null;
 
-            ReachableSurrogate surrogate = new ReachableSurrogate();
+            var surrogate = new ReachableSurrogate();
 
             source.Dispatcher.Invoke(() =>
             {

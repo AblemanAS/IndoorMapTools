@@ -1,5 +1,7 @@
 ﻿<!--
-Copyright 2026-present Kyuho Son
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-    
+
 <Window x:Class="IndoorMapTools.View.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -27,7 +29,7 @@ limitations under the License.
         xmlns:uc="clr-namespace:IndoorMapTools.View.UserControls"
         xmlns:exm="clr-namespace:IndoorMapTools.MVVMExtensions.Markup"
         xmlns:cvt="clr-namespace:IndoorMapTools.Helper"
-        xmlns:dc="clr-namespace:EnhancedCommands.System.Windows.Input.DialogCommands;assembly=EnhancedCommands"
+        xmlns:dc="clr-namespace:EnhancedCommands.Input.DialogCommands;assembly=EnhancedCommands"
         Title="{DynamicResource strings.AppName}"
         WindowStartupLocation="CenterScreen" MinWidth="1280" MinHeight="720"
         mc:Ignorable="d" d:DesignHeight="720" d:DesignWidth="1280">
@@ -220,7 +222,7 @@ limitations under the License.
                                                 OnOpeningCommand="{Binding Data.InitDialogStateCommand, Source={StaticResource dcproxy}}"
                                                 OKCommand="{Binding Data.PadCropMapImageCommand, Source={StaticResource dcproxy}}"
                                                 OnOpeningCommandParameter="{Binding}">
-                                            <DataTemplate DataType="{x:Type viewModel:MapImageEditVM}">
+                                            <DataTemplate DataType="{x:Type viewModel:FloorListItemVM}">
                                                 <view:PadCropForm/>
                                             </DataTemplate>
                                         </dc:TemplatedConfirmDialogCommand>

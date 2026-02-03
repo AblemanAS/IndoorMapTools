@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,7 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -54,7 +56,8 @@ namespace IndoorMapTools.ViewModel
         [ObservableProperty] private Point mapViewFocus;
         [ObservableProperty] private string selectedItemSummary;
         public Dictionary<Floor, double[]> AreaPivots { get; } = new();
-
+        public Dictionary<Area, Point> AreaPseudoCenter { get; } = new();
+        
         [NotifyCanExecuteChangedFor(nameof(AnalyzeReachabilityCommand))]
         [ObservableProperty] private bool areLandmarkOutlinesComplete;
 
@@ -104,8 +107,7 @@ namespace IndoorMapTools.ViewModel
             finally { guardSelectPropagation = false; }
 
             SelectedItemSummary = value?.ToString();
-            Floor newFloor = (value != null) ? Model.Building.Floors[value.FloorId] : null;
-            if(SelectedFloor != newFloor) SelectedFloor = newFloor;
+            LookFloorAndFocusArea(value);
         }
 
 
@@ -144,8 +146,6 @@ namespace IndoorMapTools.ViewModel
             finally { guardSelectPropagation = false; }
 
             SelectedItemSummary = value.ToString();
-            Floor newFloor = (value != null) ? Model.Building.Floors[value.FloorId] : null;
-            if(SelectedFloor != newFloor) SelectedFloor = newFloor;
         }
 
 
@@ -158,9 +158,33 @@ namespace IndoorMapTools.ViewModel
                 SelectedFGAViewLandmarkItem = null;
                 SelectedMapViewLandmarkItem = null;
                 SelectedFGAViewAreaItem = null;
-                SelectedMapViewAreaItem = null;
+                if(value != null && value.Data is Area isolatedArea)
+                {
+                    SelectedMapViewAreaItem = isolatedArea;
+                    LookFloorAndFocusArea(isolatedArea);
+                }
+                else SelectedMapViewAreaItem = null;
             }
             finally { guardSelectPropagation = false; }
+
+            SelectedItemSummary = (value?.Data as Area)?.ToString();
+        }
+
+
+        private void LookFloorAndFocusArea(Area area)
+        {
+            if(area == null)
+            {
+                SelectedFloor = null;
+                return;
+            }
+
+            Floor newFloor = Model.Building.Floors[area.FloorId];
+            if(SelectedFloor != newFloor) SelectedFloor = newFloor;
+
+            if(area.Landmarks.Count != 0)
+                MapViewFocus = CoordTransformAlgorithms.CalculatePolygonCenter(area.Landmarks[0].Outline);
+            else MapViewFocus = AreaPseudoCenter[area];
         }
 
 
@@ -178,6 +202,7 @@ namespace IndoorMapTools.ViewModel
                 GraphEdges = BuildGraphEdges(result.ReachableClusters);
 
                 AreaPivots.Clear();
+                AreaPseudoCenter.Clear();
 
                 for(int i = 0; i < Model.Building.Floors.Count; i++)
                 {
@@ -199,6 +224,12 @@ namespace IndoorMapTools.ViewModel
                     AreaPivots[floor] = new double[] { moved.X, newHeight - moved.Y, -moved.X, moved.Y };
                 }
 
+                foreach(GraphNode curNode in result.ReachableClusters)
+                {
+                    if(curNode.Data is Area isolatedArea)
+                        AreaPseudoCenter[isolatedArea] = ReachableAlgorithms.GetPseudoReachableCenter(isolatedArea.Reachable);
+                }
+
                 Result = result;
             }, strSvc["ReachableClusterAnalysisStatusDesc"]);
         }
@@ -218,6 +249,26 @@ namespace IndoorMapTools.ViewModel
                         new FGAData(endNode.Floor, endNode.Group, endNode.Area)));
                 }
             }
+
+            //var lowestDict = new Dictionary<LandmarkGroup, Landmark>();
+            //var highestDict = new Dictionary<LandmarkGroup, Landmark>();
+            //for(int i = 0; i < building.Floors.Count; i++)
+            //    foreach(Landmark curLM in building.Floors[i].Landmarks)
+            //        if(!lowestDict.ContainsKey(curLM.ParentGroup)) lowestDict[curLM.ParentGroup] = curLM;
+            //for(int i = building.Floors.Count - 1; i >= 0; i--)
+            //    foreach(Landmark curLM in building.Floors[i].Landmarks)
+            //        if(!highestDict.ContainsKey(curLM.ParentGroup)) highestDict[curLM.ParentGroup] = curLM;
+
+            //foreach(var group in lowestDict.Keys)
+            //{
+            //    var lowestLM = lowestDict[group];
+            //    var highestLM = highestDict[group];
+            //    if(lowestLM == highestLM) continue;
+            //    var startNode = result.LandmarkToNode[lowestLM];
+            //    var endNode = result.LandmarkToNode[highestLM];
+            //    edges.Add(new FGAEdgeData(new FGAData(startNode.Floor, startNode.Group, startNode.Area),
+            //        new FGAData(endNode.Floor, endNode.Group, endNode.Area)));
+            //}
 
             return edges;
         }

@@ -14,7 +14,7 @@
             </ResourceDictionary.MergedDictionaries>
         
             <!-- 앱 버전 정보 Generation.MajorRevision.MinorRevision.BugFix -->
-            <sys:String x:Key="AppVersion">0.7.t.11</sys:String>
+            <sys:String x:Key="AppVersion">0.8.0.0</sys:String>
 
             <!-- 기본값 -->
             <Point x:Key="DefaultLonlat" X="127.36554" Y="36.37417"/>
@@ -25,6 +25,7 @@
             <SolidColorBrush x:Key="TransparentLightBlue" Color="LightBlue" Opacity="0.6"/>
             <SolidColorBrush x:Key="TransparentAliceBlue" Color="AliceBlue" Opacity="0.6"/>
             <SolidColorBrush x:Key="TransparentRed" Color="Red" Opacity="0.3"/>
+            <DropShadowEffect x:Key="TransparentRedEffect" Color="Red" ShadowDepth="0" BlurRadius="0"/>
             <DropShadowEffect x:Key="TransparentBlueEffect" Color="DeepSkyBlue" ShadowDepth="0" BlurRadius="0"/>
             <DropShadowEffect x:Key="AliceBlueEffect" Color="AliceBlue" ShadowDepth="0" BlurRadius="5"/>
 

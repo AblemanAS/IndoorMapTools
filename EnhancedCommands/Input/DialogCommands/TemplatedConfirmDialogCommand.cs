@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,7 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using System;
 using System.ComponentModel;
@@ -22,7 +24,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 
-namespace EnhancedCommands.System.Windows.Input.DialogCommands
+namespace EnhancedCommands.Input.DialogCommands
 {
     public class TemplatedConfirmDialogCommand : TemplatedDialogCommand
     {
@@ -81,10 +83,10 @@ namespace EnhancedCommands.System.Windows.Input.DialogCommands
             mainPanel.Children.Add(confirmPanel);
 
             // 바인딩
-            okbtn.SetBinding(Button.CommandProperty, new Binding(nameof(OKCommand)) { Source = this });
-            okbtn.SetBinding(Button.CommandParameterProperty, new Binding(nameof(OKCommandParameter)) { Source = this });
-            cancelbtn.SetBinding(Button.CommandProperty, new Binding(nameof(CancelCommand)) { Source = this });
-            cancelbtn.SetBinding(Button.CommandParameterProperty, new Binding(nameof(CancelCommandParameter)) { Source = this });
+            okbtn.SetBinding(System.Windows.Controls.Primitives.ButtonBase.CommandProperty, new Binding(nameof(OKCommand)) { Source = this });
+            okbtn.SetBinding(System.Windows.Controls.Primitives.ButtonBase.CommandParameterProperty, new Binding(nameof(OKCommandParameter)) { Source = this });
+            cancelbtn.SetBinding(System.Windows.Controls.Primitives.ButtonBase.CommandProperty, new Binding(nameof(CancelCommand)) { Source = this });
+            cancelbtn.SetBinding(System.Windows.Controls.Primitives.ButtonBase.CommandParameterProperty, new Binding(nameof(CancelCommandParameter)) { Source = this });
 
             // 다이얼로그 생성 및 컨텐트, 컨텍스트 설정
             var dialog = CreateDialog();

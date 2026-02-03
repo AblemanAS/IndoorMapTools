@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,7 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -35,8 +37,8 @@ namespace IndoorMapTools.ViewModel
         [ObservableProperty] private Floor model;
         [ObservableProperty] private int replicationCount = 1;
         [ObservableProperty] private int leftPad;
-        [ObservableProperty] private int rightPad;
         [ObservableProperty] private int topPad;
+        [ObservableProperty] private int rightPad;
         [ObservableProperty] private int bottomPad;
         [ObservableProperty] private int newWidth;
         [ObservableProperty] private int newHeight;
@@ -68,8 +70,8 @@ namespace IndoorMapTools.ViewModel
             if(Model != newModel) Model = newModel;
 
             LeftPad = 0;
-            RightPad = 0;
             TopPad = 0;
+            RightPad = 0;
             BottomPad = 0;
             NewWidth = Model.MapImage.PixelWidth;
             NewHeight = Model.MapImage.PixelHeight;
@@ -78,7 +80,7 @@ namespace IndoorMapTools.ViewModel
 
         [RelayCommand] private void ReorderFloor(int destIndex) => Model.ParentBuilding.MoveFloor(Model, destIndex);
         [RelayCommand] private void ReplicateFloor() => EntityOrganizer.ReplicateFloor(Model, ReplicationCount, ParentProject.Namespace);
-        [RelayCommand] private void PadCropMapImage() => fmeSvc.PadCropMapImage(Model, LeftPad, RightPad, TopPad, BottomPad);
+        [RelayCommand] private void PadCropMapImage() => fmeSvc.PadCropMapImage(Model, LeftPad, TopPad, RightPad, BottomPad);
 
         [RelayCommand] private void LoadReplacementImage(string[] filePaths)
         {

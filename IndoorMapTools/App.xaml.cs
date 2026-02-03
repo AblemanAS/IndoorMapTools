@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,7 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using IndoorMapTools.Services.Infrastructure.INI;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +29,6 @@ namespace IndoorMapTools
         private const string INI_PATH = "config.ini";
         private const string INI_APP_OPEN_STREET_MAP = "OpenStreetMap";
         private const string INI_KEY_TILE_SOURCE_URL = "tile_src_url";
-
         private const string RESOURCE_TILE_SOURCE_URL = "TileSourceURL";
 
         private readonly Tuple<string, string>[] CURSOR_DEFS =
@@ -41,11 +42,9 @@ namespace IndoorMapTools
             Tuple.Create("UnmarkCursor", "pack://application:,,,/Resources/unmark.cur")
         }; // 커서 리소스 정의 (Resource Key, Path)
 
+
         protected override void OnStartup(StartupEventArgs e)
         {
-            //AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
-            //AppDomain.CurrentDomain.TypeResolve += CurrentDomain_TypeResolve;
-
             // Read INI
             string tilesSource = new INIService(INI_PATH).ReadValue(INI_APP_OPEN_STREET_MAP, INI_KEY_TILE_SOURCE_URL);
             if(tilesSource != null) Resources[RESOURCE_TILE_SOURCE_URL] = tilesSource;
@@ -57,81 +56,8 @@ namespace IndoorMapTools
                 Resources[name] = new Cursor(st, true);
             }
 
-            // 종속성 주입
-            var services = new ServiceCollection(); 
-
-            services.AddSingleton<Services.Application.FloorMapEditService>();
-            services.AddSingleton<Services.Application.IMessageService>(
-                sp => sp.GetRequiredService<Services.Presentation.MessageBoxService>());
-            services.AddSingleton<Services.Application.IProjectPersistenceService>(
-                sp => sp.GetRequiredService<Services.Infrastructure.ProtoBuf.ProtoBufService>());
-            services.AddSingleton<Services.Application.IResourceStringService>(
-                sp => sp.GetRequiredService<Services.Presentation.LocalizationService>());
-
-            services.AddSingleton<Services.Infrastructure.GeoLocation.GeoLocationService>();
-            services.AddSingleton<Services.Infrastructure.IMPJ.IMPJImportService>();
-            services.AddSingleton<Services.Infrastructure.IMPJ.IMPJExportService>();
-            services.AddSingleton<Services.Infrastructure.ProtoBuf.ProtoBufService>();
-
-            services.AddSingleton<Services.Presentation.BackgroundService>();
-            services.AddSingleton<Services.Presentation.MessageBoxService>();
-            services.AddSingleton<Services.Presentation.LocalizationService>();
-
-            services.AddSingleton<ViewModel.AnalysisFormVM>();
-            services.AddSingleton<ViewModel.ExportProjectVM>();
-            services.AddSingleton<ViewModel.FloorListItemVM>();
-            services.AddSingleton<ViewModel.GlobalMapVM>();
-            services.AddSingleton<ViewModel.IndoorMapVM>();
-            services.AddSingleton<ViewModel.LandmarkTreeItemVM>();
-            services.AddSingleton<ViewModel.MainWindowVM>();
-            services.AddSingleton<ViewModel.MapImageEditVM>();
-            services.AddSingleton<View.MainWindow>();
-
-            var provider = services.BuildServiceProvider();
-            var mainWindow = provider.GetRequiredService<View.MainWindow>();
+            var mainWindow = DependencyInjector.ServiceProvider.GetRequiredService<View.MainWindow>();
             mainWindow.Show();
         }
-
-
-        //private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
-        //{
-        //    var requested = new AssemblyName(args.Name).Name;
-
-        //    if(requested == "KAILOSMapTools")
-        //    {
-        //        Console.WriteLine("=== KAILOSMapTools requested ===");
-        //        Console.WriteLine(args.Name);
-        //        Console.WriteLine(new System.Diagnostics.StackTrace(true).ToString());
-        //        Console.WriteLine("================================");
-
-        //        return typeof(IndoorMapTools.Model.Project).Assembly;
-        //    }
-
-        //    return null;
-        //}
-
-        //private static Assembly CurrentDomain_TypeResolve(object sender, ResolveEventArgs args)
-        //{
-        //    Console.WriteLine($"[TypeResolve] {args.Name}");
-
-        //    var name = args.Name;
-        //    var comma = name.IndexOf(',');
-        //    if(comma >= 0) name = name.Substring(0, comma);
-
-        //    const string oldNs = "KAILOSMapTools.ViewModel.";
-        //    const string newNs = "IndoorMapTools.Model.";
-
-        //    if(name.StartsWith(oldNs, StringComparison.Ordinal))
-        //    {
-        //        var mapped = newNs + name.Substring(oldNs.Length);
-        //        var asm = typeof(Project).Assembly;
-
-        //        // 실제로 존재하는 타입인지 확인하고 있으면 해당 어셈블리 반환
-        //        if(asm.GetType(mapped, throwOnError: false, ignoreCase: false) != null)
-        //            return asm;
-        //    }
-
-        //    return null;
-        //}
     }
 }

@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,14 +14,14 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
 
-namespace FGAView.System.Windows.Controls
+namespace FGAView.Controls
 {
     /// <summary>
     /// 자기 자신이 FGA 레이아웃 매퍼 기능을 내장하여, 
@@ -29,8 +31,6 @@ namespace FGAView.System.Windows.Controls
     {
         public Size CellSize { get; set; } = new Size(64, 64); // Cell Size (픽셀 단위) - 기본값 64px
         private readonly FGALayoutEngine mapper = new FGALayoutEngine();
-        private bool isMeasureValid = false;
-        private bool isUnderMeasure = false;
 
         public FGAView()
         {
@@ -41,28 +41,18 @@ namespace FGAView.System.Windows.Controls
 
         protected override Size MeasureOverride(Size availableSize)
         {
-            isUnderMeasure = true;
-            try
-            {
-                // 전체 하위 control들에 measure 요청
-                // 여기서 하위 FGAPanel들에 의해 UpdateReservation가 호출되어 FGA 배치 신청을 모두 받음
-                // 배치 신청에 따라 자신의 크기가 달라지기 때문에 Measure에서 처리하는 게 적합
-                base.MeasureOverride(availableSize);
-                isMeasureValid = true;
-                return mapper.MeasureFGALayout(CellSize); // 맵에 따라 필요한 영역을 계산하여 반환
-            }
-            finally { isUnderMeasure = false; }
+            // 전체 하위 control들에 measure 요청
+            // 여기서 하위 FGAPanel들에 의해 UpdateReservation가 호출되어 FGA 배치 신청을 모두 받음
+            // 배치 신청에 따라 자신의 크기가 달라지기 때문에 Measure에서 처리하는 게 적합
+            base.MeasureOverride(availableSize);
+            return mapper.MeasureFGALayout(CellSize); // 맵에 따라 필요한 영역을 계산하여 반환
         }
 
 
         public void UpdateReservation(UIElement item, IEnumerable<(int Floor, int Group, int Area)> identifiers)
         {
             mapper.UpdateReservation(item, identifiers);
-            if(!isUnderMeasure && isMeasureValid) // InvalidateMeasure 다수 호출 방지
-            {
-                InvalidateMeasure();
-                isMeasureValid = false;
-            }
+            InvalidateMeasure();
         }
 
 

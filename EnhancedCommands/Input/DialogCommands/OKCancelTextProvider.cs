@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,13 +14,13 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace EnhancedCommands.System.Windows.Input.DialogCommands
+namespace EnhancedCommands.Input.DialogCommands
 {
     public class OkCancelTextProvider
     {
@@ -30,7 +32,7 @@ namespace EnhancedCommands.System.Windows.Input.DialogCommands
         public static (string ok, string cancel) Get(CultureInfo culture)
         {
             // 캐시 키: CultureInfo.Name (예: "ko-KR", "zh-Hant-TW")
-            var key = (culture != null && !string.IsNullOrEmpty(culture.Name)) ? culture.Name : "en";
+            var key = culture != null && !string.IsNullOrEmpty(culture.Name) ? culture.Name : "en";
 
             // fast path
             if(string.Equals(key, cachedKey, StringComparison.OrdinalIgnoreCase))
@@ -68,7 +70,7 @@ namespace EnhancedCommands.System.Windows.Input.DialogCommands
                 }
 
                 // 3) TwoLetter fallback (ko-KR -> ko), for cases where Name is empty/odd
-                var lang = (culture != null && !string.IsNullOrEmpty(culture.TwoLetterISOLanguageName))
+                var lang = culture != null && !string.IsNullOrEmpty(culture.TwoLetterISOLanguageName)
                     ? culture.TwoLetterISOLanguageName: "en";
 
                 if(Table.TryGetValue(lang, out v))

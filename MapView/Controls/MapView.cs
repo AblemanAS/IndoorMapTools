@@ -1,5 +1,7 @@
-﻿/***********************************************************************
-Copyright 2026-present Kyuho Son
+﻿/********************************************************************************
+Copyright 2026-present Korea Advanced Institute of Science and Technology (KAIST)
+
+Author: Kyuho Son
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,7 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-***********************************************************************/
+********************************************************************************/
 
 using System;
 using System.ComponentModel;
@@ -23,7 +25,7 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace MapView.System.Windows.Controls
+namespace MapView.Controls
 {
     [ContentProperty(nameof(MapElements))]
     public class MapView : Panel
@@ -96,7 +98,7 @@ namespace MapView.System.Windows.Controls
         private static void OnActiveToolChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if(!(d is MapView instance)) return;
-            instance.Cursor = (e.NewValue is MouseTool newTool) ? newTool.DefaultCursor : UngrabCursor;
+            instance.Cursor = e.NewValue is MouseTool newTool ? newTool.DefaultCursor : UngrabCursor;
         }
 
         // 렌더링 소스
