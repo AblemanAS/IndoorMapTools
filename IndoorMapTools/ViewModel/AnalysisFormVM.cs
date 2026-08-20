@@ -145,7 +145,7 @@ namespace IndoorMapTools.ViewModel
             }
             finally { guardSelectPropagation = false; }
 
-            SelectedItemSummary = value.ToString();
+            SelectedItemSummary = value?.ToString();
         }
 
 

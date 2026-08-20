@@ -38,6 +38,9 @@ namespace IndoorMapTools.Services.Presentation
         /// <summary> Progress가 없는 Task가 실행되고 있는지 </summary>
         [ObservableProperty] private bool progressIndeterminated;
 
+        /// <summary> 최근 백그라운드 작업에서 발생한 예외 </summary>
+        [ObservableProperty] private Exception lastError;
+
         /// <summary> 최근 태스크 작업 시간 </summary>
         public long EllapsedMilliseconds => stopwatch.ElapsedMilliseconds;
 
@@ -62,6 +65,7 @@ namespace IndoorMapTools.Services.Presentation
                 stopwatch.Stop();
                 Debug.WriteLine($"Background Task [{TaskName}] Time Lapse : {stopwatch.ElapsedMilliseconds}ms");
 
+                LastError = e.Error;
                 OnPropertyChanged(nameof(IsBusy));
                 ProgressIndeterminated = false;
                 ProgressPercentage = 0;
@@ -88,6 +92,7 @@ namespace IndoorMapTools.Services.Presentation
         public void Run(Action execute, Action executeOnCompleted, string taskName = "")
         {
             ClearTasks();
+            LastError = null;
 
             if(execute == null) return;
             currentHandler = (sender, e) =>
@@ -101,7 +106,11 @@ namespace IndoorMapTools.Services.Presentation
 
             if(executeOnCompleted != null)
             {
-                currentCompletedHandler = (sender, e) => executeOnCompleted();
+                currentCompletedHandler = (sender, e) =>
+                {
+                    if(e.Error == null && !e.Cancelled)
+                        executeOnCompleted();
+                };
                 RunWorkerCompleted += currentCompletedHandler;
             }
 

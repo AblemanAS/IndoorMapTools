@@ -33,7 +33,6 @@ namespace IndoorMapTools.Services.Domain
                 EntityNamer.GetNumberedLandmarkGroupName(namespaceMap, type), type);
             Landmark landmark = building.CreateLandmark(
                 EntityNamer.GetNumberedLandmarkName(namespaceMap, type), group, floor, position);
-            floor.AddLandmark(landmark);
             return landmark;
         }
 

@@ -90,7 +90,8 @@ limitations under the License.
                             GrabCursor="{x:Static mv:MapView.GrabCursor}" UngrabCursor="{x:Static mv:MapView.UngrabCursor}"
                             WestLongitude="{Binding LeftLongitude}" SouthLatitude="{Binding BottomLatitude}"
                             PixelPerMeter="{Binding MapImagePPM}" Rotation="{Binding MapImageRotation}"
-                            Opacity="{Binding DataContext.MapImageOpacity, ElementName=mapControl}"/>
+                            Opacity="{Binding DataContext.MapImageOpacity, ElementName=mapControl}"
+                            IsHitTestVisible="{Binding ActiveTool, ElementName=mapControl, Converter={cvt:IsNull}}"/>
                     </DataTemplate>
                 </ContentPresenter.ContentTemplate>
             </ContentPresenter>

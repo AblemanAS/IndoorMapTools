@@ -23,10 +23,10 @@ using IndoorMapTools.Services.Domain;
 using IndoorMapTools.Services.Infrastructure.GeoLocation;
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows;
@@ -60,33 +60,47 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
                 progBox.Report(10);
 
                 // Floors
-                var floorLevelDict = new ConcurrentDictionary<Floor, int>();
                 var dirs = tempDirInfo.GetDirectories();
+                var importedFloors = new ImportedFloor[dirs.Length];
                 int maximumProgress = dirs.Length + 1;
                 int currentProgress = 0;
 
-                Parallel.ForEach(tempDirInfo.EnumerateDirectories(), floorDir =>
+                Parallel.For(0, dirs.Length, floorIndex =>
                 {
+                    var floorDir = dirs[floorIndex];
+
                     // Map Image 로 Floor 생성
                     var curFloor = new Floor("", resultProject.Building, // 임시 이름 -> 나중에 정렬 후 부여
                         ImageAlgorithms.BitmapImageFromFile(Path.Combine(floorDir.FullName, 
                         IMPJDefinitions.FLOOR_IMAGE_FILE_NAME)), 0.0, 0.0);
-                    resultProject.Building.AddFloor(curFloor);
 
                     // Floor Attributes 역직렬화
                     string floorAttrText = File.ReadAllText(Path.Combine(floorDir.FullName, IMPJDefinitions.FLOOR_ATTR_FILE_NAME));
-                        floorLevelDict[curFloor] = DeserializeFloorAttr(curFloor, floorAttrText, resultProject.CRS);
+                    var floorAttr = DeserializeFloorAttr(curFloor, floorAttrText, resultProject.CRS);
 
                     // Reachable 언팩
                     var rawBitmap = new Bitmap(Path.Combine(floorDir.FullName, IMPJDefinitions.FLOOR_OGM_FILE_NAME));
-                    curFloor.Reachable = ReachableAlgorithms.BuildReachablefromOGM(rawBitmap, 
-                        curFloor.MapImage.PixelWidth, curFloor.MapImage.PixelHeight);
+                    SetReachableFromImportedOgm(curFloor, rawBitmap, floorAttr);
 
-                    progBox.Report(10 + 90 * ++currentProgress / maximumProgress);
+                    importedFloors[floorIndex] = new ImportedFloor(curFloor, floorAttr, floorIndex);
+
+                    int progress = Interlocked.Increment(ref currentProgress);
+                    progBox.Report(10 + 90 * progress / maximumProgress);
                 });
 
-                // Floor 순서 정렬
-                resultProject.Building.SortFloors(fl => floorLevelDict[fl]);
+                // Floor 순서 정렬 및 Building에 추가
+                Array.Sort(importedFloors, (left, right) =>
+                {
+                    int levelCompare = left.Attributes.Level.CompareTo(right.Attributes.Level);
+                    return levelCompare != 0
+                        ? levelCompare
+                        : left.DirectoryIndex.CompareTo(right.DirectoryIndex);
+                });
+                foreach(var importedFloor in importedFloors)
+                    resultProject.Building.AddFloor(importedFloor.Floor);
+
+                if(TryGetConsistentResolution(importedFloors, out double reachableResolution))
+                    resultProject.ReachableResolution = reachableResolution;
 
                 // Landmarks Attributes 역직렬화
                 string landmarkAttrText = File.ReadAllText(Path.Combine(tempDirectory, IMPJDefinitions.LANDMARKS_ATTR_FILE_NAME));
@@ -111,6 +125,29 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
             }
             catch(Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return null; }
             finally { Directory.Delete(tempDirectory, true); }
+        }
+
+
+        private void SetReachableFromImportedOgm(Floor floor, Bitmap rawBitmap, FloorImportAttributes floorAttr)
+        {
+            if(floorAttr.OgmResolution.HasValue)
+            {
+                double reachableScale = 1.0 / floorAttr.OgmResolution.Value / floor.MapImagePPM;
+                bool matchesCeilGrid =
+                    rawBitmap.Width == Math.Max(1, (int)Math.Ceiling(floor.MapImage.PixelWidth * reachableScale)) &&
+                    rawBitmap.Height == Math.Max(1, (int)Math.Ceiling(floor.MapImage.PixelHeight * reachableScale));
+
+                floor.Reachable = matchesCeilGrid
+                    ? ReachableAlgorithms.BuildReachablefromOGM(rawBitmap,
+                        floor.MapImage.PixelWidth, floor.MapImage.PixelHeight, reachableScale)
+                    : ReachableAlgorithms.BuildReachablefromOGM(rawBitmap,
+                        floor.MapImage.PixelWidth, floor.MapImage.PixelHeight);
+            }
+            else
+            {
+                floor.Reachable = ReachableAlgorithms.BuildReachablefromOGM(rawBitmap,
+                    floor.MapImage.PixelWidth, floor.MapImage.PixelHeight);
+            }
         }
 
 
@@ -193,7 +230,7 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
         }
 
 
-        private int DeserializeFloorAttr(Floor floor, string jsonText, int crs)
+        private FloorImportAttributes DeserializeFloorAttr(Floor floor, string jsonText, int crs)
         {
             var serializer = new JavaScriptSerializer();
 
@@ -207,7 +244,52 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
             floor.BottomLatitude = globalOffset.Y;
             var curFloorImageJsonDict = (Dictionary<string, object>)jsonDict[IMPJDefinitions.PROP_FLOOR_IMAGE];
             floor.MapImagePPM = Convert.ToDouble(curFloorImageJsonDict[IMPJDefinitions.PROP_FLOOR_IMAGE_PPM]);
-            return Convert.ToInt32(jsonDict[IMPJDefinitions.PROP_FLOOR_LEVEL]);
+
+            double? ogmResolution = null;
+            try
+            {
+                var curFloorOgmJsonDict = (Dictionary<string, object>)jsonDict[IMPJDefinitions.PROP_FLOOR_OGM];
+                double parsedResolution = Convert.ToDouble(curFloorOgmJsonDict[IMPJDefinitions.PROP_FLOOR_OGM_RES]);
+                if(parsedResolution > 0 && !double.IsNaN(parsedResolution) && !double.IsInfinity(parsedResolution))
+                    ogmResolution = parsedResolution;
+            }
+            catch { }
+
+            return new FloorImportAttributes(Convert.ToInt32(jsonDict[IMPJDefinitions.PROP_FLOOR_LEVEL]), ogmResolution);
+        }
+
+
+        private bool TryGetConsistentResolution(IEnumerable<ImportedFloor> importedFloors, out double resolution)
+        {
+            const double tolerance = 1e-9;
+            double? firstResolution = null;
+
+            foreach(var importedFloor in importedFloors)
+            {
+                if(!importedFloor.Attributes.OgmResolution.HasValue) continue;
+
+                double currentResolution = importedFloor.Attributes.OgmResolution.Value;
+                if(!firstResolution.HasValue)
+                {
+                    firstResolution = currentResolution;
+                    continue;
+                }
+
+                if(Math.Abs(currentResolution - firstResolution.Value) > tolerance)
+                {
+                    resolution = default;
+                    return false;
+                }
+            }
+
+            if(!firstResolution.HasValue)
+            {
+                resolution = default;
+                return false;
+            }
+
+            resolution = firstResolution.Value;
+            return true;
         }
 
 
@@ -228,6 +310,34 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
             }
 
             return maxEntityId;
+        }
+
+
+        private readonly struct ImportedFloor
+        {
+            public ImportedFloor(Floor floor, FloorImportAttributes attributes, int directoryIndex)
+            {
+                Floor = floor;
+                Attributes = attributes;
+                DirectoryIndex = directoryIndex;
+            }
+
+            public Floor Floor { get; }
+            public FloorImportAttributes Attributes { get; }
+            public int DirectoryIndex { get; }
+        }
+
+
+        private readonly struct FloorImportAttributes
+        {
+            public FloorImportAttributes(int level, double? ogmResolution)
+            {
+                Level = level;
+                OgmResolution = ogmResolution;
+            }
+
+            public int Level { get; }
+            public double? OgmResolution { get; }
         }
     }
 }

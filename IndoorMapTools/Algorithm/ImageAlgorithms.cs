@@ -120,18 +120,20 @@ namespace IndoorMapTools.Algorithm
 
             using Graphics g = Graphics.FromImage(rotatedImage);
 
+            var matrix = new Drawing2D.Matrix();
+            matrix.Translate((newWidth - bitmap.Width) / 2, (newHeight - bitmap.Height) / 2, Drawing2D.MatrixOrder.Append);
+            matrix.RotateAt((float)rotation, new System.Drawing.PointF(newWidth / 2, newHeight / 2), Drawing2D.MatrixOrder.Append);
+            g.Transform = matrix;
             if(accurate)
             {
                 g.InterpolationMode = InterpolationMode.NearestNeighbor;
                 g.PixelOffsetMode = PixelOffsetMode.Half;
             }
-
-            var matrix = new Drawing2D.Matrix();
-            matrix.Translate((newWidth - bitmap.Width) / 2, (newHeight - bitmap.Height) / 2, Drawing2D.MatrixOrder.Append);
-            matrix.RotateAt((float)rotation, new System.Drawing.PointF(newWidth / 2, newHeight / 2), Drawing2D.MatrixOrder.Append);
-            g.Transform = matrix;
-            g.InterpolationMode = Drawing2D.InterpolationMode.Bilinear;
-            g.PixelOffsetMode = Drawing2D.PixelOffsetMode.None;
+            else
+            {
+                g.InterpolationMode = InterpolationMode.Bilinear;
+                g.PixelOffsetMode = PixelOffsetMode.None;
+            }
             g.Clear(System.Drawing.Color.Transparent);
             g.DrawImage(bitmap, new System.Drawing.PointF(0, 0));
 
@@ -181,58 +183,73 @@ namespace IndoorMapTools.Algorithm
 
         public static void Resize1bpp(Bitmap srcBitmap, Bitmap dstBitmap)
         {
+            Resize1bpp(srcBitmap, dstBitmap, srcBitmap.Width / (double)dstBitmap.Width,
+                srcBitmap.Height / (double)dstBitmap.Height, false);
+        }
+
+
+        public static void Resize1bpp(Bitmap srcBitmap, Bitmap dstBitmap, double xScale, double yScale, bool flipY)
+        {
             int srcWidth = srcBitmap.Width;
             int srcHeight = srcBitmap.Height;
             int dstWidth = dstBitmap.Width;
             int dstHeight = dstBitmap.Height;
 
             // LockBits
-            BitmapData srcData = srcBitmap.LockBits(new System.Drawing.Rectangle(0, 0, srcWidth, srcHeight),
-                ImageLockMode.ReadOnly, PixelFormat.Format1bppIndexed);
-            BitmapData dstData = dstBitmap.LockBits(new System.Drawing.Rectangle(0, 0, dstWidth, dstHeight),
-                ImageLockMode.WriteOnly, PixelFormat.Format1bppIndexed);
-
-            unsafe
+            BitmapData srcData = null;
+            BitmapData dstData = null;
+            try
             {
-                byte* srcBasePtr = (byte*)srcData.Scan0.ToPointer();
-                byte* dstBasePtr = (byte*)dstData.Scan0.ToPointer();
+                srcData = srcBitmap.LockBits(new System.Drawing.Rectangle(0, 0, srcWidth, srcHeight),
+                    ImageLockMode.ReadOnly, PixelFormat.Format1bppIndexed);
+                dstData = dstBitmap.LockBits(new System.Drawing.Rectangle(0, 0, dstWidth, dstHeight),
+                    ImageLockMode.WriteOnly, PixelFormat.Format1bppIndexed);
 
-                // Nearest Neighbor
-                for(int dstY = 0; dstY < dstHeight; dstY++)
+                unsafe
                 {
-                    // Source Y 계산
-                    int srcY = (int)((dstY + 0.5) * srcHeight / dstHeight);
-                    if(srcY < 0) srcY = 0;
-                    if(srcY >= srcHeight) srcY = srcHeight - 1;
+                    byte* srcBasePtr = (byte*)srcData.Scan0.ToPointer();
+                    byte* dstBasePtr = (byte*)dstData.Scan0.ToPointer();
 
-                    // Source, Destication Y Stride offset 계산
-                    int srcByteStrideOffset = srcY * srcData.Stride;
-                    int dstByteStrideOffset = dstY * dstData.Stride;
-
-                    for(int dstX = 0; dstX < dstWidth; dstX++)
+                    // Nearest Neighbor
+                    for(int dstY = 0; dstY < dstHeight; dstY++)
                     {
-                        // Source X 계산
-                        int srcX = (int)((dstX + 0.5) * srcWidth / dstWidth);
-                        if(srcX < 0) srcX = 0;
-                        if(srcX >= srcWidth) srcX = srcWidth - 1;
+                        // Source Y 계산
+                        int sampleY = flipY ? dstHeight - 1 - dstY : dstY;
+                        int srcY = (int)((sampleY + 0.5) * yScale);
+                        if(srcY < 0) srcY = 0;
+                        if(srcY >= srcHeight) srcY = srcHeight - 1;
 
-                        // Source Pixel value 따기
-                        byte b = srcBasePtr[srcByteStrideOffset + (srcX / 8)];
-                        byte bitVal = (byte)((b >> (7 - (srcX % 8))) & 1);
+                        // Source, Destication Y Stride offset 계산
+                        int srcByteStrideOffset = srcY * srcData.Stride;
+                        int dstByteStrideOffset = dstY * dstData.Stride;
 
-                        // Destination Pixel value 넣기
-                        byte mask = (byte)(1 << (7 - (dstX % 8)));
-                        int dstByteIndex = dstY * dstData.Stride + (dstX / 8);
+                        for(int dstX = 0; dstX < dstWidth; dstX++)
+                        {
+                            // Source X 계산
+                            int srcX = (int)((dstX + 0.5) * xScale);
+                            if(srcX < 0) srcX = 0;
+                            if(srcX >= srcWidth) srcX = srcWidth - 1;
 
-                        if(bitVal == 0) dstBasePtr[dstByteIndex] &= (byte)~mask;
-                        else dstBasePtr[dstByteIndex] |= mask;
+                            // Source Pixel value 따기
+                            byte b = srcBasePtr[srcByteStrideOffset + (srcX / 8)];
+                            byte bitVal = (byte)((b >> (7 - (srcX % 8))) & 1);
+
+                            // Destination Pixel value 넣기
+                            byte mask = (byte)(1 << (7 - (dstX % 8)));
+                            int dstByteIndex = dstByteStrideOffset + (dstX / 8);
+
+                            if(bitVal == 0) dstBasePtr[dstByteIndex] &= (byte)~mask;
+                            else dstBasePtr[dstByteIndex] |= mask;
+                        }
                     }
                 }
             }
-
-            // UnlockBits
-            srcBitmap.UnlockBits(srcData);
-            dstBitmap.UnlockBits(dstData);
+            finally
+            {
+                // UnlockBits
+                if(srcData != null) srcBitmap.UnlockBits(srcData);
+                if(dstData != null) dstBitmap.UnlockBits(dstData);
+            }
         }
 
 

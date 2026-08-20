@@ -28,6 +28,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Windows;
+using System.Windows.Media.Imaging;
 
 namespace IndoorMapTools.ViewModel
 {
@@ -165,18 +167,41 @@ namespace IndoorMapTools.ViewModel
         }
 
         [RelayCommand] private void SaveProject(string filePath)
-            => bgSvc.Run(() => projectIOSvc.SaveProject(Model, filePath), strSvc["SaveProjectStatusDesc"]);
+        {
+            var projectToSave = Model;
+            bgSvc.Run(() => projectIOSvc.SaveProject(projectToSave, filePath), strSvc["SaveProjectStatusDesc"]);
+        }
 
         [RelayCommand] private void SaveAndNewProject(string filePath)
         {
-            SaveProject(filePath);
-            NewProjectCommand.Execute(null);
+            var projectToSave = Model;
+            bgSvc.Run(
+                () => projectIOSvc.SaveProject(projectToSave, filePath),
+                () => NewProjectCommand.Execute(null),
+                strSvc["SaveProjectStatusDesc"]);
         }
 
         // 층 리스트 핸들러
         [RelayCommand] private void CreateFloor(string filePath)
-            => bgSvc.Run(() => Model?.Building.CreateFloor(EntityNamer.GetNumberedFloorName(Model.Namespace), 
-                ImageAlgorithms.BitmapImageFromFile(filePath), Gvm.GlobalMapFocus));
+        {
+            if(Model == null) return;
+
+            Project targetProject = Model;
+            Point targetLocation = Gvm.GlobalMapFocus;
+            BitmapImage loadedMapImage = null;
+
+            bgSvc.Run(
+                () => loadedMapImage = ImageAlgorithms.BitmapImageFromFile(filePath),
+                () =>
+                {
+                    if(Model != targetProject) return;
+
+                    targetProject.Building.CreateFloor(
+                        EntityNamer.GetNumberedFloorName(targetProject.Namespace),
+                        loadedMapImage,
+                        targetLocation);
+                });
+        }
 
         [RelayCommand] private void BatchFloorName() => EntityNamer.BatchFloorName(Model.Building.Floors);
     }

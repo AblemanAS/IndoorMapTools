@@ -26,6 +26,7 @@ using IndoorMapTools.Services.Domain;
 using IndoorMapTools.Services.Presentation;
 using System;
 using System.Windows;
+using System.Windows.Media.Imaging;
 
 namespace IndoorMapTools.ViewModel
 {
@@ -63,8 +64,25 @@ namespace IndoorMapTools.ViewModel
         }
 
         [RelayCommand] private void CreateFloor(string filePath)
-            => bgSvc.Run(() => Model.CreateFloor(EntityNamer.GetNumberedFloorName(Model.ParentProject.Namespace),
-                ImageAlgorithms.BitmapImageFromFile(filePath), GlobalMapFocus));
+        {
+            if(Model == null) return;
+
+            Building targetBuilding = Model;
+            Point targetLocation = GlobalMapFocus;
+            BitmapImage loadedMapImage = null;
+
+            bgSvc.Run(
+                () => loadedMapImage = ImageAlgorithms.BitmapImageFromFile(filePath),
+                () =>
+                {
+                    if(Model != targetBuilding) return;
+
+                    targetBuilding.CreateFloor(
+                        EntityNamer.GetNumberedFloorName(targetBuilding.ParentProject.Namespace),
+                        loadedMapImage,
+                        targetLocation);
+                });
+        }
 
         [RelayCommand] private void LocateFloor(Point destination)
         {

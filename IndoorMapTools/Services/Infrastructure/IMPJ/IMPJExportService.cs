@@ -21,12 +21,12 @@ using IndoorMapTools.Helper;
 using IndoorMapTools.Model;
 using IndoorMapTools.Services.Infrastructure.GeoLocation;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -41,8 +41,6 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
 
         public IMPJExportService(GeoLocationService glSvc) => this.glSvc = glSvc;
 
-        private readonly ConcurrentDictionary<Floor, Matrix> transformerCache = new();
-
         public void Export(Project context, string filePath, Action<int> progressCb = null)
         {
             string tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
@@ -51,13 +49,20 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
             int currentProgress = 0;
 
             var progBox = new IntegerProgressBox((p) => progressCb?.Invoke(p));
+            var transformerCache = new Dictionary<Floor, Matrix>();
+
+            int ReportStep()
+            {
+                int progress = Interlocked.Increment(ref currentProgress);
+                return 100 * progress / maximumProgress;
+            }
 
             // 각 층별 Transform Matrix 캐시
             foreach(var floor in context.Building.Floors)
                 floor.Reachable.Dispatcher.Invoke(() =>
                     transformerCache[floor] = CoordTransformAlgorithms.CalculateTransformer(floor.Reachable.PixelWidth,
                     floor.Reachable.PixelHeight, floor.MapImageRotation, 1 / floor.MapImagePPM));
-            progBox.Report(100 * ++currentProgress / maximumProgress);
+            progBox.Report(ReportStep());
 
             try
             {
@@ -67,18 +72,19 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
                 var buildingTask = Task.Run(() => // Building 데이터
                 {
                     File.WriteAllText(Path.Combine(tempDirectory, IMPJDefinitions.META_ATTR_FILE_NAME), SerializeBuildingAttr(context.Building, context.CRS));
-                    progBox.Report(100 * ++currentProgress / maximumProgress);
+                    progBox.Report(ReportStep());
                 });
 
                 var landmarksTask = Task.Run(() => // Landmarks 데이터
                 {
-                    File.WriteAllText(Path.Combine(tempDirectory, IMPJDefinitions.LANDMARKS_ATTR_FILE_NAME), SerializeLandmarkGroupsAttr(context.Building.LandmarkGroups));
-                    progBox.Report(100 * ++currentProgress / maximumProgress);
+                    File.WriteAllText(Path.Combine(tempDirectory, IMPJDefinitions.LANDMARKS_ATTR_FILE_NAME),
+                        SerializeLandmarkGroupsAttr(context.Building.LandmarkGroups, transformerCache));
+                    progBox.Report(ReportStep());
                 });
 
                 Parallel.ForEach(context.Building.Floors, floor => // Floor 데이터
                 {
-                    var progBoxfloor = new IntegerProgressBox((p) => progBox.Report(100 * ++currentProgress / maximumProgress));
+                    var progBoxfloor = new IntegerProgressBox((p) => progBox.Report(ReportStep()));
 
                     string currentFloorDirectory = Path.Combine(tempDirectory, floor.Name);
                     Directory.CreateDirectory(currentFloorDirectory);
@@ -105,13 +111,12 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
                 Task.WaitAll(buildingTask, landmarksTask);
 
                 ZipFile.CreateFromDirectory(tempDirectory, filePath);
-                progBox.Report(100 * ++currentProgress / maximumProgress);
+                progBox.Report(ReportStep());
             }
             catch(Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Warning); }
             finally
             {
                 Directory.Delete(tempDirectory, true);
-                transformerCache.Clear();
             }
         }
 
@@ -146,7 +151,8 @@ namespace IndoorMapTools.Services.Infrastructure.IMPJ
         }
 
 
-        private string SerializeLandmarkGroupsAttr(IEnumerable<LandmarkGroup> groups)
+        private string SerializeLandmarkGroupsAttr(IEnumerable<LandmarkGroup> groups,
+            IReadOnlyDictionary<Floor, Matrix> transformerCache)
         {
             var serializer = new JsonBuilder();
             

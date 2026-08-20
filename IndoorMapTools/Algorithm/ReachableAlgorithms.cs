@@ -795,6 +795,9 @@ namespace IndoorMapTools.Algorithm
         public static Bitmap BuildOGMfromReachable(WriteableBitmap reachable, double rotation, double scale,
             bool conservative, IEnumerable<Point[]> includedPolygons, IProgress<int> progressCb = null)
         {
+            if(scale <= 0 || double.IsNaN(scale) || double.IsInfinity(scale))
+                throw new ArgumentOutOfRangeException(nameof(scale));
+
             Bitmap originalBitmap = null, rotateFlippedBitmap = null, scaledBitmap = null;
             BitmapData bitmapData = null;
 
@@ -847,9 +850,9 @@ namespace IndoorMapTools.Algorithm
                 timer.Reset();
                 timer.Start();
 
-                // OGM 기록할 축소 비트맵 생성, (int)로 floorin 되므로 scale 대비 약간 작게 생성됨
-                int newWidth = (int)(rotateFlippedBitmap.Width * scale);
-                int newHeight = (int)(rotateFlippedBitmap.Height * scale);
+                // OGM 기록할 축소 비트맵 생성
+                int newWidth = Math.Max(1, (int)Math.Ceiling(rotateFlippedBitmap.Width * scale));
+                int newHeight = Math.Max(1, (int)Math.Ceiling(rotateFlippedBitmap.Height * scale));
                 scaledBitmap = new Bitmap(newWidth, newHeight, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
                 scaledBitmap.SetResolution(96, 96);
 
@@ -873,8 +876,9 @@ namespace IndoorMapTools.Algorithm
                             if(rotateFlippedBitmap.GetPixel(x, y).A == 0)
                             {
                                 int targetYPos = (int)((y + 0.5) * scale);
-                                if(targetYPos >= newHeight) continue;
+                                if(targetYPos < 0 || targetYPos >= newHeight) continue;
                                 int targetXPos = (int)((x + 0.5) * scale);
+                                if(targetXPos < 0 || targetXPos >= newWidth) continue;
                                 pixels[targetYPos * bitmapStride + targetXPos / 8] &= (byte)~(0x80 >> (targetXPos % 8));
                             }
                         }
@@ -894,8 +898,9 @@ namespace IndoorMapTools.Algorithm
                             if(rotateFlippedBitmap.GetPixel(x, y).A != 0)
                             {
                                 int targetYPos = (int)((y + 0.5) * scale);
-                                if(targetYPos >= newHeight) continue;
+                                if(targetYPos < 0 || targetYPos >= newHeight) continue;
                                 int targetXPos = (int)((x + 0.5) * scale);
+                                if(targetXPos < 0 || targetXPos >= newWidth) continue;
                                 pixels[targetYPos * bitmapStride + targetXPos / 8] |= (byte)(0x80 >> (targetXPos % 8));
                             }
                         }
@@ -927,6 +932,8 @@ namespace IndoorMapTools.Algorithm
                     // 경계 Assert
                     Debug.Assert(targetX >= 0 && targetX < newWidth && targetY >= 0 && targetY < newHeight,
                         $"Transformed location out of bounds: {targetX}, {targetY}");
+                    targetX = Math.Max(0, Math.Min(newWidth - 1, targetX));
+                    targetY = Math.Max(0, Math.Min(newHeight - 1, targetY));
 
                     int byteIndex = targetY * bitmapData.Stride + (targetX / 8);
                     byte mask = (byte)(0b10000000 >> (targetX % 8));
@@ -937,9 +944,9 @@ namespace IndoorMapTools.Algorithm
             }
             finally
             {
-                scaledBitmap.UnlockBits(bitmapData);
-                rotateFlippedBitmap.Dispose();
-                originalBitmap.Dispose();
+                if(bitmapData != null) scaledBitmap.UnlockBits(bitmapData);
+                rotateFlippedBitmap?.Dispose();
+                originalBitmap?.Dispose();
             }
 
             progressCb?.Report(100);
@@ -992,28 +999,51 @@ namespace IndoorMapTools.Algorithm
         /// <returns>출력 Reachable 작업영역</returns>
         public static WriteableBitmap BuildReachablefromOGM(Bitmap ogm, int pixelWidth, int pixelHeight, Action<int> progressCb = null)
         {
-            // 상하 뒤집기
-            ogm.RotateFlip(System.Drawing.RotateFlipType.RotateNoneFlipY);
-            progressCb?.Invoke(10);
+            double xScale = ogm.Width / (double)pixelWidth;
+            double yScale = ogm.Height / (double)pixelHeight;
+            return BuildReachablefromOGM(ogm, pixelWidth, pixelHeight, xScale, yScale, progressCb);
+        }
 
-            // 이미지 스케일
-            var scaledBitmap = new Bitmap(pixelWidth, pixelHeight, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
-            ImageAlgorithms.Resize1bpp(ogm, scaledBitmap);
-            ogm.Dispose();
-            progressCb?.Invoke(20);
 
-            // 새 Reachable 생성
-            var result = CreateReachable(pixelWidth, pixelHeight);
+        public static WriteableBitmap BuildReachablefromOGM(Bitmap ogm, int pixelWidth, int pixelHeight,
+            double scale, Action<int> progressCb = null)
+        {
+            return BuildReachablefromOGM(ogm, pixelWidth, pixelHeight, scale, scale, progressCb);
+        }
 
-            // 데이터 복사
-            BitmapData bitmapData = scaledBitmap.LockBits(new System.Drawing.Rectangle(0, 0, scaledBitmap.Width, scaledBitmap.Height),
-                ImageLockMode.ReadOnly, scaledBitmap.PixelFormat);
-            result.Dispatcher.Invoke(() => result.FromArray(bitmapData.Scan0));
-            scaledBitmap.UnlockBits(bitmapData);
-            scaledBitmap.Dispose();
-            progressCb?.Invoke(100);
 
-            return result;
+        private static WriteableBitmap BuildReachablefromOGM(Bitmap ogm, int pixelWidth, int pixelHeight,
+            double xScale, double yScale, Action<int> progressCb = null)
+        {
+            Bitmap scaledBitmap = null;
+            BitmapData bitmapData = null;
+
+            try
+            {
+                progressCb?.Invoke(10);
+
+                // 이미지 스케일 및 상하 뒤집기
+                scaledBitmap = new Bitmap(pixelWidth, pixelHeight, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
+                ImageAlgorithms.Resize1bpp(ogm, scaledBitmap, xScale, yScale, true);
+                progressCb?.Invoke(20);
+
+                // 새 Reachable 생성
+                var result = CreateReachable(pixelWidth, pixelHeight);
+
+                // 데이터 복사
+                bitmapData = scaledBitmap.LockBits(new System.Drawing.Rectangle(0, 0, scaledBitmap.Width, scaledBitmap.Height),
+                    ImageLockMode.ReadOnly, scaledBitmap.PixelFormat);
+                result.Dispatcher.Invoke(() => result.FromArray(bitmapData.Scan0));
+                progressCb?.Invoke(100);
+
+                return result;
+            }
+            finally
+            {
+                if(bitmapData != null) scaledBitmap.UnlockBits(bitmapData);
+                scaledBitmap?.Dispose();
+                ogm.Dispose();
+            }
         }
 
 

@@ -254,12 +254,17 @@ namespace IndoorMapTools.Algorithm
             {
                 Floor curFloor = areas[floorIndex].Key; // 현재 층
                 List<Area> curAreas = areas[floorIndex].Value; // 현재 층의 area들
-                if(curAreas.Count == 0) return; // ReachableArea 없으면 패스
+                if(curAreas.Count == 0)
+                {
+                    if(curFloor.Landmarks.Count == 0) return;
+                    throw new InvalidOperationException($"Floor '{curFloor.Name}' has landmarks but no reachable area.");
+                }
 
                 // 커플링 관련 변수
                 Matrix transformer = transformers[curFloor]; // 현재 층의 변환 행렬 (랜드마크 좌표 -> 미터좌표)
                 byte[] pixelBuffer = new byte[1];
                 var sourceRect = new Int32Rect(0, 0, 1, 1);
+                int reachableWidth = curAreas[0].Reachable.PixelWidth;
                 int reachableHeight = curAreas[0].Reachable.PixelHeight;
 
                 // 각 Landmark 순회
@@ -268,10 +273,13 @@ namespace IndoorMapTools.Algorithm
                     Landmark curLandmark = curFloor.Landmarks[landmarkIndex];
                     Point calculatedCenter = CoordTransformAlgorithms.CalculatePolygonCenter(curLandmark.Outline); // Center
                     Point transformedLoc = transformer.Transform(calculatedCenter); // Location
-                    sourceRect.X = (int)(transformedLoc.X / reachableResolution);
-                    sourceRect.Y = (int)(reachableHeight - transformedLoc.Y / reachableResolution);
+                    int cellX = (int)(transformedLoc.X / reachableResolution);
+                    int rawCellY = (int)(transformedLoc.Y / reachableResolution);
+                    sourceRect.X = Math.Max(0, Math.Min(reachableWidth - 1, cellX));
+                    sourceRect.Y = Math.Max(0, Math.Min(reachableHeight - 1, reachableHeight - 1 - rawCellY));
 
                     // 각 ReachableArea에 속하는지 판단 후 참조 설정
+                    bool isCoupled = false;
                     foreach(Area curArea in curAreas)
                     {
                         BitmapImage curReachableSegment = curArea.Reachable;
@@ -281,16 +289,25 @@ namespace IndoorMapTools.Algorithm
                         {
                             landmarkToAreaKVParr[floorIndex][landmarkIndex] = (curLandmark, curArea);
                             curArea.Landmarks.Add(curLandmark); // Area에 Landmark 추가
+                            isCoupled = true;
                             break;
                         }
                     }
+
+                    if(!isCoupled)
+                        throw new InvalidOperationException(
+                            $"Landmark '{curLandmark.Name}' on floor '{curFloor.Name}' is not included in any reachable area.");
                 }
             });
 
             var LandmarktoArea = new Dictionary<Landmark, Area>(totalLandmarkCount);
             foreach(var e in landmarkToAreaKVParr)
                 foreach((Landmark key, Area value) in e)
+                {
+                    if(key == null || value == null)
+                        throw new InvalidOperationException("Landmark-to-area coupling was not completed.");
                     LandmarktoArea.Add(key, value); // Landmark -> Area 매핑
+                }
 
             return LandmarktoArea;
         }
