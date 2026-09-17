@@ -19,6 +19,9 @@
             <!-- 기본값 -->
             <Point x:Key="DefaultLonlat" X="127.36554" Y="36.37417"/>
             <sys:String x:Key="TileSourceURL">https://tile.openstreetmap.org/{z}/{x}/{y}.png</sys:String>
+            <sys:Int32 x:Key="TileZoomOffset">0</sys:Int32>
+            <sys:Int32 x:Key="TileMinZoom">0</sys:Int32>
+            <sys:Int32 x:Key="TileMaxZoom">19</sys:Int32>
             
             <!-- Map View용 컬러브러시, 이펙트 -->
             <SolidColorBrush x:Key="TransparentWhite" Color="White" Opacity="0.5"/>

@@ -26,12 +26,23 @@ namespace IndoorMapTools.ViewModel
 {
     public partial class LandmarkTreeItemVM : ObservableObject
     {
+        [NotifyCanExecuteChangedFor(nameof(CopyToFloorsCommand), nameof(IsolateCommand))]
         [ObservableProperty] private Landmark model;
 
         private Project ParentProject => Model.ParentGroup.ParentBuilding.ParentProject;
+        private bool HasLandmark => Model != null;
 
         [RelayCommand] public void Join(LandmarkGroup group) => Model.ParentGroup.ParentBuilding.MoveLandmarkToGroup(Model, group);
-        [RelayCommand] private void CopyToFloors() => EntityOrganizer.CopyLandmarkToEveryFloors(Model, ParentProject.Namespace);
-        [RelayCommand] private void Isolate() => EntityOrganizer.IsolateLandmark(Model, ParentProject.Namespace);
+        [RelayCommand(CanExecute = nameof(HasLandmark))] private void CopyToFloors()
+        {
+            if(Model == null) return;
+            EntityOrganizer.CopyLandmarkToEveryFloors(Model, ParentProject.Namespace);
+        }
+
+        [RelayCommand(CanExecute = nameof(HasLandmark))] private void Isolate()
+        {
+            if(Model == null) return;
+            EntityOrganizer.IsolateLandmark(Model, ParentProject.Namespace);
+        }
     }
 }

@@ -36,7 +36,7 @@ namespace IndoorMapTools.Model
         public ObservableCollection<Floor> Floors { get; } = new();
         public ObservableCollection<LandmarkGroup> LandmarkGroups { get; } = new();
 
-        public Building(Project parentProject) => ParentProject = parentProject;
+        public Building(Project parentProject) : this() => ParentProject = parentProject;
 
         public Floor CreateFloor(string entityName, BitmapImage mapImage, Point lonlat)
         {
@@ -85,6 +85,9 @@ namespace IndoorMapTools.Model
         public void RemoveLandmarkGroup(LandmarkGroup child) => LandmarkGroups.Remove(child);
 
         public override string ToString() => Name;
-        private Building() {}
+        private Building()
+        {
+            LandmarkGroups.CollectionChanged += (s, e) => OnPropertyChanged(nameof(LandmarkGroups));
+        }
     }
 }

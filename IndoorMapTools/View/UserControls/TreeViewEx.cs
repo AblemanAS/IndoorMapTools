@@ -165,6 +165,7 @@ namespace IndoorMapTools.View.UserControls
         {
             base.OnMouseRightButtonDown(e);
             SetCurrentValue(IsSelectedProperty, true);
+            e.Handled = true;
         }
 
 

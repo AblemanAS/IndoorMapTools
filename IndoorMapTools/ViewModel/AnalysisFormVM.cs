@@ -62,6 +62,7 @@ namespace IndoorMapTools.ViewModel
         [ObservableProperty] private bool areLandmarkOutlinesComplete;
 
         private bool guardSelectPropagation = false;
+        private object analysisGeneration = new();
 
 
         public AnalysisFormVM(BackgroundService bgSvc, IResourceStringService strSvc)
@@ -193,24 +194,38 @@ namespace IndoorMapTools.ViewModel
 
         [RelayCommand] private void AnalyzeReachability()
         {
+            if(bgSvc.IsBusy || Model == null) return;
+
+            ClearAnalysisResult();
+            var generation = analysisGeneration;
+            var project = Model;
+            var building = project.Building;
+            double resolution = project.ReachableResolution;
+            bool conservative = project.ConservativeCellValidation;
+            bool directed = project.DirectedReachableCluster;
+            AnalysisResult pendingResult = null;
+            IReadOnlyList<FGAEdgeData> pendingIntraGroupEdges = null;
+            IReadOnlyDictionary<GraphNode, IReadOnlyList<FGAEdgeData>> pendingGraphEdges = null;
+            Dictionary<Floor, double[]> pendingAreaPivots = null;
+            Dictionary<Area, Point> pendingAreaPseudoCenter = null;
+
             bgSvc.Run(() =>
             {
-                ClearAnalysisResult();
-                var result = AnalysisService.AnalyzeReachability(Model.Building, fgaSolver, Model.ReachableResolution, 
-                    Model.ConservativeCellValidation, Model.DirectedReachableCluster, bgSvc.ReportProgress);
-                IntraGroupEdges = BuildIntraGroupEdges(result, Model.Building);
-                GraphEdges = BuildGraphEdges(result.ReachableClusters);
+                var result = AnalysisService.AnalyzeReachability(building, fgaSolver, resolution,
+                    conservative, directed, bgSvc.ReportProgress);
+                var intraGroupEdges = BuildIntraGroupEdges(result, building);
+                var graphEdges = BuildGraphEdges(result.ReachableClusters);
 
-                AreaPivots.Clear();
-                AreaPseudoCenter.Clear();
+                var areaPivots = new Dictionary<Floor, double[]>();
+                var areaPseudoCenter = new Dictionary<Area, Point>();
 
-                for(int i = 0; i < Model.Building.Floors.Count; i++)
+                for(int i = 0; i < building.Floors.Count; i++)
                 {
-                    var floor = Model.Building.Floors[i];
+                    var floor = building.Floors[i];
                     var curFloorAreas = result.FloorToAreas[floor];
                     if(curFloorAreas.Count == 0)
                     {
-                        AreaPivots[floor] = new double[] { 0.0, 0.0, 0.0, 0.0 };
+                        areaPivots[floor] = new double[] { 0.0, 0.0, 0.0, 0.0 };
                         continue;
                     }
 
@@ -218,19 +233,55 @@ namespace IndoorMapTools.ViewModel
                     int imageHeight = floor.MapImage.PixelHeight;
                     var transformer = CoordTransformAlgorithms.CalculateTransformer(
                         imageWidth, imageHeight, floor.MapImageRotation, 1.0);
-                    double newHeight = curFloorAreas[0].Reachable.PixelHeight * floor.MapImagePPM * Model.ReachableResolution;
+                    double newHeight = curFloorAreas[0].Reachable.PixelHeight * floor.MapImagePPM * resolution;
                     var pivot = new Point(0, imageHeight);
                     Point moved = transformer.Transform(pivot);
-                    AreaPivots[floor] = new double[] { moved.X, newHeight - moved.Y, -moved.X, moved.Y };
+                    areaPivots[floor] = new double[] { moved.X, newHeight - moved.Y, -moved.X, moved.Y };
                 }
 
                 foreach(GraphNode curNode in result.ReachableClusters)
                 {
                     if(curNode.Data is Area isolatedArea)
-                        AreaPseudoCenter[isolatedArea] = ReachableAlgorithms.GetPseudoReachableCenter(isolatedArea.Reachable);
+                    {
+                        var floor = building.Floors[isolatedArea.FloorId];
+                        var center = ReachableAlgorithms.GetPseudoReachableCenter(isolatedArea.Reachable);
+                        var transformer = CoordTransformAlgorithms.CalculateTransformer(
+                            floor.MapImage.PixelWidth, floor.MapImage.PixelHeight,
+                            floor.MapImageRotation, 1.0 / floor.MapImagePPM / resolution);
+                        transformer.Invert();
+                        // Undo the area bitmap's vertical flip before returning to map-image pixels.
+                        center.Y = isolatedArea.Reachable.PixelHeight - center.Y;
+                        areaPseudoCenter[isolatedArea] = transformer.Transform(center);
+                    }
                 }
 
-                Result = result;
+                pendingResult = result;
+                pendingIntraGroupEdges = intraGroupEdges;
+                pendingGraphEdges = graphEdges;
+                pendingAreaPivots = areaPivots;
+                pendingAreaPseudoCenter = areaPseudoCenter;
+            }, () =>
+            {
+                try
+                {
+                    // Closing the dialog invalidates this run before its UI publication.
+                    if(!ReferenceEquals(generation, analysisGeneration) || !ReferenceEquals(project, Model)) return;
+
+                    foreach(var item in pendingAreaPivots) AreaPivots.Add(item.Key, item.Value);
+                    foreach(var item in pendingAreaPseudoCenter) AreaPseudoCenter.Add(item.Key, item.Value);
+                    IntraGroupEdges = pendingIntraGroupEdges;
+                    GraphEdges = pendingGraphEdges;
+                    Result = pendingResult;
+                }
+                finally
+                {
+                    // BackgroundService retains its delegates until the next Run.
+                    pendingResult = null;
+                    pendingIntraGroupEdges = null;
+                    pendingGraphEdges = null;
+                    pendingAreaPivots = null;
+                    pendingAreaPseudoCenter = null;
+                }
             }, strSvc["ReachableClusterAnalysisStatusDesc"]);
         }
 
@@ -310,6 +361,7 @@ namespace IndoorMapTools.ViewModel
 
         [RelayCommand] private void ClearAnalysisResult()
         {
+            analysisGeneration = new object();
             Result = null;
             IntraGroupEdges = null;
             GraphEdges = null;
@@ -320,6 +372,8 @@ namespace IndoorMapTools.ViewModel
             SelectedFloor = null;
             SelectedCluster = null;
             SelectedItemSummary = null;
+            AreaPivots.Clear();
+            AreaPseudoCenter.Clear();
         }
     }
 }

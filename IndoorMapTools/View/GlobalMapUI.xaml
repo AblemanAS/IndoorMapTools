@@ -48,6 +48,10 @@ limitations under the License.
                     Center="{Binding GlobalMapFocus}" ZoomLevel="19"
                     GrabCursor="{x:Static mv:MapView.GrabCursor}" UngrabCursor="{x:Static mv:MapView.UngrabCursor}"
                     AltTileSourceURL ="{DynamicResource TileSourceURL}"
+                    TileSourceHeaders="{DynamicResource TileSourceHeaders}"
+                    TileZoomOffset="{DynamicResource TileZoomOffset}"
+                    TileMinZoom="{DynamicResource TileMinZoom}"
+                    TileMaxZoom="{DynamicResource TileMaxZoom}"
                     OnFileDropCommand="{Binding CreateFloorCommand}" 
                     BuildingOutline="{Binding PolygonVisual, ElementName=polygonTool}">
 

@@ -17,8 +17,12 @@ limitations under the License.
 ********************************************************************************/
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using System.Web.Script.Serialization;
 using System.Windows.Media.Imaging;
 
@@ -27,7 +31,7 @@ namespace IndoorMapTools.OpenStreetMapControl
 {
     public class TileCacheManager
     {
-        private const string CACHE_PATH = "KAILOSMapToolsTileCache";
+        private const string CACHE_PATH = "IndoorMapToolsTileCache";
         private const int EXPIRATION_PERIOD = 7;
 
         public static TileCacheManager instance;
@@ -42,16 +46,40 @@ namespace IndoorMapTools.OpenStreetMapControl
             CleanExpiredCache();
         }
 
-        private string GetTilePath(long x, long y, int z) =>
-            Path.Combine(rootPath, z.ToString(), x.ToString(), $"{y}.png");
-
-        private string GetMetaPath(long x, long y, int z) =>
-            GetTilePath(x, y, z) + ".meta";
-
-        public bool TryLoadTile(long x, long y, int z, out BitmapImage image)
+        public static string CreateSourceId(string url, IReadOnlyDictionary<string, string> headers,
+            int zoomOffset, int minZoom, int maxZoom)
         {
-            string tilePath = GetTilePath(x, y, z);
-            string metaPath = GetMetaPath(x, y, z);
+            using var data = new MemoryStream();
+            using(var writer = new BinaryWriter(data, Encoding.UTF8, true))
+            {
+                // BinaryWriter prefixes strings with their UTF-8 byte lengths.
+                writer.Write("tile-source-v1");
+                writer.Write(url);
+                writer.Write(zoomOffset);
+                writer.Write(minZoom);
+                writer.Write(maxZoom);
+                writer.Write(headers?.Count ?? 0);
+                if(headers != null)
+                    foreach(var header in headers.OrderBy(h => h.Key, StringComparer.OrdinalIgnoreCase))
+                    {
+                        writer.Write(header.Key.ToLowerInvariant());
+                        writer.Write(header.Value);
+                    }
+            }
+            using var sha = SHA256.Create();
+            return BitConverter.ToString(sha.ComputeHash(data.ToArray())).Replace("-", "").ToLowerInvariant();
+        }
+
+        private string GetTilePath(string sourceId, long x, long y, int z) =>
+            Path.Combine(rootPath, sourceId, z.ToString(), x.ToString(), $"{y}.png");
+
+        private string GetMetaPath(string sourceId, long x, long y, int z) =>
+            GetTilePath(sourceId, x, y, z) + ".meta";
+
+        public bool TryLoadTile(string sourceId, long x, long y, int z, out BitmapImage image)
+        {
+            string tilePath = GetTilePath(sourceId, x, y, z);
+            string metaPath = GetMetaPath(sourceId, x, y, z);
             image = null;
 
             if(!File.Exists(tilePath) || !File.Exists(metaPath))
@@ -67,6 +95,7 @@ namespace IndoorMapTools.OpenStreetMapControl
                 var bmp = new BitmapImage();
                 bmp.BeginInit();
                 bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
                 bmp.UriSource = new Uri(tilePath);
                 bmp.EndInit();
                 bmp.Freeze();
@@ -79,10 +108,10 @@ namespace IndoorMapTools.OpenStreetMapControl
             }
         }
 
-        public void SaveTile(long x, long y, int z, byte[] imageData)
+        public void SaveTile(string sourceId, long x, long y, int z, byte[] imageData)
         {
-            string tilePath = GetTilePath(x, y, z);
-            string metaPath = GetMetaPath(x, y, z);
+            string tilePath = GetTilePath(sourceId, x, y, z);
+            string metaPath = GetMetaPath(sourceId, x, y, z);
 
             Directory.CreateDirectory(Path.GetDirectoryName(tilePath));
             File.WriteAllBytes(tilePath, imageData);

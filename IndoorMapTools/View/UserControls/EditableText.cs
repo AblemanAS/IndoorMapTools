@@ -183,8 +183,8 @@ namespace IndoorMapTools.View.UserControls
 
             bool pf = Validator switch
             {
-                ValidationType.None =>              proc(true, text),
-                ValidationType.Name =>              proc(true, text),
+                ValidationType.None =>              proc(!string.IsNullOrWhiteSpace(text), text),
+                ValidationType.Name =>              proc(!string.IsNullOrWhiteSpace(text), text),
                 ValidationType.Int =>               proc(int.TryParse(text, out var resI), resI),
                 ValidationType.Natural =>           proc(int.TryParse(text, out var resN) && resN >= 0, resN),
                 ValidationType.Float =>             proc(float.TryParse(text, out var resF), resF),

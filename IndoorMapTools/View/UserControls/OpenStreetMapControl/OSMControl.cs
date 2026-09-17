@@ -19,9 +19,12 @@ limitations under the License.
 using Microsoft.Maps.MapControl.WPF;
 using Microsoft.Maps.MapControl.WPF.Overlays;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -40,7 +43,7 @@ namespace IndoorMapTools.OpenStreetMapControl
     public class OSMControl : Map
     {
         private const string MAP_TILE_SOURCE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-        private const string RESOURCE_FAILED_TILE_IMAGE = "FailedTileImage";
+        private const string RESOURCE_FAILED_TILE_IMAGE = "FailedTile";
         private const int MAX_OSM_ZOOM_SUPPORTED = 19;
 
         [Bindable(true)]
@@ -68,10 +71,47 @@ namespace IndoorMapTools.OpenStreetMapControl
 
         private static void OnAlternativeTileSourceURLChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if(!(d is OSMControl instance && e.NewValue is string altSource)) return;
-            instance.tileLayer.TileSourceURL = altSource;
+            var instance = (OSMControl)d;
+            instance.tileLayer.Configure(instance.AltTileSourceURL ?? MAP_TILE_SOURCE_URL,
+                instance.TileSourceHeaders, instance.TileZoomOffset, instance.TileMinZoom, instance.TileMaxZoom);
             instance.InvalidateVisual();
         }
+
+        public IReadOnlyDictionary<string, string> TileSourceHeaders
+        {
+            get => (IReadOnlyDictionary<string, string>)GetValue(TileSourceHeadersProperty);
+            set => SetValue(TileSourceHeadersProperty, value);
+        }
+        public static readonly DependencyProperty TileSourceHeadersProperty =
+            DependencyProperty.Register(nameof(TileSourceHeaders), typeof(IReadOnlyDictionary<string, string>), typeof(OSMControl),
+                new PropertyMetadata(null, OnAlternativeTileSourceURLChanged));
+
+        public int TileZoomOffset
+        {
+            get => (int)GetValue(TileZoomOffsetProperty);
+            set => SetValue(TileZoomOffsetProperty, value);
+        }
+        public static readonly DependencyProperty TileZoomOffsetProperty =
+            DependencyProperty.Register(nameof(TileZoomOffset), typeof(int), typeof(OSMControl),
+                new PropertyMetadata(0, OnAlternativeTileSourceURLChanged));
+
+        public int TileMinZoom
+        {
+            get => (int)GetValue(TileMinZoomProperty);
+            set => SetValue(TileMinZoomProperty, value);
+        }
+        public static readonly DependencyProperty TileMinZoomProperty =
+            DependencyProperty.Register(nameof(TileMinZoom), typeof(int), typeof(OSMControl),
+                new PropertyMetadata(0, OnAlternativeTileSourceURLChanged));
+
+        public int TileMaxZoom
+        {
+            get => (int)GetValue(TileMaxZoomProperty);
+            set => SetValue(TileMaxZoomProperty, value);
+        }
+        public static readonly DependencyProperty TileMaxZoomProperty =
+            DependencyProperty.Register(nameof(TileMaxZoom), typeof(int), typeof(OSMControl),
+                new PropertyMetadata(MAX_OSM_ZOOM_SUPPORTED, OnAlternativeTileSourceURLChanged));
 
 
         [Bindable(true)]
@@ -322,7 +362,27 @@ namespace IndoorMapTools.OpenStreetMapControl
 
         private class OSMTileLayer : MapTileLayer
         {
-            public string TileSourceURL { get; set; } = MAP_TILE_SOURCE_URL;
+            private string tileSourceURL = MAP_TILE_SOURCE_URL;
+            private IReadOnlyDictionary<string, string> headers;
+            private int zoomOffset;
+            private int minZoom;
+            private int maxZoom = MAX_OSM_ZOOM_SUPPORTED;
+            private bool needsCoordinates;
+            private static readonly string osmSourceId = TileCacheManager.CreateSourceId(
+                MAP_TILE_SOURCE_URL, null, 0, 0, MAX_OSM_ZOOM_SUPPORTED);
+            private string sourceId = osmSourceId;
+
+            public void Configure(string url, IReadOnlyDictionary<string, string> requestHeaders,
+                int offset, int minimum, int maximum)
+            {
+                tileSourceURL = url;
+                headers = requestHeaders;
+                zoomOffset = offset;
+                minZoom = minimum;
+                maxZoom = maximum;
+                needsCoordinates = url.Contains("{lon}") || url.Contains("{lat}");
+                sourceId = TileCacheManager.CreateSourceId(url, requestHeaders, offset, minimum, maximum);
+            }
 
             private static BitmapImage failedImage;
 
@@ -333,7 +393,7 @@ namespace IndoorMapTools.OpenStreetMapControl
                 {
                     if(client == null)
                     {
-                        client = new HttpClient();
+                        client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
                         string appVersion = (string)Application.Current.FindResource("AppVersion");
                         client.DefaultRequestHeaders.UserAgent.Clear();
                         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("IndoorMapTools", appVersion));
@@ -349,58 +409,77 @@ namespace IndoorMapTools.OpenStreetMapControl
 
             private BitmapImage GetImage(long x, long y, int z)
             {
-                var (realX, realY, realZ, zoomDiff) = MapToSourceTile(x, y, z);
+                var image = GetSourceImage(x, y, z, tileSourceURL, headers, zoomOffset,
+                    minZoom, maxZoom, needsCoordinates, sourceId);
+                if(image == null && sourceId != osmSourceId)
+                    image = GetSourceImage(x, y, z, MAP_TILE_SOURCE_URL, null, 0,
+                        0, MAX_OSM_ZOOM_SUPPORTED, false, osmSourceId);
+                return image ?? (failedImage ??= (BitmapImage)Application.Current.FindResource(RESOURCE_FAILED_TILE_IMAGE));
+            }
 
-                BitmapImage sourceTile = LoadOrDownloadTile(realX, realY, realZ);
-                if(sourceTile == null)
-                    return failedImage ??= (BitmapImage)Application.Current.FindResource(RESOURCE_FAILED_TILE_IMAGE);
-
-                if(zoomDiff == 0)
-                    return sourceTile;
-
+            private BitmapImage GetSourceImage(long x, long y, int z, string url,
+                IReadOnlyDictionary<string, string> requestHeaders, int offset, int minimum,
+                int maximum, bool coordinates, string cacheId)
+            {
+                if(z < 0 || z > 62 || (long)z + offset < minimum) return null;
+                long difference = Math.Max(0L, (long)z + offset - maximum);
+                if(difference > 8 || difference > z) return null;
+                int zoomDiff = (int)difference;
+                var sourceTile = LoadOrDownloadTile(x >> zoomDiff, y >> zoomDiff, z - zoomDiff,
+                    url, requestHeaders, offset, coordinates, cacheId);
+                if(sourceTile == null || zoomDiff == 0) return sourceTile;
                 return ExtractAndScaleSubTile(sourceTile, x, y, zoomDiff);
             }
 
-            private (long realX, long realY, int realZ, int zoomDiff) MapToSourceTile(long x, long y, int z)
+            private static Uri CreateTileAddress(string url, long x, long y, int z, int offset, bool coordinates)
             {
-                if(z <= MAX_OSM_ZOOM_SUPPORTED) return (x, y, z, 0);
-
-                int zoomDiff = z - MAX_OSM_ZOOM_SUPPORTED;
-                long realX = x >> zoomDiff;
-                long realY = y >> zoomDiff;
-                return (realX, realY, MAX_OSM_ZOOM_SUPPORTED, zoomDiff);
+                var culture = CultureInfo.InvariantCulture;
+                string address = url.Replace("{x}", x.ToString(culture))
+                    .Replace("{y}", y.ToString(culture))
+                    .Replace("{z}", ((long)z + offset).ToString(culture));
+                if(coordinates)
+                {
+                    double n = Math.Pow(2.0, z);
+                    double lon = (x + 0.5) / n * 360.0 - 180.0;
+                    double lat = Math.Atan(Math.Sinh(Math.PI * (1.0 - 2.0 * (y + 0.5) / n))) * 180.0 / Math.PI;
+                    address = address.Replace("{lon}", lon.ToString("R", culture))
+                        .Replace("{lat}", lat.ToString("R", culture));
+                }
+                return new Uri(address);
             }
 
-            private BitmapImage LoadOrDownloadTile(long x, long y, int z)
+            private BitmapImage LoadOrDownloadTile(long x, long y, int z, string url,
+                IReadOnlyDictionary<string, string> requestHeaders, int offset, bool coordinates, string cacheId)
             {
-                if(TileCacheManager.Instance.TryLoadTile(x, y, z, out var cached))
-                    return cached;
-
-                Uri address = new Uri(TileSourceURL
-                    .Replace("{x}", x.ToString())
-                    .Replace("{y}", y.ToString())
-                    .Replace("{z}", z.ToString()));
-
                 try
                 {
-                    HttpResponseMessage response = Client.GetAsync(address).Result;
-
-                    if(response.IsSuccessStatusCode)
+                    if(TileCacheManager.Instance.TryLoadTile(cacheId, x, y, z, out var cached))
+                        return cached;
+                    using var request = new HttpRequestMessage(HttpMethod.Get, CreateTileAddress(url, x, y, z, offset, coordinates));
+                    if(requestHeaders != null)
+                        foreach(var header in requestHeaders)
+                            request.Headers.Add(header.Key, header.Value);
+                    using var response = Client.SendAsync(request).GetAwaiter().GetResult();
+                    if(!response.IsSuccessStatusCode)
                     {
-                        byte[] data = response.Content.ReadAsByteArrayAsync().Result;
-                        TileCacheManager.Instance.SaveTile(x, y, z, data);
-
-                        using var ms = new MemoryStream(data);
-                        var img = new BitmapImage();
-                        img.BeginInit();
-                        img.CacheOption = BitmapCacheOption.OnLoad;
-                        img.StreamSource = ms;
-                        img.EndInit();
-                        img.Freeze();
-                        return img;
+                        Trace.TraceWarning("Tile request failed: HTTP {0}.", (int)response.StatusCode);
+                        return null;
                     }
+                    byte[] data = response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
+                    using var ms = new MemoryStream(data);
+                    var img = new BitmapImage();
+                    img.BeginInit();
+                    img.CacheOption = BitmapCacheOption.OnLoad;
+                    img.StreamSource = ms;
+                    img.EndInit();
+                    img.Freeze();
+                    try { TileCacheManager.Instance.SaveTile(cacheId, x, y, z, data); }
+                    catch(IOException) { Trace.TraceWarning("Tile cache write failed."); }
+                    catch(UnauthorizedAccessException) { Trace.TraceWarning("Tile cache write was denied."); }
+                    return img;
                 }
-                catch { }
+                catch(Exception ex)
+                { Trace.TraceWarning("Tile request failed ({0}).", ex.GetType().Name); }
 
                 return null;
             }
